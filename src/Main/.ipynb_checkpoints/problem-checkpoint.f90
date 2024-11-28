@@ -760,7 +760,8 @@ contains
                 !  call this%Write_to_files()
                 counter = counter + 1
                 ncyc = ncyc + 1
-                write(*,*) "Cycle time: ", omp_get_wtime()-start
+                write(*,'(A30, F12.6)') "Cycle time: ", omp_get_wtime()-start
+                 write(*,*) "####################################################"
             !      call this%cr%Checkpoint(ckpt_name)
             end do
             
