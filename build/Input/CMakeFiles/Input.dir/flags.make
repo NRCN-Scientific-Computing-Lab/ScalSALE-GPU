@@ -6,5 +6,5 @@ Fortran_DEFINES =
 
 Fortran_INCLUDES = -I/home/u39966a550667980b66e637513213840/json-fortran/json-fortran/build
 
-Fortran_FLAGS = -fPIC -cpp -fpp -O2 -g -qopenmp -fopenmp-targets=spir64 -module ../modules
+Fortran_FLAGS = -fPIC -cpp -fpp -O3 -qopenmp -fopenmp-targets=spir64 -module ../modules
 

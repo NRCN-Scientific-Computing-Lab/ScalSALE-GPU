@@ -6,5 +6,5 @@ Fortran_DEFINES =
 
 Fortran_INCLUDES = 
 
-Fortran_FLAGS = -fPIC -cpp -fpp -O2 -g -qopenmp -fopenmp-targets=spir64 -module ../../modules
+Fortran_FLAGS = -fPIC -cpp -fpp -O3 -qopenmp -fopenmp-targets=spir64 -module ../../modules
 

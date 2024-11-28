@@ -415,26 +415,41 @@ contains
 
         real(8), dimension(:, :, :), pointer :: p,x              
         integer :: i,j,k
+        real(8) :: accel_time, avisc_time, vel_time, thermo_time, rezone_time, energy_time, mesh_time
         call this%total_sie%Point_to_data(1, x)
 
-
+        thermo_time = omp_get_wtime()
         call this%Calculate_thermodynamics()
+        write(*,*) "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
 
         call time%Calculate_dt(this%mesh, this%velocity, this%rezone%mesh_velocity, this%vertex_mass, this%total_vof, this%emfm)
         this%cyc_delete = this%cyc_delete+1
 
+        accel_time = omp_get_wtime()
         call this%Calculate_acceleration_3d(time%dt_mid)
-
+        write(*,*) "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
+        
+        
+        avisc_time = omp_get_wtime()
         call this%Calculate_artificial_viscosity_3d(time)
-
+        write(*,*) "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
+        
+        vel_time = omp_get_wtime()
         call this%Calculate_velocity_3d(time%dt_mid)
+        write(*,*) "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
+
+        rezone_time = omp_get_wtime()
         call this%rezone%Calculate_rezone_3d(time%dt)
+        write(*,*) "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
 
+        energy_time = omp_get_wtime()
         call this%Calculate_energy_3d(this%init_temperature, time%dt)
+        write(*,*) "Calculate_energy_3d time:", omp_get_wtime() - energy_time
 
-        call this%Fix_vof_3d(time%dt, 0)
-
+        !call this%Fix_vof_3d(time%dt, 0)
+        mesh_time = omp_get_wtime()
         call this%Calculate_mesh_3d(time)
+        write(*,*) "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
 
         if (this%rezone%rezone_type /= 0) call this%advect%Calculate_advect_3d()
 

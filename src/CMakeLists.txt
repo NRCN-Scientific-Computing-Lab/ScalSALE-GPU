@@ -16,7 +16,7 @@ set(CMAKE_Fortran_FLAGS "-fPIC -cpp -qopenmp -O2 -g -fopenmp-targets=spir64 -ffr
 #-mavx512f -Ofast
 else()
 set(ENV{JSONFORTRAN} "/home/u39966a550667980b66e637513213840/json-fortran/json-fortran/build")
-set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O2 -g -qopenmp -fopenmp-targets=spir64")
+set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O3 -qopenmp -fopenmp-targets=spir64")
 endif()
 
 #set(CMAKE_Fortran_FLAGS "-g -qopenmp -fpp -fPIC -traceback -fpe0")

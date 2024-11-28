@@ -6,5 +6,5 @@ Fortran_DEFINES = -DParallel_EXPORTS
 
 Fortran_INCLUDES = 
 
-Fortran_FLAGS = -fPIC -cpp -fpp -O2 -g -qopenmp -fopenmp-targets=spir64 -module ../modules -fPIC
+Fortran_FLAGS = -fPIC -cpp -fpp -O3 -qopenmp -fopenmp-targets=spir64 -module ../modules -fPIC
 

@@ -229,7 +229,7 @@ contains
         call total_volume%Point_to_data(vol)
         
        ndev = omp_get_num_devices()
-       start_time = omp_wget_time()
+       start_time = omp_get_wtime()
        !$omp target map(to:x, y, z, velocity_x, velocity_y, velocity_z, vof, vol) map(from:dvel_x_dx, dvel_x_dy, dvel_x_dz, dvel_y_dx, dvel_y_dy, dvel_y_dz, dvel_z_dx, dvel_z_dy, dvel_z_dz)
        !$omp teams distribute parallel do collapse(3) private(ip,jp,kp,x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8,u1,u2,u3,u4,u5,u6,u7,u8) &
        !$omp& private(v1,v2,v3,v4,v5,v6,v7,v8,w1,w2,w3,w4,w5,w6,w7,w8) 
