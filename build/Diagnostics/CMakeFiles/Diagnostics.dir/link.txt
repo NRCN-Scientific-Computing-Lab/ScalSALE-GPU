@@ -1,0 +1,1 @@
+/opt/intel/oneapi/2024.2/bin/mpiifx -fPIC -fPIC -cpp -fpp -O2 -g -qopenmp -fopenmp-targets=spir64 -shared -nofor-main -Wl,-soname,libDiagnostics.so -o ../lib/libDiagnostics.so CMakeFiles/Diagnostics.dir/textual_diagnostic.f90.o 

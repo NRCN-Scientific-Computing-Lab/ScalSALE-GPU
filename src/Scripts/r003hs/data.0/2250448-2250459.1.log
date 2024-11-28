@@ -1,0 +1,1 @@
+2250475 : CRITICAL : Assertion failed: handler_ex:315: (is_first_class ? g_signal_manager->is_first_class_handler_set[signo] : g_signal_manager->is_second_class_handler_set[signo]) : . Please contact the technical support.  

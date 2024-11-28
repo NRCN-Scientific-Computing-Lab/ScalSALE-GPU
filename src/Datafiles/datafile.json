@@ -120,7 +120,7 @@
         ]
     }, 
     "diagnostics": {
-        "number_diagnostics": 1,
+        "number_diagnostics": 0,
         "group": [
             {
                 "condition": 1,
@@ -179,9 +179,9 @@
         "rezone_type": "lagrange"
     },
 "parallel":{
-"np":27,
-"npz":3,
-"npy":3,
-"npx":3
+"np":1,
+"npz":1,
+"npy":1,
+"npx":1
 }
 }

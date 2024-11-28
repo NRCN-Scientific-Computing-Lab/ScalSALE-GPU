@@ -21,4 +21,5 @@ else
     #mpirun -n 1 -mca btl self,sm,openib ../exec/main
     #mpirun -n 8 ../exec/main
     mpirun -n $1 ../exec/main
+    #vtune -collect hotspots mpirun -n $1 ../exec/main
 fi

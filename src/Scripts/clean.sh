@@ -19,7 +19,7 @@ then
   FC=mpif90 cmake ../src/
 else
   echo "@@@@ INTEL @@@@"
-  FC=mpif90 cmake ../src 
+  FC=mpiifx cmake ../src 
 fi
 #if test "$1" = tests
 #then 
