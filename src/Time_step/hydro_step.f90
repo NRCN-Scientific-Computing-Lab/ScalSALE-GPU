@@ -420,37 +420,37 @@ contains
 
         thermo_time = omp_get_wtime()
         call this%Calculate_thermodynamics()
-        write(*,'(A30, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
+        write(*,'(A50, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
         dt_time = omp_get_wtime()       
         call time%Calculate_dt(this%mesh, this%velocity, this%rezone%mesh_velocity, this%vertex_mass, this%total_vof, this%emfm)
-        write(*,'(A30, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
+        write(*,'(A50, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
         this%cyc_delete = this%cyc_delete+1
 
         accel_time = omp_get_wtime()
         call this%Calculate_acceleration_3d(time%dt_mid)
-        write(*,'(A30, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
+        write(*,'(A50, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
         
         
         avisc_time = omp_get_wtime()
         call this%Calculate_artificial_viscosity_3d(time)
-        write(*,'(A30, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
+        write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
         
         vel_time = omp_get_wtime()
         call this%Calculate_velocity_3d(time%dt_mid)
-        write(*,'(A30, F12.6)') "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
-        
+        write(*,'(A50, F12.6)') "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
+    
         rezone_time = omp_get_wtime()
         call this%rezone%Calculate_rezone_3d(time%dt)
-        write(*,'(A30, F12.6)') "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
+        write(*,'(A50, F12.6)') "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
 
         energy_time = omp_get_wtime()
         call this%Calculate_energy_3d(this%init_temperature, time%dt)
-        write(*,'(A30, F12.6)') "Calculate_energy_3d time:", omp_get_wtime() - energy_time
+        write(*,'(A50, F12.6)') "Calculate_energy_3d time:", omp_get_wtime() - energy_time
 
         !call this%Fix_vof_3d(time%dt, 0)
         mesh_time = omp_get_wtime()
         call this%Calculate_mesh_3d(time)
-        write(*,'(A30, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
+        write(*,'(A50, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
 
         if (this%rezone%rezone_type /= 0) call this%advect%Calculate_advect_3d()
 
@@ -1410,6 +1410,7 @@ contains
         real(8) :: y1, y2, y3, y4, y5, y6, y7, y8  
         real(8) :: z1, z2, z3, z4, z5, z6, z7, z8  
         real(8) :: r1, r2, r3, r4, r5, r6, r7, r8  
+        real(8) :: loop_time
 
         call this%acceleration   %Point_to_data(acceleration_x, acceleration_y, acceleration_z)
         call this%velocity       %Point_to_data(velocity_x, velocity_y, velocity_z)
@@ -1420,6 +1421,10 @@ contains
         call this%a_visc         %Point_to_data(a_visc)
 
         call this%a_visc%Exchange_end()
+
+        loop_time = omp_get_wtime()
+        !$omp target map(to:inversed_vertex_mass, a_visc, acceleration_x, acceleration_y, acceleration_z) map(from:velocity_x, velocity_y, velocity_z)
+       !$omp teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6)
         do k = 1, this%nzp
             do j = 1, this%nyp
                 do i = 1, this%nxp
@@ -1485,25 +1490,36 @@ contains
                         -a_visc(i , jm, km) * ((x6 - x5) * (y1 - y5) - (y6 - y5) * (x1 - x5)) &
                         -a_visc(im, jm, k ) * ((x5 - x4) * (y3 - y4) - (y5 - y4) * (x3 - x4)) &
                         -a_visc(im, jm, km) * ((x6 - x4) * (y5 - y4) - (y6 - y4) * (x5 - x4))))
-
-
-
-
                 end do
             end do
         end do
-
+        !$omp end teams distribute parallel do    
+        !$omp end target  
+        
+        write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----loop1 time:", omp_get_wtime() - loop_time
+        
+        loop_time = omp_get_wtime()
+        
         if (this%mesh%mesh_type /= 2) then
             call this%velocity%Impose_spherical_symmetry(this%mesh%coordinates)
         end if
 
+         write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----spherical time:", omp_get_wtime() - loop_time
+         loop_time = omp_get_wtime()
+
         call this%velocity%Impose_no_move_3d(this%mesh%coordinates)
 
+        write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----no_move time:", omp_get_wtime() - loop_time
+        loop_time = omp_get_wtime()
+        
         call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false.)
-
+        
+        write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----apply-BC time:", omp_get_wtime() - loop_time    
+        
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, this%total_vof, this%total_volume&
             , this%nx, this%ny, this%nz, this%emf)
             call this%velocity%Exchange_end()
+       
     end subroutine Calculate_velocity_3d
 
 

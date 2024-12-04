@@ -692,8 +692,14 @@ contains
 
         real(8), dimension(:, :, :), pointer :: velocity_x_target     
         real(8), dimension(:, :, :), pointer :: velocity_y_target     
-        real(8), dimension(:, :, :), pointer :: velocity_z_target     
+        real(8), dimension(:, :, :), pointer :: velocity_z_target 
+                real(8), dimension(:, :, :), pointer :: acceleration_x_target     
+        real(8), dimension(:, :, :), pointer :: acceleration_y_target     
+        real(8), dimension(:, :, :), pointer :: acceleration_z_target 
         real(8), dimension(:, :, :), pointer :: x_target              
+        real(8), dimension(:, :, :), pointer :: avisc_target              
+        real(8), dimension(:, :, :), pointer :: rmv_target              
+        
         real(8), dimension(:, :, :), pointer :: y_target              
         real(8), dimension(:, :, :), pointer :: z_target              
 
@@ -742,14 +748,16 @@ contains
             call this%velocity%dvelocity_z_dx%Point_to_data(dvel_z_dx_target)
             call this%velocity%dvelocity_z_dy%Point_to_data(dvel_z_dy_target)
             call this%velocity%dvelocity_z_dz%Point_to_data(dvel_z_dz_target)
-    
+    call this%total_inverse_vertex_mass%Point_to_data(rmv_target)
             call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
+            call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
             call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
             call this%total_vof%       Point_to_data(vof_target)
+            call this%a_visc%       Point_to_data(avisc_target)
             call this%total_volume%    Point_to_data(vol_target)
             
             write(*,*) "Number of Available devices: ", omp_get_num_devices()
-            !$omp target enter data map(to: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target) &
+            !$omp target enter data map(to: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target, avisc_target, acceleration_x_target, acceleration_y_target, acceleration_z_target, rmv_target) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
         
@@ -760,8 +768,8 @@ contains
                 !  call this%Write_to_files()
                 counter = counter + 1
                 ncyc = ncyc + 1
-                write(*,'(A30, F12.6)') "Cycle time: ", omp_get_wtime()-start
-                 write(*,*) "####################################################"
+                write(*,'(A30, F12.6)') "Total cycle time: ", omp_get_wtime()-start
+                write(*,*) "#####################################################################"
             !      call this%cr%Checkpoint(ckpt_name)
             end do
             
@@ -775,20 +783,21 @@ contains
         !you should expect the same result for each correct execution you make. 
         !we print the values in a stride of 10 in each axis to save on storage and I/O operations.
         !these values should indicate whether your code is correct or not.
-        
+        write(*,*) "Total Time:", omp_get_wtime() - finish
+        write(*,*) "ncyc: ", ncyc-1
 
-        open (unit=411, file='total_pressure_result.txt', status = 'replace')  
-        write(411,*) this%total_pressure%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
-        close (411)
+        !open (unit=411, file='total_pressure_result.txt', status = 'replace')  
+        !write(411,*) this%total_pressure%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
+        !close (411)
         open (unit=412, file='velocity_result.txt', status = 'replace')  
-        write(412,*) this%velocity%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
+        write(412,*) this%velocity%data(1)%values(0:this%nxp, 0:this%nyp, 0:this%nzp) 
         close (412)
-        open (unit=413, file='total_cell_mass_result.txt', status = 'replace')  
-        write(413,*) this%total_cell_mass%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
-        close (413)
-        open (unit=414, file='total_sie_result.txt', status = 'replace')  
-        write(414,*) this%total_sie%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
-        close (414)
+        !open (unit=413, file='total_cell_mass_result.txt', status = 'replace')  
+        !write(413,*) this%total_cell_mass%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
+        !close (413)
+        !open (unit=414, file='total_sie_result.txt', status = 'replace')  
+        !write(414,*) this%total_sie%data(1)%values(1:this%nx, 1:this%ny:10, 1:this%nz:10) 
+        !close (414)
 
         call this%Close_files()
         if (this%parallel_params%my_rank == 0) then
@@ -801,8 +810,7 @@ contains
             open (71, status = 'replace', file = "runtime_" // trim(int2str(this%global_nx)) // "_" // trim(int2str(this%num_proc)) // ".txt")
             write(71,*) "Total Time:", omp_get_wtime() - finish
         end if
-        write(*,*) "Total Time:", omp_get_wtime() - finish
-        write(*,*) "ncyc: ", ncyc-1
+        
     end subroutine Start_calculation
 
     subroutine Create_materials(this, df, bc_c_wrap_arr, mat_cell)
