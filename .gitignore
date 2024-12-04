@@ -36,3 +36,5 @@
 **r0*
 src/Scripts/diags*
 src/Scripts/velocity_result.txt
+
+build/*
