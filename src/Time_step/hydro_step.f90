@@ -1496,7 +1496,7 @@ contains
         !$omp end teams distribute parallel do    
         !$omp end target  
         
-        write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----loop1 time:", omp_get_wtime() - loop_time
+        write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----loop1 time:", omp_get_wtime() - loop_time
         
         loop_time = omp_get_wtime()
         
@@ -1504,17 +1504,17 @@ contains
             call this%velocity%Impose_spherical_symmetry(this%mesh%coordinates)
         end if
 
-         write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----spherical time:", omp_get_wtime() - loop_time
+         write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----spherical time:", omp_get_wtime() - loop_time
          loop_time = omp_get_wtime()
 
         call this%velocity%Impose_no_move_3d(this%mesh%coordinates)
 
-        write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----no_move time:", omp_get_wtime() - loop_time
+        write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----no_move time:", omp_get_wtime() - loop_time
         loop_time = omp_get_wtime()
         
         call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false.)
         
-        write(*,'(A50, F12.6)') "    Calculate_velocity_3d-----apply-BC time:", omp_get_wtime() - loop_time    
+        write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----apply-BC time:", omp_get_wtime() - loop_time    
         
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, this%total_vof, this%total_volume&
             , this%nx, this%ny, this%nz, this%emf)
