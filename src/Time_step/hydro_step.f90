@@ -588,8 +588,6 @@ contains
 
         call this%materials%Apply_eos(this%nx, this%ny, this%nz, this%emf, .true.)
 
-
-
         do k = 1, this%nz
             do j = 1, this%ny
                 do i = 1, this%nx

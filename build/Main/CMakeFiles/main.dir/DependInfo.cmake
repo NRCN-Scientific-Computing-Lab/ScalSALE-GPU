@@ -44,5 +44,9 @@ set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
   "/home/reemh/ScalSALE-GPU/build/General/CMakeFiles/General.dir/DependInfo.cmake"
   )
 
+# Targets to which this target links which contain Fortran sources.
+set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+  )
+
 # Fortran module output directory.
 set(CMAKE_Fortran_TARGET_MODULE_DIR "/home/reemh/ScalSALE-GPU/build/modules")

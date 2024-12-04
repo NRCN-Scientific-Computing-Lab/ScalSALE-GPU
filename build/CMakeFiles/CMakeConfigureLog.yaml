@@ -4,16 +4,16 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineSystem.cmake:204 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineSystem.cmake:205 (message)"
       - "CMakeLists.txt:3 (project)"
     message: |
       The system is: Linux - 4.18.0-553.5.1.el8_10.x86_64 - x86_64
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "/usr/share/cmake/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
@@ -28,14 +28,14 @@ events:
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
       
       The C compiler identification is NVHPC, found in:
-        /home/reemh/ScalSALE-GPU/build/CMakeFiles/3.26.5/CompilerIdC/a.out
+        /home/reemh/ScalSALE-GPU/build/CMakeFiles/3.30.3/CompilerIdC/a.out
       
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "/usr/share/cmake/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
@@ -50,19 +50,19 @@ events:
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
       
       The CXX compiler identification is NVHPC, found in:
-        /home/reemh/ScalSALE-GPU/build/CMakeFiles/3.26.5/CompilerIdCXX/a.out
+        /home/reemh/ScalSALE-GPU/build/CMakeFiles/3.30.3/CompilerIdCXX/a.out
       
   -
     kind: "try_compile-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
-      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FmDUxj"
-      binary: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FmDUxj"
+      source: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-ahmHEC"
+      binary: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-ahmHEC"
     cmakeVariables:
       CMAKE_C_FLAGS: ""
       CMAKE_EXE_LINKER_FLAGS: ""
@@ -70,39 +70,40 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: /home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FmDUxj
+        Change Dir: '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-ahmHEC'
         
-        Run Build Command(s):/usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_49062/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_49062.dir/build.make CMakeFiles/cmTC_49062.dir/build
-        gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FmDUxj'
-        Building C object CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc   -v -MD -MT CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c
+        Run Build Command(s): /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_95986/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_95986.dir/build.make CMakeFiles/cmTC_95986.dir/build
+        gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-ahmHEC'
+        Building C object CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc   -v -MD -MT CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -c /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c
         Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7
         Export PGI=/opt/sw/compilers/pgi/2024_247
-        Create file CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d
+        Create file CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512VL__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__HLE__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDRND__ -D__RDSEED__ -D__RTM__ -D__LAHF_SAHF__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_PGCG_SOURCE --c -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o --dependencies_to_file CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d -q -o /tmp/nvcVrPobngGUuQgT.il /usr/share/cmake/Modules/CMakeCCompilerABI.c -- /usr/share/cmake/Modules/CMakeCCompilerABI.c -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp skylake-avx512 -x 120 0x1000 -astype 0 -x 121 1 -fn /usr/share/cmake/Modules/CMakeCCompilerABI.c -il /tmp/nvcVrPobngGUuQgT.il -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 122 0x400000 -y 125 0x100000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc /usr/share/cmake/Modules/CMakeCCompilerABI.c -v -MD -MT CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -c' -asm /tmp/nvcFrPobD2NvnBXR.ll
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BITALG__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512IFMA__ -D__AVX512VBMI__ -D__AVX512VBMI2__ -D__AVX512VL__ -D__AVX512VNNI__ -D__AVX512VPOPCNTDQ__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__GFNI__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PCONFIG__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDPID__ -D__RDRND__ -D__RDSEED__ -D__LAHF_SAHF__ -D__SGX__ -D__SHA__ -D__VAES__ -D__VPCLMULQDQ__ -D__WBNOINVD__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_PGCG_SOURCE --c -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o --dependencies_to_file CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d -q -o /tmp/nvcTiB8bhwAg-Vg3.il /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -- /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp icelake-server -x 120 0x1000 -astype 0 -x 121 1 -fn /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -il /tmp/nvcTiB8bhwAg-Vg3.il -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 122 0x400000 -y 125 0x100000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -v -MD -MT CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -c' -asm /tmp/nvc9iB8b3_vexri5.ll
         NVC++/x86-64 Linux 24.7-0: compilation successful
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvcFrPobD2NvnBXR.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+rtm -mattr=+pku -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+prfchw -mattr=+rdseed -mattr=+sahf -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o
-        Unlinking /tmp/nvcVrPobngGUuQgT.il
-        Unlinking /tmp/nvcNrPob13a2DFKC.s
-        Unlinking /tmp/nvcFrPobD2NvnBXR.ll
-        Unlinking /tmp/nvcxrPobfQgUBlvO.llvm
-        Linking C executable cmTC_49062
-        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_49062.dir/link.txt --verbose=1
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc  -v CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -o cmTC_49062 
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvc9iB8b3_vexri5.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+avx512ifma -mattr=+avx512vbmi -mattr=+avx512vbmi2 -mattr=+avx512bitalg -mattr=+avx512vpopcntdq -mattr=+avx512vnni -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+sha -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+pku -mattr=+gfni -mattr=+vaes -mattr=+vpclmulqdq -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+pconfig -mattr=+prfchw -mattr=+rdpid -mattr=+rdseed -mattr=+sahf -mattr=+sgx -mattr=+wbnoinvd -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o
+        Unlinking /tmp/nvcTiB8bhwAg-Vg3.il
+        Unlinking /tmp/nvcviB8b-gneh5U-.s
+        Unlinking /tmp/nvc9iB8b3_vexri5.ll
+        Unlinking /tmp/nvcLiB8bV1L5RAyl.llvm
+        Linking C executable cmTC_95986
+        /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_95986.dir/link.txt --verbose=1
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc  -v CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -o cmTC_95986
         Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7
         Export PGI=/opt/sw/compilers/pgi/2024_247
         
-        /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_49062 -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
-        gmake[1]: Leaving directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FmDUxj'
+        /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_95986 -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
+        gmake[1]: Leaving directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-ahmHEC'
         
       exitCode: 0
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
-      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Parsed C implicit include dir info: rv=start
@@ -112,37 +113,39 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:152 (message)"
-      - "/usr/share/cmake/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Parsed C implicit link information:
-        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        ignore line: [Change Dir: /home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FmDUxj]
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-ahmHEC']
         ignore line: []
-        ignore line: [Run Build Command(s):/usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_49062/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_49062.dir/build.make CMakeFiles/cmTC_49062.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FmDUxj']
-        ignore line: [Building C object CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o]
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc   -v -MD -MT CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake/Modules/CMakeCCompilerABI.c]
+        ignore line: [Run Build Command(s): /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_95986/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_95986.dir/build.make CMakeFiles/cmTC_95986.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-ahmHEC']
+        ignore line: [Building C object CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc   -v -MD -MT CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -c /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c]
         ignore line: [Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7]
         ignore line: [Export PGI=/opt/sw/compilers/pgi/2024_247]
-        ignore line: [Create file CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d]
+        ignore line: [Create file CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512VL__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__HLE__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDRND__ -D__RDSEED__ -D__RTM__ -D__LAHF_SAHF__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_PGCG_SOURCE --c -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o --dependencies_to_file CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d -q -o /tmp/nvcVrPobngGUuQgT.il /usr/share/cmake/Modules/CMakeCCompilerABI.c -- /usr/share/cmake/Modules/CMakeCCompilerABI.c -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp skylake-avx512 -x 120 0x1000 -astype 0 -x 121 1 -fn /usr/share/cmake/Modules/CMakeCCompilerABI.c -il /tmp/nvcVrPobngGUuQgT.il -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 122 0x400000 -y 125 0x100000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc /usr/share/cmake/Modules/CMakeCCompilerABI.c -v -MD -MT CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -c' -asm /tmp/nvcFrPobD2NvnBXR.ll]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BITALG__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512IFMA__ -D__AVX512VBMI__ -D__AVX512VBMI2__ -D__AVX512VL__ -D__AVX512VNNI__ -D__AVX512VPOPCNTDQ__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__GFNI__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PCONFIG__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDPID__ -D__RDRND__ -D__RDSEED__ -D__LAHF_SAHF__ -D__SGX__ -D__SHA__ -D__VAES__ -D__VPCLMULQDQ__ -D__WBNOINVD__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_PGCG_SOURCE --c -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o --dependencies_to_file CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d -q -o /tmp/nvcTiB8bhwAg-Vg3.il /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -- /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp icelake-server -x 120 0x1000 -astype 0 -x 121 1 -fn /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -il /tmp/nvcTiB8bhwAg-Vg3.il -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 122 0x400000 -y 125 0x100000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCCompilerABI.c -v -MD -MT CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -MF CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o.d -o CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -c' -asm /tmp/nvc9iB8b3_vexri5.ll]
         ignore line: [NVC++/x86-64 Linux 24.7-0: compilation successful]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvcFrPobD2NvnBXR.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+rtm -mattr=+pku -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+prfchw -mattr=+rdseed -mattr=+sahf -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o]
-        ignore line: [Unlinking /tmp/nvcVrPobngGUuQgT.il]
-        ignore line: [Unlinking /tmp/nvcNrPob13a2DFKC.s]
-        ignore line: [Unlinking /tmp/nvcFrPobD2NvnBXR.ll]
-        ignore line: [Unlinking /tmp/nvcxrPobfQgUBlvO.llvm]
-        ignore line: [Linking C executable cmTC_49062]
-        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_49062.dir/link.txt --verbose=1]
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc  -v CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -o cmTC_49062 ]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvc9iB8b3_vexri5.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+avx512ifma -mattr=+avx512vbmi -mattr=+avx512vbmi2 -mattr=+avx512bitalg -mattr=+avx512vpopcntdq -mattr=+avx512vnni -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+sha -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+pku -mattr=+gfni -mattr=+vaes -mattr=+vpclmulqdq -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+pconfig -mattr=+prfchw -mattr=+rdpid -mattr=+rdseed -mattr=+sahf -mattr=+sgx -mattr=+wbnoinvd -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o]
+        ignore line: [Unlinking /tmp/nvcTiB8bhwAg-Vg3.il]
+        ignore line: [Unlinking /tmp/nvcviB8b-gneh5U-.s]
+        ignore line: [Unlinking /tmp/nvc9iB8b3_vexri5.ll]
+        ignore line: [Unlinking /tmp/nvcLiB8bV1L5RAyl.llvm]
+        ignore line: [Linking C executable cmTC_95986]
+        ignore line: [/opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_95986.dir/link.txt --verbose=1]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc  -v CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -o cmTC_95986]
         ignore line: [Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7]
         ignore line: [Export PGI=/opt/sw/compilers/pgi/2024_247]
         ignore line: []
-        link line: [/usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_49062 -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o]
+        link line: [/usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_95986 -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [/usr/lib64/crt1.o] ==> obj [/usr/lib64/crt1.o]
           arg [/usr/lib64/crti.o] ==> obj [/usr/lib64/crti.o]
@@ -157,11 +160,11 @@ events:
           arg [-L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> dir [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib]
           arg [-L/usr/lib64] ==> dir [/usr/lib64]
           arg [-L/usr/lib/gcc/x86_64-redhat-linux/8/] ==> dir [/usr/lib/gcc/x86_64-redhat-linux/8/]
-          arg [CMakeFiles/cmTC_49062.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [CMakeFiles/cmTC_95986.dir/CMakeCCompilerABI.c.o] ==> ignore
           arg [-rpath] ==> ignore
           arg [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_49062] ==> ignore
+          arg [cmTC_95986] ==> ignore
           arg [-L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64]
           arg [-lnvomp] ==> lib [nvomp]
           arg [-ldl] ==> lib [dl]
@@ -179,6 +182,7 @@ events:
           arg [-lm] ==> lib [m]
           arg [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o] ==> obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o]
           arg [/usr/lib64/crtn.o] ==> obj [/usr/lib64/crtn.o]
+        linker tool for 'C': /usr/bin/ld
         collapse obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/8/crtbegin.o]
         collapse obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/8/crtend.o]
         collapse library dir [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib]
@@ -192,56 +196,68 @@ events:
       
       
   -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Running the C compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld version 2.30-123.el8
+  -
     kind: "try_compile-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
-      - "/usr/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1q2Skz"
-      binary: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1q2Skz"
+      source: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FVohbj"
+      binary: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FVohbj"
     cmakeVariables:
       CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
       CMAKE_EXE_LINKER_FLAGS: ""
     buildResult:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: /home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1q2Skz
+        Change Dir: '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FVohbj'
         
-        Run Build Command(s):/usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_0565e/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_0565e.dir/build.make CMakeFiles/cmTC_0565e.dir/build
-        gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1q2Skz'
-        Building CXX object CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++   -v -MD -MT CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp
+        Run Build Command(s): /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_20760/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_20760.dir/build.make CMakeFiles/cmTC_20760.dir/build
+        gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FVohbj'
+        Building CXX object CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++   -v -MD -MT CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -c /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp
         Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7
         Export PGI=/opt/sw/compilers/pgi/2024_247
-        Create file CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d
+        Create file CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512VL__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__HLE__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDRND__ -D__RDSEED__ -D__RTM__ -D__LAHF_SAHF__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_GNU_SOURCE -D_PGCG_SOURCE -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8 --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/x86_64-redhat-linux --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/backward --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o --dependencies_to_file CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d -q -o /tmp/nvc++QTPob_Y-uHl3S.il /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -- /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp skylake-avx512 -x 120 0x1000 -astype 0 -x 121 1 -fn /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -il /tmp/nvc++QTPob_Y-uHl3S.il -x 117 0x200 -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -v -MD -MT CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -c' -asm /tmp/nvc++kTPobEGVU51gr.ll
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BITALG__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512IFMA__ -D__AVX512VBMI__ -D__AVX512VBMI2__ -D__AVX512VL__ -D__AVX512VNNI__ -D__AVX512VPOPCNTDQ__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__GFNI__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PCONFIG__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDPID__ -D__RDRND__ -D__RDSEED__ -D__LAHF_SAHF__ -D__SGX__ -D__SHA__ -D__VAES__ -D__VPCLMULQDQ__ -D__WBNOINVD__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_GNU_SOURCE -D_PGCG_SOURCE -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8 --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/x86_64-redhat-linux --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/backward --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o --dependencies_to_file CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d -q -o /tmp/nvc++AZB8bodmEzHMk.il /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -- /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp icelake-server -x 120 0x1000 -astype 0 -x 121 1 -fn /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -il /tmp/nvc++AZB8bodmEzHMk.il -x 117 0x200 -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc++ /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -v -MD -MT CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -c' -asm /tmp/nvc++6ZB8bUeqhrMYL.ll
         NVC++/x86-64 Linux 24.7-0: compilation successful
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvc++kTPobEGVU51gr.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+rtm -mattr=+pku -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+prfchw -mattr=+rdseed -mattr=+sahf -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o
-        Unlinking /tmp/nvc++QTPob_Y-uHl3S.il
-        Unlinking /tmp/nvc++6TPobUk_zH0Y7.s
-        Unlinking /tmp/nvc++kTPobEGVU51gr.ll
-        Unlinking /tmp/nvc++ATPoboKRrInj6.llvm
-        Linking CXX executable cmTC_0565e
-        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0565e.dir/link.txt --verbose=1
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++  -v CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_0565e 
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvc++6ZB8bUeqhrMYL.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+avx512ifma -mattr=+avx512vbmi -mattr=+avx512vbmi2 -mattr=+avx512bitalg -mattr=+avx512vpopcntdq -mattr=+avx512vnni -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+sha -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+pku -mattr=+gfni -mattr=+vaes -mattr=+vpclmulqdq -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+pconfig -mattr=+prfchw -mattr=+rdpid -mattr=+rdseed -mattr=+sahf -mattr=+sgx -mattr=+wbnoinvd -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o
+        Unlinking /tmp/nvc++AZB8bodmEzHMk.il
+        Unlinking /tmp/nvc++QZB8b_CSe5_hz.s
+        Unlinking /tmp/nvc++6ZB8bUeqhrMYL.ll
+        Unlinking /tmp/nvc++kZB8bEQqgMyZ_.llvm
+        Linking CXX executable cmTC_20760
+        /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_20760.dir/link.txt --verbose=1
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++  -v CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_20760
         Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7
         Export PGI=/opt/sw/compilers/pgi/2024_247
         
-        /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_0565e -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -latomic -lnvhpcatm -lstdc++ -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
-        gmake[1]: Leaving directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1q2Skz'
+        /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_20760 -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -latomic -lnvhpcatm -lstdc++ -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
+        gmake[1]: Leaving directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FVohbj'
         
       exitCode: 0
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
-      - "/usr/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Parsed CXX implicit include dir info: rv=start
@@ -251,37 +267,39 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:152 (message)"
-      - "/usr/share/cmake/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:3 (project)"
     message: |
       Parsed CXX implicit link information:
-        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        ignore line: [Change Dir: /home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1q2Skz]
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FVohbj']
         ignore line: []
-        ignore line: [Run Build Command(s):/usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_0565e/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_0565e.dir/build.make CMakeFiles/cmTC_0565e.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1q2Skz']
-        ignore line: [Building CXX object CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o]
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++   -v -MD -MT CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Run Build Command(s): /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_20760/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_20760.dir/build.make CMakeFiles/cmTC_20760.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-FVohbj']
+        ignore line: [Building CXX object CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++   -v -MD -MT CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -c /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp]
         ignore line: [Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7]
         ignore line: [Export PGI=/opt/sw/compilers/pgi/2024_247]
-        ignore line: [Create file CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d]
+        ignore line: [Create file CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512VL__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__HLE__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDRND__ -D__RDSEED__ -D__RTM__ -D__LAHF_SAHF__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_GNU_SOURCE -D_PGCG_SOURCE -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8 --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/x86_64-redhat-linux --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/backward --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o --dependencies_to_file CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d -q -o /tmp/nvc++QTPob_Y-uHl3S.il /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -- /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp skylake-avx512 -x 120 0x1000 -astype 0 -x 121 1 -fn /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -il /tmp/nvc++QTPob_Y-uHl3S.il -x 117 0x200 -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc++ /usr/share/cmake/Modules/CMakeCXXCompilerABI.cpp -v -MD -MT CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -c' -asm /tmp/nvc++kTPobEGVU51gr.ll]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/nvcpfe -- --llalign -D__GNUC__=8 -D__GNUC_MINOR__=5 -D__GNUC_PATCHLEVEL__=0 -D__unix -D__unix__ -Dunix -Dlinux -D__linux -D__linux__ -D__ELF__ -D__NO_MATH_INLINES -D__LP64__ -D__x86_64 -D__x86_64__ -D__LONG_MAX__=9223372036854775807L '-D__SIZE_TYPE__=unsigned long int' '-D__PTRDIFF_TYPE__=long int' -D__amd64 -D__amd64__ -D__k8 -D__k8__ -D__MMX__ -D__SSE_MATH__ -D__MMX_WITH_SSE__ -D__SSE__ -D__SSE2__ -D__SSE2_MATH__ -D__SSE3__ -D__SSSE3__ -D__SSE4_1__ -D__SSE4_2__ -D__ABM__ -D__ADX__ -D__AES__ -D__AVX__ -D__AVX2__ -D__AVX512BITALG__ -D__AVX512BW__ -D__AVX512CD__ -D__AVX512DQ__ -D__AVX512F__ -D__AVX512IFMA__ -D__AVX512VBMI__ -D__AVX512VBMI2__ -D__AVX512VL__ -D__AVX512VNNI__ -D__AVX512VPOPCNTDQ__ -D__BMI__ -D__BMI2__ -D__CLFLUSHOPT__ -D__CLWB__ -D__CX16__ -D__F16C__ -D__FMA__ -D__FSGSBASE__ -D__FXSR__ -D__GFNI__ -D__LZCNT__ -D__MOVBE__ -D__PCLMUL__ -D__PCONFIG__ -D__PKU__ -D__POPCNT__ -D__PRFCHW__ -D__RDPID__ -D__RDRND__ -D__RDSEED__ -D__LAHF_SAHF__ -D__SGX__ -D__SHA__ -D__VAES__ -D__VPCLMULQDQ__ -D__WBNOINVD__ -D__XSAVE__ -D__XSAVEC__ -D__XSAVEOPT__ -D__XSAVES__ -D__PGI -D__NVCOMPILER -D_GNU_SOURCE -D_PGCG_SOURCE -I- -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/extras/qd/include/qd -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nvshmem/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/nccl/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/mpi/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/math_libs/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include --sys_include /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8 --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/x86_64-redhat-linux --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/../../../../include/c++/8/backward --sys_include /usr/lib/gcc/x86_64-redhat-linux/8/include --sys_include /usr/local/include --sys_include /usr/include -D__PGLLVM__ -D__NVCOMPILER_LLVM__ -D__extension__= --preinclude _cplus_preinclude.h --preinclude_macros _cplus_macros.h --gnu_version=80500 -D__pgnu_vsn=80500 --no_fixed_bp --dependencies_target_to_stdout CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o --dependencies_to_file CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d -q -o /tmp/nvc++AZB8bodmEzHMk.il /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -- /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -opt 1 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp icelake-server -x 120 0x1000 -astype 0 -x 121 1 -fn /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -il /tmp/nvc++AZB8bodmEzHMk.il -x 117 0x200 -x 123 0x80000000 -x 123 4 -x 2 0x400 -x 209 0x10 -x 119 0x20 -def __pgnu_vsn=80500 -x 70 0x40000000 -x 183 4 -x 121 0x800 -x 6 0x20000 -x 249 170 -x 120 0x200000 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -gnuvsn 80500 -x 69 0x200 -x 123 0x400 -cmdline '+nvc++ /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeCXXCompilerABI.cpp -v -MD -MT CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -MF CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o.d -o CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -c' -asm /tmp/nvc++6ZB8bUeqhrMYL.ll]
         ignore line: [NVC++/x86-64 Linux 24.7-0: compilation successful]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvc++kTPobEGVU51gr.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+rtm -mattr=+pku -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+prfchw -mattr=+rdseed -mattr=+sahf -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o]
-        ignore line: [Unlinking /tmp/nvc++QTPob_Y-uHl3S.il]
-        ignore line: [Unlinking /tmp/nvc++6TPobUk_zH0Y7.s]
-        ignore line: [Unlinking /tmp/nvc++kTPobEGVU51gr.ll]
-        ignore line: [Unlinking /tmp/nvc++ATPoboKRrInj6.llvm]
-        ignore line: [Linking CXX executable cmTC_0565e]
-        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_0565e.dir/link.txt --verbose=1]
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++  -v CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_0565e ]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvc++6ZB8bUeqhrMYL.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+avx512ifma -mattr=+avx512vbmi -mattr=+avx512vbmi2 -mattr=+avx512bitalg -mattr=+avx512vpopcntdq -mattr=+avx512vnni -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+sha -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+pku -mattr=+gfni -mattr=+vaes -mattr=+vpclmulqdq -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+pconfig -mattr=+prfchw -mattr=+rdpid -mattr=+rdseed -mattr=+sahf -mattr=+sgx -mattr=+wbnoinvd -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [Unlinking /tmp/nvc++AZB8bodmEzHMk.il]
+        ignore line: [Unlinking /tmp/nvc++QZB8b_CSe5_hz.s]
+        ignore line: [Unlinking /tmp/nvc++6ZB8bUeqhrMYL.ll]
+        ignore line: [Unlinking /tmp/nvc++kZB8bEQqgMyZ_.llvm]
+        ignore line: [Linking CXX executable cmTC_20760]
+        ignore line: [/opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_20760.dir/link.txt --verbose=1]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/nvc++  -v CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_20760]
         ignore line: [Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7]
         ignore line: [Export PGI=/opt/sw/compilers/pgi/2024_247]
         ignore line: []
-        link line: [/usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_0565e -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -latomic -lnvhpcatm -lstdc++ -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o]
+        link line: [/usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_20760 -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -latomic -lnvhpcatm -lstdc++ -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [/usr/lib64/crt1.o] ==> obj [/usr/lib64/crt1.o]
           arg [/usr/lib64/crti.o] ==> obj [/usr/lib64/crti.o]
@@ -296,11 +314,11 @@ events:
           arg [-L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> dir [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib]
           arg [-L/usr/lib64] ==> dir [/usr/lib64]
           arg [-L/usr/lib/gcc/x86_64-redhat-linux/8/] ==> dir [/usr/lib/gcc/x86_64-redhat-linux/8/]
-          arg [CMakeFiles/cmTC_0565e.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [CMakeFiles/cmTC_20760.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
           arg [-rpath] ==> ignore
           arg [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_0565e] ==> ignore
+          arg [cmTC_20760] ==> ignore
           arg [-L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64]
           arg [-latomic] ==> lib [atomic]
           arg [-lnvhpcatm] ==> lib [nvhpcatm]
@@ -321,6 +339,7 @@ events:
           arg [-lm] ==> lib [m]
           arg [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o] ==> obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o]
           arg [/usr/lib64/crtn.o] ==> obj [/usr/lib64/crtn.o]
+        linker tool for 'CXX': /usr/bin/ld
         collapse obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/8/crtbegin.o]
         collapse obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/8/crtend.o]
         collapse library dir [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib]
@@ -336,9 +355,19 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
-      - "/usr/share/cmake/Modules/CMakeDetermineFortranCompiler.cmake:179 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:3 (project)"
+    message: |
+      Running the CXX compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld version 2.30-123.el8
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineFortranCompiler.cmake:186 (CMAKE_DETERMINE_COMPILER_ID)"
       - "CMakeLists.txt:4 (enable_language)"
     message: |
       Compiling the Fortran compiler identification source file "CMakeFortranCompilerId.F" succeeded.
@@ -351,46 +380,46 @@ events:
       Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7
       Export PGI=/opt/sw/compilers/pgi/2024_247
       
-      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort1 CMakeFortranCompilerId.F -opt 1 -nostatic -x 19 0x400000 -quad -x 59 4 -x 15 2 -x 49 0x400004 -x 51 0x20 -x 57 0x4c -x 58 0x10000 -x 124 0x1000 -tp skylake-avx512 -x 57 0xfb0000 -x 58 0x78031040 -x 47 0x08 -x 48 4608 -x 49 0x100 -stdinc /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include:/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec:/usr/lib/gcc/x86_64-redhat-linux/8/include:/usr/local/include:/usr/include -cmdline '+nvfortran CMakeFortranCompilerId.F -v -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -Wl,-rpath -Wl,$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi' -def __unix -def __unix__ -def unix -def linux -def __linux -def __linux__ -def __ELF__ -def __NO_MATH_INLINES -def __LP64__ -def __x86_64 -def __x86_64__ -def __LONG_MAX__=9223372036854775807L -def '__SIZE_TYPE__=unsigned long int' -def '__PTRDIFF_TYPE__=long int' -def __amd64 -def __amd64__ -def __k8 -def __k8__ -def __MMX__ -def __SSE_MATH__ -def __MMX_WITH_SSE__ -def __SSE__ -def __SSE2__ -def __SSE2_MATH__ -def __SSE3__ -def __SSSE3__ -def __SSE4_1__ -def __SSE4_2__ -def __ABM__ -def __ADX__ -def __AES__ -def __AVX__ -def __AVX2__ -def __AVX512BW__ -def __AVX512CD__ -def __AVX512DQ__ -def __AVX512F__ -def __AVX512VL__ -def __BMI__ -def __BMI2__ -def __CLFLUSHOPT__ -def __CLWB__ -def __CX16__ -def __F16C__ -def __FMA__ -def __FSGSBASE__ -def __FXSR__ -def __HLE__ -def __LZCNT__ -def __MOVBE__ -def __PCLMUL__ -def __PKU__ -def __POPCNT__ -def __PRFCHW__ -def __RDRND__ -def __RDSEED__ -def __RTM__ -def __LAHF_SAHF__ -def __XSAVE__ -def __XSAVEC__ -def __XSAVEOPT__ -def __XSAVES__ -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -def __PGLLVM__ -def __NVCOMPILER_LLVM__ -def __extension__= -def __NVCOMPILER_GPU_SEPARATE_MEM -preprocess -nofreeform -vect 48 -x 54 1 -x 68 0x1 -x 70 0x40000000 -x 70 0x40000000 -x 68 0x1 -x 124 1 -x 195 0x8000 -y 163 0xc0000000 -x 189 0x10 -stbfile /tmp/nvfortrang6PobsR-kb8rx.stb -modexport /tmp/nvfortran26PobIf9D5TzW.cmod -modindex /tmp/nvfortranM6PobYXLGcOF8.cmdx -cci /tmp/nvfortranw6Pobctv99erQ.cci -output /tmp/nvfortranM6PobYSx3O7PW.ilm
+      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort1 CMakeFortranCompilerId.F -opt 1 -nostatic -x 19 0x400000 -quad -x 59 4 -x 15 2 -x 49 0x400004 -x 51 0x20 -x 57 0x4c -x 58 0x10000 -x 124 0x1000 -tp icelake-server -x 57 0xfb0000 -x 58 0x78031040 -x 47 0x08 -x 48 4608 -x 49 0x100 -stdinc /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include:/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec:/usr/lib/gcc/x86_64-redhat-linux/8/include:/usr/local/include:/usr/include -cmdline '+nvfortran CMakeFortranCompilerId.F -v -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -Wl,-rpath -Wl,$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi' -def __unix -def __unix__ -def unix -def linux -def __linux -def __linux__ -def __ELF__ -def __NO_MATH_INLINES -def __LP64__ -def __x86_64 -def __x86_64__ -def __LONG_MAX__=9223372036854775807L -def '__SIZE_TYPE__=unsigned long int' -def '__PTRDIFF_TYPE__=long int' -def __amd64 -def __amd64__ -def __k8 -def __k8__ -def __MMX__ -def __SSE_MATH__ -def __MMX_WITH_SSE__ -def __SSE__ -def __SSE2__ -def __SSE2_MATH__ -def __SSE3__ -def __SSSE3__ -def __SSE4_1__ -def __SSE4_2__ -def __ABM__ -def __ADX__ -def __AES__ -def __AVX__ -def __AVX2__ -def __AVX512BITALG__ -def __AVX512BW__ -def __AVX512CD__ -def __AVX512DQ__ -def __AVX512F__ -def __AVX512IFMA__ -def __AVX512VBMI__ -def __AVX512VBMI2__ -def __AVX512VL__ -def __AVX512VNNI__ -def __AVX512VPOPCNTDQ__ -def __BMI__ -def __BMI2__ -def __CLFLUSHOPT__ -def __CLWB__ -def __CX16__ -def __F16C__ -def __FMA__ -def __FSGSBASE__ -def __FXSR__ -def __GFNI__ -def __LZCNT__ -def __MOVBE__ -def __PCLMUL__ -def __PCONFIG__ -def __PKU__ -def __POPCNT__ -def __PRFCHW__ -def __RDPID__ -def __RDRND__ -def __RDSEED__ -def __LAHF_SAHF__ -def __SGX__ -def __SHA__ -def __VAES__ -def __VPCLMULQDQ__ -def __WBNOINVD__ -def __XSAVE__ -def __XSAVEC__ -def __XSAVEOPT__ -def __XSAVES__ -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -def __PGLLVM__ -def __NVCOMPILER_LLVM__ -def __extension__= -def __NVCOMPILER_GPU_SEPARATE_MEM -preprocess -nofreeform -vect 48 -x 54 1 -x 68 0x1 -x 70 0x40000000 -x 70 0x40000000 -x 68 0x1 -x 124 1 -x 195 0x8000 -y 163 0xc0000000 -x 189 0x10 -stbfile /tmp/nvfortraneyC8bmzoP9_Yp.stb -modexport /tmp/nvfortranKyC8bSIbLLEDB.cmod -modindex /tmp/nvfortraneyC8bm4npAEWX.cmdx -cci /tmp/nvfortranKyC8bS7wKzgDP.cci -output /tmp/nvfortraneyC8bmQjjKlf-.ilm
         0 inform,   0 warnings,   0 severes, 0 fatal for cmakefortrancompilerid
       NVFORTRAN/x86-64 Linux 24.7-0: compilation successful
       
-      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort2 /tmp/nvfortranM6PobYSx3O7PW.ilm -fn CMakeFortranCompilerId.F -opt 1 -x 51 0x20 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp skylake-avx512 -x 120 0x1000 -x 124 0x1400 -y 15 2 -x 57 0x3b0000 -x 58 0x48000000 -x 49 0x100 -astype 0 -x 121 1 -x 183 4 -x 121 0x800 -x 68 0x1 -x 8 0x40000000 -x 70 0x40000000 -x 56 0x10 -x 54 0x10 -x 249 170 -x 68 0x20 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 124 1 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -cci /tmp/nvfortranw6Pobctv99erQ.cci -cmdline '+nvfortran CMakeFortranCompilerId.F -v -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -Wl,-rpath -Wl,$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi' -stbfile /tmp/nvfortrang6PobsR-kb8rx.stb -asm /tmp/nvfortrang6Pobsa0vNkYh.ll
+      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort2 /tmp/nvfortraneyC8bmQjjKlf-.ilm -fn CMakeFortranCompilerId.F -opt 1 -x 51 0x20 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp icelake-server -x 120 0x1000 -x 124 0x1400 -y 15 2 -x 57 0x3b0000 -x 58 0x48000000 -x 49 0x100 -astype 0 -x 121 1 -x 183 4 -x 121 0x800 -x 68 0x1 -x 8 0x40000000 -x 70 0x40000000 -x 56 0x10 -x 54 0x10 -x 249 170 -x 68 0x20 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 124 1 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -cci /tmp/nvfortranKyC8bS7wKzgDP.cci -cmdline '+nvfortran CMakeFortranCompilerId.F -v -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -Wl,-rpath -Wl,$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi' -stbfile /tmp/nvfortraneyC8bmzoP9_Yp.stb -asm /tmp/nvfortraneyC8bmhKu7w1X.ll
         0 inform,   0 warnings,   0 severes, 0 fatal for cmakefortrancompilerid
       NVFORTRAN/x86-64 Linux 24.7-0: compilation successful
       
-      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvfortrang6Pobsa0vNkYh.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+rtm -mattr=+pku -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+prfchw -mattr=+rdseed -mattr=+sahf -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o /tmp/nvfortran26PobIcuF2ise.o
+      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvfortraneyC8bmhKu7w1X.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+avx512ifma -mattr=+avx512vbmi -mattr=+avx512vbmi2 -mattr=+avx512bitalg -mattr=+avx512vpopcntdq -mattr=+avx512vnni -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+sha -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+pku -mattr=+gfni -mattr=+vaes -mattr=+vpclmulqdq -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+pconfig -mattr=+prfchw -mattr=+rdpid -mattr=+rdseed -mattr=+sahf -mattr=+sgx -mattr=+wbnoinvd -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o /tmp/nvfortranKyC8bSafRAAwn.o
       
-      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/append -noerror /tmp/nvfortran26PobIcuF2ise.o -name .IPDINFO /tmp/nvfortran26PobIf9D5TzW.cmod -name .IPEINFO /tmp/nvfortranM6PobYXLGcOF8.cmdx
+      /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/append -noerror /tmp/nvfortranKyC8bSafRAAwn.o -name .IPDINFO /tmp/nvfortranKyC8bSIbLLEDB.cmod -name .IPEINFO /tmp/nvfortraneyC8bm4npAEWX.cmdx
       
-      /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/f90main.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ /tmp/nvfortran26PobIcuF2ise.o -rpath '$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib' -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvf -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lrt -lpthread -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
-      Unlinking /tmp/nvfortranM6PobYSx3O7PW.ilm
-      Unlinking /tmp/nvfortranw6Pobctv99erQ.cci
-      Unlinking /tmp/nvfortrang6PobsR-kb8rx.stb
-      Unlinking /tmp/nvfortran26PobIf9D5TzW.cmod
-      Unlinking /tmp/nvfortranM6PobYXLGcOF8.cmdx
-      Unlinking /tmp/nvfortranw6PobcauqsksZ.s
-      Unlinking /tmp/nvfortrang6Pobsa0vNkYh.ll
-      Unlinking /tmp/nvfortran26PobIcuF2ise.o
-      Unlinking /tmp/nvfortranM6PobYw0mKeZq.llvm
+      /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/f90main.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ /tmp/nvfortranKyC8bSafRAAwn.o -rpath '$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib' -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvf -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lrt -lpthread -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
+      Unlinking /tmp/nvfortraneyC8bmQjjKlf-.ilm
+      Unlinking /tmp/nvfortranKyC8bS7wKzgDP.cci
+      Unlinking /tmp/nvfortraneyC8bmzoP9_Yp.stb
+      Unlinking /tmp/nvfortranKyC8bSIbLLEDB.cmod
+      Unlinking /tmp/nvfortraneyC8bm4npAEWX.cmdx
+      Unlinking /tmp/nvfortranKyC8bS58AgUVQ.s
+      Unlinking /tmp/nvfortraneyC8bmhKu7w1X.ll
+      Unlinking /tmp/nvfortranKyC8bSafRAAwn.o
+      Unlinking /tmp/nvfortraneyC8bmgTfClE1.llvm
       
       
       Compilation of the Fortran compiler identification source "CMakeFortranCompilerId.F" produced "a.out"
       
       The Fortran compiler identification is NVHPC, found in:
-        /home/reemh/ScalSALE-GPU/build/CMakeFiles/3.26.5/CompilerIdFortran/a.out
+        /home/reemh/ScalSALE-GPU/build/CMakeFiles/3.30.3/CompilerIdFortran/a.out
       
   -
     kind: "try_compile-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
-      - "/usr/share/cmake/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:4 (enable_language)"
     checks:
       - "Detecting Fortran compiler ABI info"
     directories:
-      source: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-Kq1JcU"
-      binary: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-Kq1JcU"
+      source: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1LmfXz"
+      binary: "/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1LmfXz"
     cmakeVariables:
       CMAKE_EXE_LINKER_FLAGS: ""
       CMAKE_Fortran_FLAGS: ""
@@ -398,49 +427,50 @@ events:
       variable: "CMAKE_Fortran_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: /home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-Kq1JcU
+        Change Dir: '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1LmfXz'
         
-        Run Build Command(s):/usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_7584c/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_7584c.dir/build.make CMakeFiles/cmTC_7584c.dir/build
-        gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-Kq1JcU'
-        Building Fortran object CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90   -v -c /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o
+        Run Build Command(s): /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_5f51c/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_5f51c.dir/build.make CMakeFiles/cmTC_5f51c.dir/build
+        gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1LmfXz'
+        Building Fortran object CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90   -v -c /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o
         Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7
         Export PGI=/opt/sw/compilers/pgi/2024_247
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort1 /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -opt 1 -nostatic -x 19 0x400000 -quad -x 59 4 -x 15 2 -x 49 0x400004 -x 51 0x20 -x 57 0x4c -x 58 0x10000 -x 124 0x1000 -tp skylake-avx512 -x 57 0xfb0000 -x 58 0x78031040 -x 47 0x08 -x 48 4608 -x 49 0x100 -stdinc /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include:/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec:/usr/lib/gcc/x86_64-redhat-linux/8/include:/usr/local/include:/usr/include -cmdline '+nvfortran /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -def __unix -def __unix__ -def unix -def linux -def __linux -def __linux__ -def __ELF__ -def __NO_MATH_INLINES -def __LP64__ -def __x86_64 -def __x86_64__ -def __LONG_MAX__=9223372036854775807L -def '__SIZE_TYPE__=unsigned long int' -def '__PTRDIFF_TYPE__=long int' -def __amd64 -def __amd64__ -def __k8 -def __k8__ -def __MMX__ -def __SSE_MATH__ -def __MMX_WITH_SSE__ -def __SSE__ -def __SSE2__ -def __SSE2_MATH__ -def __SSE3__ -def __SSSE3__ -def __SSE4_1__ -def __SSE4_2__ -def __ABM__ -def __ADX__ -def __AES__ -def __AVX__ -def __AVX2__ -def __AVX512BW__ -def __AVX512CD__ -def __AVX512DQ__ -def __AVX512F__ -def __AVX512VL__ -def __BMI__ -def __BMI2__ -def __CLFLUSHOPT__ -def __CLWB__ -def __CX16__ -def __F16C__ -def __FMA__ -def __FSGSBASE__ -def __FXSR__ -def __HLE__ -def __LZCNT__ -def __MOVBE__ -def __PCLMUL__ -def __PKU__ -def __POPCNT__ -def __PRFCHW__ -def __RDRND__ -def __RDSEED__ -def __RTM__ -def __LAHF_SAHF__ -def __XSAVE__ -def __XSAVEC__ -def __XSAVEOPT__ -def __XSAVES__ -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -def __PGLLVM__ -def __NVCOMPILER_LLVM__ -def __extension__= -def __NVCOMPILER_GPU_SEPARATE_MEM -preprocess -freeform -vect 48 -x 54 1 -x 68 0x1 -x 70 0x40000000 -x 70 0x40000000 -x 68 0x1 -x 124 1 -x 195 0x8000 -y 163 0xc0000000 -x 189 0x10 -stbfile /tmp/nvfortranclQobga1mtJ8L.stb -modexport /tmp/nvfortranslQob2aD8hM0a.cmod -modindex /tmp/nvfortranIlQobMhfXqYSo.cmdx -cci /tmp/nvfortranYlQobwvIphJeg.cci -output /tmp/nvfortranIlQobMqGc6sdt.ilm
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort1 /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -opt 1 -nostatic -x 19 0x400000 -quad -x 59 4 -x 15 2 -x 49 0x400004 -x 51 0x20 -x 57 0x4c -x 58 0x10000 -x 124 0x1000 -tp icelake-server -x 57 0xfb0000 -x 58 0x78031040 -x 47 0x08 -x 48 4608 -x 49 0x100 -stdinc /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include:/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec:/usr/lib/gcc/x86_64-redhat-linux/8/include:/usr/local/include:/usr/include -cmdline '+nvfortran /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -def __unix -def __unix__ -def unix -def linux -def __linux -def __linux__ -def __ELF__ -def __NO_MATH_INLINES -def __LP64__ -def __x86_64 -def __x86_64__ -def __LONG_MAX__=9223372036854775807L -def '__SIZE_TYPE__=unsigned long int' -def '__PTRDIFF_TYPE__=long int' -def __amd64 -def __amd64__ -def __k8 -def __k8__ -def __MMX__ -def __SSE_MATH__ -def __MMX_WITH_SSE__ -def __SSE__ -def __SSE2__ -def __SSE2_MATH__ -def __SSE3__ -def __SSSE3__ -def __SSE4_1__ -def __SSE4_2__ -def __ABM__ -def __ADX__ -def __AES__ -def __AVX__ -def __AVX2__ -def __AVX512BITALG__ -def __AVX512BW__ -def __AVX512CD__ -def __AVX512DQ__ -def __AVX512F__ -def __AVX512IFMA__ -def __AVX512VBMI__ -def __AVX512VBMI2__ -def __AVX512VL__ -def __AVX512VNNI__ -def __AVX512VPOPCNTDQ__ -def __BMI__ -def __BMI2__ -def __CLFLUSHOPT__ -def __CLWB__ -def __CX16__ -def __F16C__ -def __FMA__ -def __FSGSBASE__ -def __FXSR__ -def __GFNI__ -def __LZCNT__ -def __MOVBE__ -def __PCLMUL__ -def __PCONFIG__ -def __PKU__ -def __POPCNT__ -def __PRFCHW__ -def __RDPID__ -def __RDRND__ -def __RDSEED__ -def __LAHF_SAHF__ -def __SGX__ -def __SHA__ -def __VAES__ -def __VPCLMULQDQ__ -def __WBNOINVD__ -def __XSAVE__ -def __XSAVEC__ -def __XSAVEOPT__ -def __XSAVES__ -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -def __PGLLVM__ -def __NVCOMPILER_LLVM__ -def __extension__= -def __NVCOMPILER_GPU_SEPARATE_MEM -preprocess -freeform -vect 48 -x 54 1 -x 68 0x1 -x 70 0x40000000 -x 70 0x40000000 -x 68 0x1 -x 124 1 -x 195 0x8000 -y 163 0xc0000000 -x 189 0x10 -stbfile /tmp/nvfortrandcD8bjtyuMp2R.stb -modexport /tmp/nvfortranBcD8brS6KSYU3.cmod -modindex /tmp/nvfortranZcD8bzoWLFDot.cmdx -cci /tmp/nvfortranRcD8bb7WmIhms.cci -output /tmp/nvfortrantcD8b5BLcpLUc.ilm
           0 inform,   0 warnings,   0 severes, 0 fatal for cmakefortrancompilerabi
         NVFORTRAN/x86-64 Linux 24.7-0: compilation successful
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort2 /tmp/nvfortranIlQobMqGc6sdt.ilm -fn /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -opt 1 -x 51 0x20 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp skylake-avx512 -x 120 0x1000 -x 124 0x1400 -y 15 2 -x 57 0x3b0000 -x 58 0x48000000 -x 49 0x100 -astype 0 -x 121 1 -x 183 4 -x 121 0x800 -x 68 0x1 -x 8 0x40000000 -x 70 0x40000000 -x 56 0x10 -x 54 0x10 -x 249 170 -x 68 0x20 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 124 1 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -cci /tmp/nvfortranYlQobwvIphJeg.cci -cmdline '+nvfortran /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -stbfile /tmp/nvfortranclQobga1mtJ8L.stb -asm /tmp/nvfortranclQobgNEjxl4p.ll
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort2 /tmp/nvfortrantcD8b5BLcpLUc.ilm -fn /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -opt 1 -x 51 0x20 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp icelake-server -x 120 0x1000 -x 124 0x1400 -y 15 2 -x 57 0x3b0000 -x 58 0x48000000 -x 49 0x100 -astype 0 -x 121 1 -x 183 4 -x 121 0x800 -x 68 0x1 -x 8 0x40000000 -x 70 0x40000000 -x 56 0x10 -x 54 0x10 -x 249 170 -x 68 0x20 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 124 1 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -cci /tmp/nvfortranRcD8bb7WmIhms.cci -cmdline '+nvfortran /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -stbfile /tmp/nvfortrandcD8bjtyuMp2R.stb -asm /tmp/nvfortranJcD8bPncvyQ4D.ll
           0 inform,   0 warnings,   0 severes, 0 fatal for cmakefortrancompilerabi
         NVFORTRAN/x86-64 Linux 24.7-0: compilation successful
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvfortranclQobgNEjxl4p.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+rtm -mattr=+pku -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+prfchw -mattr=+rdseed -mattr=+sahf -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvfortranJcD8bPncvyQ4D.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+avx512ifma -mattr=+avx512vbmi -mattr=+avx512vbmi2 -mattr=+avx512bitalg -mattr=+avx512vpopcntdq -mattr=+avx512vnni -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+sha -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+pku -mattr=+gfni -mattr=+vaes -mattr=+vpclmulqdq -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+pconfig -mattr=+prfchw -mattr=+rdpid -mattr=+rdseed -mattr=+sahf -mattr=+sgx -mattr=+wbnoinvd -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o
         
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/append -noerror CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -name .IPDINFO /tmp/nvfortranslQob2aD8hM0a.cmod -name .IPEINFO /tmp/nvfortranIlQobMhfXqYSo.cmdx
-        Unlinking /tmp/nvfortranIlQobMqGc6sdt.ilm
-        Unlinking /tmp/nvfortranYlQobwvIphJeg.cci
-        Unlinking /tmp/nvfortranclQobga1mtJ8L.stb
-        Unlinking /tmp/nvfortranslQob2aD8hM0a.cmod
-        Unlinking /tmp/nvfortranIlQobMhfXqYSo.cmdx
-        Unlinking /tmp/nvfortranYlQobweUspZP-.s
-        Unlinking /tmp/nvfortranclQobgNEjxl4p.ll
-        Unlinking /tmp/nvfortranslQob2Ft_gRz6.llvm
-        Linking Fortran executable cmTC_7584c
-        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7584c.dir/link.txt --verbose=1
-        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90  -v CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -o cmTC_7584c 
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/append -noerror CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -name .IPDINFO /tmp/nvfortranBcD8brS6KSYU3.cmod -name .IPEINFO /tmp/nvfortranZcD8bzoWLFDot.cmdx
+        Unlinking /tmp/nvfortrantcD8b5BLcpLUc.ilm
+        Unlinking /tmp/nvfortranRcD8bb7WmIhms.cci
+        Unlinking /tmp/nvfortrandcD8bjtyuMp2R.stb
+        Unlinking /tmp/nvfortranBcD8brS6KSYU3.cmod
+        Unlinking /tmp/nvfortranZcD8bzoWLFDot.cmdx
+        Unlinking /tmp/nvfortranlcD8bHbs5igOa.s
+        Unlinking /tmp/nvfortranJcD8bPncvyQ4D.ll
+        Unlinking /tmp/nvfortran7cD8bX6ZAz3f4.llvm
+        Linking Fortran executable cmTC_5f51c
+        /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5f51c.dir/link.txt --verbose=1
+        /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90  -v CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -o cmTC_5f51c
         Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7
         Export PGI=/opt/sw/compilers/pgi/2024_247
         
-        /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/f90main.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -rpath '$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib' -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_7584c -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvf -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lrt -lpthread -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
-        gmake[1]: Leaving directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-Kq1JcU'
+        /usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/f90main.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -rpath '$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib' -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_5f51c -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvf -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lrt -lpthread -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o
+        gmake[1]: Leaving directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1LmfXz'
         
       exitCode: 0
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:127 (message)"
-      - "/usr/share/cmake/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:4 (enable_language)"
     message: |
       Parsed Fortran implicit include dir info: rv=start
@@ -450,47 +480,49 @@ events:
   -
     kind: "message-v1"
     backtrace:
-      - "/usr/share/cmake/Modules/CMakeDetermineCompilerABI.cmake:152 (message)"
-      - "/usr/share/cmake/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
       - "CMakeLists.txt:4 (enable_language)"
     message: |
       Parsed Fortran implicit link information:
-        link line regex: [^( *|.*[/\\])(ld|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
-        ignore line: [Change Dir: /home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-Kq1JcU]
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1LmfXz']
         ignore line: []
-        ignore line: [Run Build Command(s):/usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_7584c/fast && /usr/bin/gmake  -f CMakeFiles/cmTC_7584c.dir/build.make CMakeFiles/cmTC_7584c.dir/build]
-        ignore line: [gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-Kq1JcU']
-        ignore line: [Building Fortran object CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o]
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90   -v -c /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o]
+        ignore line: [Run Build Command(s): /opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_5f51c/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_5f51c.dir/build.make CMakeFiles/cmTC_5f51c.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/reemh/ScalSALE-GPU/build/CMakeFiles/CMakeScratch/TryCompile-1LmfXz']
+        ignore line: [Building Fortran object CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90   -v -c /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o]
         ignore line: [Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7]
         ignore line: [Export PGI=/opt/sw/compilers/pgi/2024_247]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort1 /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -opt 1 -nostatic -x 19 0x400000 -quad -x 59 4 -x 15 2 -x 49 0x400004 -x 51 0x20 -x 57 0x4c -x 58 0x10000 -x 124 0x1000 -tp skylake-avx512 -x 57 0xfb0000 -x 58 0x78031040 -x 47 0x08 -x 48 4608 -x 49 0x100 -stdinc /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include:/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec:/usr/lib/gcc/x86_64-redhat-linux/8/include:/usr/local/include:/usr/include -cmdline '+nvfortran /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -def __unix -def __unix__ -def unix -def linux -def __linux -def __linux__ -def __ELF__ -def __NO_MATH_INLINES -def __LP64__ -def __x86_64 -def __x86_64__ -def __LONG_MAX__=9223372036854775807L -def '__SIZE_TYPE__=unsigned long int' -def '__PTRDIFF_TYPE__=long int' -def __amd64 -def __amd64__ -def __k8 -def __k8__ -def __MMX__ -def __SSE_MATH__ -def __MMX_WITH_SSE__ -def __SSE__ -def __SSE2__ -def __SSE2_MATH__ -def __SSE3__ -def __SSSE3__ -def __SSE4_1__ -def __SSE4_2__ -def __ABM__ -def __ADX__ -def __AES__ -def __AVX__ -def __AVX2__ -def __AVX512BW__ -def __AVX512CD__ -def __AVX512DQ__ -def __AVX512F__ -def __AVX512VL__ -def __BMI__ -def __BMI2__ -def __CLFLUSHOPT__ -def __CLWB__ -def __CX16__ -def __F16C__ -def __FMA__ -def __FSGSBASE__ -def __FXSR__ -def __HLE__ -def __LZCNT__ -def __MOVBE__ -def __PCLMUL__ -def __PKU__ -def __POPCNT__ -def __PRFCHW__ -def __RDRND__ -def __RDSEED__ -def __RTM__ -def __LAHF_SAHF__ -def __XSAVE__ -def __XSAVEC__ -def __XSAVEOPT__ -def __XSAVES__ -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -def __PGLLVM__ -def __NVCOMPILER_LLVM__ -def __extension__= -def __NVCOMPILER_GPU_SEPARATE_MEM -preprocess -freeform -vect 48 -x 54 1 -x 68 0x1 -x 70 0x40000000 -x 70 0x40000000 -x 68 0x1 -x 124 1 -x 195 0x8000 -y 163 0xc0000000 -x 189 0x10 -stbfile /tmp/nvfortranclQobga1mtJ8L.stb -modexport /tmp/nvfortranslQob2aD8hM0a.cmod -modindex /tmp/nvfortranIlQobMhfXqYSo.cmdx -cci /tmp/nvfortranYlQobwvIphJeg.cci -output /tmp/nvfortranIlQobMqGc6sdt.ilm]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort1 /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -opt 1 -nostatic -x 19 0x400000 -quad -x 59 4 -x 15 2 -x 49 0x400004 -x 51 0x20 -x 57 0x4c -x 58 0x10000 -x 124 0x1000 -tp icelake-server -x 57 0xfb0000 -x 58 0x78031040 -x 47 0x08 -x 48 4608 -x 49 0x100 -stdinc /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include:/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/include-stdexec:/usr/lib/gcc/x86_64-redhat-linux/8/include:/usr/local/include:/usr/include -cmdline '+nvfortran /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -def __unix -def __unix__ -def unix -def linux -def __linux -def __linux__ -def __ELF__ -def __NO_MATH_INLINES -def __LP64__ -def __x86_64 -def __x86_64__ -def __LONG_MAX__=9223372036854775807L -def '__SIZE_TYPE__=unsigned long int' -def '__PTRDIFF_TYPE__=long int' -def __amd64 -def __amd64__ -def __k8 -def __k8__ -def __MMX__ -def __SSE_MATH__ -def __MMX_WITH_SSE__ -def __SSE__ -def __SSE2__ -def __SSE2_MATH__ -def __SSE3__ -def __SSSE3__ -def __SSE4_1__ -def __SSE4_2__ -def __ABM__ -def __ADX__ -def __AES__ -def __AVX__ -def __AVX2__ -def __AVX512BITALG__ -def __AVX512BW__ -def __AVX512CD__ -def __AVX512DQ__ -def __AVX512F__ -def __AVX512IFMA__ -def __AVX512VBMI__ -def __AVX512VBMI2__ -def __AVX512VL__ -def __AVX512VNNI__ -def __AVX512VPOPCNTDQ__ -def __BMI__ -def __BMI2__ -def __CLFLUSHOPT__ -def __CLWB__ -def __CX16__ -def __F16C__ -def __FMA__ -def __FSGSBASE__ -def __FXSR__ -def __GFNI__ -def __LZCNT__ -def __MOVBE__ -def __PCLMUL__ -def __PCONFIG__ -def __PKU__ -def __POPCNT__ -def __PRFCHW__ -def __RDPID__ -def __RDRND__ -def __RDSEED__ -def __LAHF_SAHF__ -def __SGX__ -def __SHA__ -def __VAES__ -def __VPCLMULQDQ__ -def __WBNOINVD__ -def __XSAVE__ -def __XSAVEC__ -def __XSAVEOPT__ -def __XSAVES__ -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -idir /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -def __PGLLVM__ -def __NVCOMPILER_LLVM__ -def __extension__= -def __NVCOMPILER_GPU_SEPARATE_MEM -preprocess -freeform -vect 48 -x 54 1 -x 68 0x1 -x 70 0x40000000 -x 70 0x40000000 -x 68 0x1 -x 124 1 -x 195 0x8000 -y 163 0xc0000000 -x 189 0x10 -stbfile /tmp/nvfortrandcD8bjtyuMp2R.stb -modexport /tmp/nvfortranBcD8brS6KSYU3.cmod -modindex /tmp/nvfortranZcD8bzoWLFDot.cmdx -cci /tmp/nvfortranRcD8bb7WmIhms.cci -output /tmp/nvfortrantcD8b5BLcpLUc.ilm]
         ignore line: [  0 inform    0 warnings    0 severes  0 fatal for cmakefortrancompilerabi]
         ignore line: [NVFORTRAN/x86-64 Linux 24.7-0: compilation successful]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort2 /tmp/nvfortranIlQobMqGc6sdt.ilm -fn /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -opt 1 -x 51 0x20 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp skylake-avx512 -x 120 0x1000 -x 124 0x1400 -y 15 2 -x 57 0x3b0000 -x 58 0x48000000 -x 49 0x100 -astype 0 -x 121 1 -x 183 4 -x 121 0x800 -x 68 0x1 -x 8 0x40000000 -x 70 0x40000000 -x 56 0x10 -x 54 0x10 -x 249 170 -x 68 0x20 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 124 1 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -cci /tmp/nvfortranYlQobwvIphJeg.cci -cmdline '+nvfortran /usr/share/cmake/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -stbfile /tmp/nvfortranclQobga1mtJ8L.stb -asm /tmp/nvfortranclQobgNEjxl4p.ll]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/fort2 /tmp/nvfortrantcD8b5BLcpLUc.ilm -fn /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -opt 1 -x 51 0x20 -x 119 0xa10000 -x 122 0x40 -x 123 0x1000 -x 127 4 -x 127 17 -x 19 0x400000 -x 28 0x40000 -x 120 0x10000000 -x 70 0x8000 -x 122 1 -x 125 0x20000 -quad -x 59 4 -tp icelake-server -x 120 0x1000 -x 124 0x1400 -y 15 2 -x 57 0x3b0000 -x 58 0x48000000 -x 49 0x100 -astype 0 -x 121 1 -x 183 4 -x 121 0x800 -x 68 0x1 -x 8 0x40000000 -x 70 0x40000000 -x 56 0x10 -x 54 0x10 -x 249 170 -x 68 0x20 -x 70 0x40000000 -x 8 0x40000000 -x 164 0x800000 -x 71 0x2000 -x 71 0x4000 -x 34 0x40000000 -x 120 0x1000000 -x 73 0x04 -x 231 0x800 -x 68 0x1 -x 39 4 -x 56 0x10 -x 26 0x10 -x 26 1 -x 56 0x4000 -x 124 1 -x 197 0 -x 175 0 -x 203 0 -x 204 0 -x 227 0xFFFF -y 163 0xc0000000 -x 189 0x10 -y 189 0x4000000 -x 60 512 -cci /tmp/nvfortranRcD8bb7WmIhms.cci -cmdline '+nvfortran /opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeFortranCompilerABI.F90 -v -c -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/include -I/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib' -stbfile /tmp/nvfortrandcD8bjtyuMp2R.stb -asm /tmp/nvfortranJcD8bPncvyQ4D.ll]
         ignore line: [  0 inform    0 warnings    0 severes  0 fatal for cmakefortrancompilerabi]
         ignore line: [NVFORTRAN/x86-64 Linux 24.7-0: compilation successful]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvfortranclQobgNEjxl4p.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+rtm -mattr=+pku -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+prfchw -mattr=+rdseed -mattr=+sahf -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/share/llvm/bin/llc /tmp/nvfortranJcD8bPncvyQ4D.ll -march=x86-64 -mcpu=native -mattr=+mmx -mattr=+sse -mattr=+sse2 -mattr=+sse3 -mattr=+ssse3 -mattr=+sse4.1 -mattr=+sse4.2 -mattr=+avx -mattr=+avx2 -mattr=+avx512f -mattr=+avx512cd -mattr=+avx512vl -mattr=+avx512bw -mattr=+avx512dq -mattr=+avx512ifma -mattr=+avx512vbmi -mattr=+avx512vbmi2 -mattr=+avx512bitalg -mattr=+avx512vpopcntdq -mattr=+avx512vnni -mattr=+f16c -mattr=+fma -mattr=+xsave -mattr=+xsaveopt -mattr=+xsavec -mattr=+xsaves -mattr=+popcnt -mattr=+sha -mattr=+aes -mattr=+pclmul -mattr=+clflushopt -mattr=+fsgsbase -mattr=+rdrnd -mattr=+bmi -mattr=+bmi2 -mattr=+lzcnt -mattr=+fxsr -mattr=+pku -mattr=+gfni -mattr=+vaes -mattr=+vpclmulqdq -mattr=+adx -mattr=+clwb -mattr=+cx16 -mattr=+movbe -mattr=+pconfig -mattr=+prfchw -mattr=+rdpid -mattr=+rdseed -mattr=+sahf -mattr=+sgx -mattr=+wbnoinvd -O1 -x86-cmov-converter=0 -dwarf-directory=false -non-global-value-max-name-size=4294967295 --align-all-functions=6 -nvhpc-memzero -filetype=obj --frame-pointer=none -o CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o]
         ignore line: []
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/append -noerror CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -name .IPDINFO /tmp/nvfortranslQob2aD8hM0a.cmod -name .IPEINFO /tmp/nvfortranIlQobMhfXqYSo.cmdx]
-        ignore line: [Unlinking /tmp/nvfortranIlQobMqGc6sdt.ilm]
-        ignore line: [Unlinking /tmp/nvfortranYlQobwvIphJeg.cci]
-        ignore line: [Unlinking /tmp/nvfortranclQobga1mtJ8L.stb]
-        ignore line: [Unlinking /tmp/nvfortranslQob2aD8hM0a.cmod]
-        ignore line: [Unlinking /tmp/nvfortranIlQobMhfXqYSo.cmdx]
-        ignore line: [Unlinking /tmp/nvfortranYlQobweUspZP-.s]
-        ignore line: [Unlinking /tmp/nvfortranclQobgNEjxl4p.ll]
-        ignore line: [Unlinking /tmp/nvfortranslQob2Ft_gRz6.llvm]
-        ignore line: [Linking Fortran executable cmTC_7584c]
-        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7584c.dir/link.txt --verbose=1]
-        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90  -v CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -o cmTC_7584c ]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/bin/tools/append -noerror CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -name .IPDINFO /tmp/nvfortranBcD8brS6KSYU3.cmod -name .IPEINFO /tmp/nvfortranZcD8bzoWLFDot.cmdx]
+        ignore line: [Unlinking /tmp/nvfortrantcD8b5BLcpLUc.ilm]
+        ignore line: [Unlinking /tmp/nvfortranRcD8bb7WmIhms.cci]
+        ignore line: [Unlinking /tmp/nvfortrandcD8bjtyuMp2R.stb]
+        ignore line: [Unlinking /tmp/nvfortranBcD8brS6KSYU3.cmod]
+        ignore line: [Unlinking /tmp/nvfortranZcD8bzoWLFDot.cmdx]
+        ignore line: [Unlinking /tmp/nvfortranlcD8bHbs5igOa.s]
+        ignore line: [Unlinking /tmp/nvfortranJcD8bPncvyQ4D.ll]
+        ignore line: [Unlinking /tmp/nvfortran7cD8bX6ZAz3f4.llvm]
+        ignore line: [Linking Fortran executable cmTC_5f51c]
+        ignore line: [/opt/sw/GeneralUtilities/cmake/3.30.3/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5f51c.dir/link.txt --verbose=1]
+        ignore line: [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/bin/mpif90  -v CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -o cmTC_5f51c]
         ignore line: [Export NVCOMPILER=/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7]
         ignore line: [Export PGI=/opt/sw/compilers/pgi/2024_247]
         ignore line: []
-        link line: [/usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/f90main.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o -rpath '$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib' -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_7584c -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvf -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lrt -lpthread -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o]
+        link line: [/usr/bin/ld /usr/lib64/crt1.o /usr/lib64/crti.o /usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/f90main.o --eh-frame-hdr -m elf_x86_64 -dynamic-linker /lib64/ld-linux-x86-64.so.2 -T /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib/nvhpc.ld -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -L/usr/lib64 -L/usr/lib/gcc/x86_64-redhat-linux/8/ CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o -rpath '$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib' -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -rpath /opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib -o cmTC_5f51c -L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64 -lnvf -lnvomp -ldl --as-needed -lnvhpcatm -latomic --no-as-needed -lpthread -lnvcpumath -lnsnvc -lnvc -lrt -lpthread -lgcc -lc -lgcc_s -lm /usr/lib/gcc/x86_64-redhat-linux/8//crtend.o /usr/lib64/crtn.o]
           arg [/usr/bin/ld] ==> ignore
           arg [/usr/lib64/crt1.o] ==> obj [/usr/lib64/crt1.o]
           arg [/usr/lib64/crti.o] ==> obj [/usr/lib64/crti.o]
@@ -507,7 +539,7 @@ events:
           arg [-L/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> dir [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib]
           arg [-L/usr/lib64] ==> dir [/usr/lib64]
           arg [-L/usr/lib/gcc/x86_64-redhat-linux/8/] ==> dir [/usr/lib/gcc/x86_64-redhat-linux/8/]
-          arg [CMakeFiles/cmTC_7584c.dir/CMakeFortranCompilerABI.F90.o] ==> ignore
+          arg [CMakeFiles/cmTC_5f51c.dir/CMakeFortranCompilerABI.F90.o] ==> ignore
           arg [-rpath] ==> ignore
           arg [$ORIGIN:$ORIGIN/../../lib:$ORIGIN/../../../lib:$ORIGIN/../../../compilers/lib:$ORIGIN/../../../../compilers/lib:$ORIGIN/../../../../../compilers/lib] ==> ignore
           arg [-rpath] ==> ignore
@@ -519,7 +551,7 @@ events:
           arg [-rpath] ==> ignore
           arg [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/compilers/lib] ==> ignore
           arg [-o] ==> ignore
-          arg [cmTC_7584c] ==> ignore
+          arg [cmTC_5f51c] ==> ignore
           arg [-L/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64] ==> dir [/usr/lib/gcc/x86_64-redhat-linux/8//../../../../lib64]
           arg [-lnvf] ==> lib [nvf]
           arg [-lnvomp] ==> lib [nvomp]
@@ -540,6 +572,7 @@ events:
           arg [-lm] ==> lib [m]
           arg [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o] ==> obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o]
           arg [/usr/lib64/crtn.o] ==> obj [/usr/lib64/crtn.o]
+        linker tool for 'Fortran': /usr/bin/ld
         collapse obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtbegin.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/8/crtbegin.o]
         collapse obj [/usr/lib/gcc/x86_64-redhat-linux/8//crtend.o] ==> [/usr/lib/gcc/x86_64-redhat-linux/8/crtend.o]
         collapse library dir [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib] ==> [/opt/sw/compilers/pgi/2024_247/Linux_x86_64/24.7/comm_libs/openmpi/openmpi-3.1.5/lib]
@@ -553,4 +586,14 @@ events:
         implicit fwks: []
       
       
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/opt/sw/GeneralUtilities/cmake/3.30.3/share/cmake-3.30/Modules/CMakeTestFortranCompiler.cmake:20 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:4 (enable_language)"
+    message: |
+      Running the Fortran compiler's linker: "/usr/bin/ld" "-v"
+      GNU ld version 2.30-123.el8
 ...
