@@ -13,7 +13,7 @@ rm -rf ../../build
 mkdir ../../build
 cd ../../build
 
-if test "$1" = "GNU"
+if test "$1" = "NVHPC"
 then
   echo "@@@@ GNU @@@@"
   FC=mpif90 cmake ../src/
