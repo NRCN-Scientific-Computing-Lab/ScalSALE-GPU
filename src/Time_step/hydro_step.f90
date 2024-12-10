@@ -413,20 +413,42 @@ contains
         class (hydro_step_t)         , intent (in out) :: this 
         type (time_t)                , intent (in out) :: time 
 
-        real(8), dimension(:, :, :), pointer :: p,x              
+        real(8), dimension(:, :, :), pointer :: p,x   
+        real(8), dimension(:, :, :), pointer :: velocity_x_target     
+        real(8), dimension(:, :, :), pointer :: velocity_y_target     
+        real(8), dimension(:, :, :), pointer :: velocity_z_target     
+        real(8), dimension(:, :, :), pointer :: x_target              
+        real(8), dimension(:, :, :), pointer :: y_target              
+        real(8), dimension(:, :, :), pointer :: z_target              
+
+        real(8), dimension(:, :, :), pointer :: vol_target            
+        real(8), dimension(:, :, :), pointer :: vof_target 
+
+        real(8), dimension(:, :, :), pointer :: acceleration_x_target     
+        real(8), dimension(:, :, :), pointer :: acceleration_y_target     
+        real(8), dimension(:, :, :), pointer :: acceleration_z_target 
         integer :: i,j,k
         real(8) :: accel_time, avisc_time, vel_time, thermo_time, rezone_time, energy_time, mesh_time, dt_time
-        call this%total_sie%Point_to_data(1, x)
 
+        call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
+        call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
+        call this%total_vof%       Point_to_data(vof_target)
+        call this%total_volume%    Point_to_data(vol_target)
+        call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
+        call this%total_sie%Point_to_data(1, x)      
         thermo_time = omp_get_wtime()
+        !$omp target update from(vol_target, vof_target)
         call this%Calculate_thermodynamics()
         write(*,'(A50, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
-        dt_time = omp_get_wtime()       
+        dt_time = omp_get_wtime()  
+        
+        !$omp target update from(x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target)
         call time%Calculate_dt(this%mesh, this%velocity, this%rezone%mesh_velocity, this%vertex_mass, this%total_vof, this%emfm)
         write(*,'(A50, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
         this%cyc_delete = this%cyc_delete+1
 
         accel_time = omp_get_wtime()
+        !$omp target update from(acceleration_x_target, acceleration_y_target, acceleration_z_target)
         call this%Calculate_acceleration_3d(time%dt_mid)
         write(*,'(A50, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
         
@@ -912,7 +934,7 @@ contains
 
         call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false.)
 
-
+        
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
             this%total_vof, this%total_volume, this%nx, this%ny, this%nz, this%emf)
     end subroutine Calculate_acceleration_3d
@@ -1422,9 +1444,9 @@ contains
 
         call this%a_visc%Exchange_end()
 
-        loop_time = omp_get_wtime()
-        !$omp target map(to:inversed_vertex_mass, a_visc, acceleration_x, acceleration_y, acceleration_z) map(from:velocity_x, velocity_y, velocity_z)
-       !$omp teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6)
+        loop_time = omp_get_wtime() 
+        !$omp target update to(acceleration_x, acceleration_y, acceleration_z, velocity_x, velocity_y, velocity_z, inversed_vertex_mass, a_visc)        
+        !$omp target teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6) map(present, to: acceleration_x, acceleration_y, acceleration_z, velocity_x, velocity_y, velocity_z, inversed_vertex_mass, a_visc)
         do k = 1, this%nzp
             do j = 1, this%nyp
                 do i = 1, this%nxp
@@ -1493,9 +1515,8 @@ contains
                 end do
             end do
         end do
-        !$omp end teams distribute parallel do    
-        !$omp end target  
-        
+        !$omp end target teams distribute parallel do     
+        !$omp target update from(velocity_x, velocity_y, velocity_z)
         write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----loop1 time:", omp_get_wtime() - loop_time
         
         loop_time = omp_get_wtime()

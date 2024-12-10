@@ -693,19 +693,35 @@ contains
         real(8), dimension(:, :, :), pointer :: velocity_x_target     
         real(8), dimension(:, :, :), pointer :: velocity_y_target     
         real(8), dimension(:, :, :), pointer :: velocity_z_target 
-                real(8), dimension(:, :, :), pointer :: acceleration_x_target     
+        
+        real(8), dimension(:, :, :), pointer :: acceleration_x_target     
         real(8), dimension(:, :, :), pointer :: acceleration_y_target     
         real(8), dimension(:, :, :), pointer :: acceleration_z_target 
-        real(8), dimension(:, :, :), pointer :: x_target              
+        
+        real(8), dimension(:, :, :), pointer :: x_target     
+        real(8), dimension(:, :, :), pointer :: y_target              
+        real(8), dimension(:, :, :), pointer :: z_target 
+        
         real(8), dimension(:, :, :), pointer :: avisc_target              
         real(8), dimension(:, :, :), pointer :: rmv_target              
-        
-        real(8), dimension(:, :, :), pointer :: y_target              
-        real(8), dimension(:, :, :), pointer :: z_target              
+                     
 
         real(8), dimension(:, :, :), pointer :: vol_target            
         real(8), dimension(:, :, :), pointer :: vof_target 
-      
+
+        real(8) :: checksum_velocity_x, checksum_velocity_y, checksum_velocity_z
+        real(8) :: checksum_acceleration_x, checksum_acceleration_y, checksum_acceleration_z
+        real(8) :: checksum_x, checksum_y, checksum_z
+        
+        checksum_velocity_x = 0.0
+        checksum_velocity_y = 0.0
+        checksum_velocity_z = 0.0
+        checksum_acceleration_x = 0.0
+        checksum_acceleration_y = 0.0
+        checksum_acceleration_z = 0.0
+        checksum_x = 0.0
+        checksum_y = 0.0
+        checksum_z = 0.0
       
         !        call this%cr%Get_ckpt_name(this%name, ckpt_name)
 #ifdef DEBUG
@@ -748,7 +764,7 @@ contains
             call this%velocity%dvelocity_z_dx%Point_to_data(dvel_z_dx_target)
             call this%velocity%dvelocity_z_dy%Point_to_data(dvel_z_dy_target)
             call this%velocity%dvelocity_z_dz%Point_to_data(dvel_z_dz_target)
-    call this%total_inverse_vertex_mass%Point_to_data(rmv_target)
+            call this%total_inverse_vertex_mass%Point_to_data(rmv_target)
             call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
             call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
             call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
@@ -776,6 +792,36 @@ contains
             !$omp target exit data map(delete: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target) &
             !$omp& map(from: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target,&
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
+
+            do k = 1, this%nzp
+            do j = 1, this%nyp
+            do i = 1, this%nxp
+                checksum_velocity_x = checksum_velocity_x + velocity_x_target(i, j, k)
+                checksum_velocity_y = checksum_velocity_y + velocity_y_target(i, j, k)
+                checksum_velocity_z = checksum_velocity_z + velocity_z_target(i, j, k)
+
+                checksum_acceleration_x = checksum_acceleration_x + acceleration_x_target(i, j, k)
+                checksum_acceleration_y = checksum_acceleration_y + acceleration_y_target(i, j, k)
+                checksum_acceleration_z = checksum_acceleration_z + acceleration_z_target(i, j, k)
+
+                checksum_x = checksum_x + x_target(i, j, k)
+                checksum_y = checksum_y + y_target(i, j, k)
+                checksum_z = checksum_z + z_target(i, j, k)
+        end do
+        end do
+        end do
+
+write(*,*) "Checksum for velocity_x_target: ", checksum_velocity_x
+write(*,*) "Checksum for velocity_y_target: ", checksum_velocity_y
+write(*,*) "Checksum for velocity_z_target: ", checksum_velocity_z
+
+write(*,*) "Checksum for acceleration_x_target: ", checksum_acceleration_x
+write(*,*) "Checksum for acceleration_y_target: ", checksum_acceleration_y
+write(*,*) "Checksum for acceleration_z_target: ", checksum_acceleration_z
+
+write(*,*) "Checksum for x_target: ", checksum_x
+write(*,*) "Checksum for y_target: ", checksum_y
+write(*,*) "Checksum for z_target: ", checksum_z
             
         end if
 

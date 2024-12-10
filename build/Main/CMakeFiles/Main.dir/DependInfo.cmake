@@ -8,25 +8,25 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_Fortran
-  "/home/reemh/ScalSALE-GPU/src/Main/problem.f90" "/home/reemh/ScalSALE-GPU/build/Main/CMakeFiles/Main.dir/problem.f90.o"
+  "/home/u39966a550667980b66e637513213840/ScalSALE/src/Main/problem.f90" "/home/u39966a550667980b66e637513213840/ScalSALE/build/Main/CMakeFiles/Main.dir/problem.f90.o"
   )
-set(CMAKE_Fortran_COMPILER_ID "NVHPC")
-set(CMAKE_Fortran_SUBMODULE_SEP "-")
-set(CMAKE_Fortran_SUBMODULE_EXT ".mod")
+set(CMAKE_Fortran_COMPILER_ID "IntelLLVM")
+set(CMAKE_Fortran_SUBMODULE_SEP "@")
+set(CMAKE_Fortran_SUBMODULE_EXT ".smod")
 
 # The include file search paths:
 set(CMAKE_Fortran_TARGET_INCLUDE_PATH
   "/include"
-  "/home/reemh/json-fortran/build_nvhpc"
+  "/home/u39966a550667980b66e637513213840/json-fortran/json-fortran/build"
   )
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   )
 
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
+# Targets to which this target links.
+set(CMAKE_TARGET_LINKED_INFO_FILES
   )
 
 # Fortran module output directory.
-set(CMAKE_Fortran_TARGET_MODULE_DIR "/home/reemh/ScalSALE-GPU/build/modules")
+set(CMAKE_Fortran_TARGET_MODULE_DIR "/home/u39966a550667980b66e637513213840/ScalSALE/build/modules")

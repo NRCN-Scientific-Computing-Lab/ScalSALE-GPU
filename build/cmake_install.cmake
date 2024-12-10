@@ -1,4 +1,4 @@
-# Install script for directory: /home/reemh/ScalSALE-GPU/src
+# Install script for directory: /home/u39966a550667980b66e637513213840/ScalSALE/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -29,7 +29,7 @@ endif()
 
 # Install shared libraries without execute permission?
 if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
-  set(CMAKE_INSTALL_SO_NO_EXE "0")
+  set(CMAKE_INSTALL_SO_NO_EXE "1")
 endif()
 
 # Is this installation the result of a crosscompile?
@@ -44,22 +44,22 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/reemh/ScalSALE-GPU/build/Parallel/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/General/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Input/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Boundary_conditions/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Quantities/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Boundary_conditions/Vertex/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Boundary_conditions/Cell/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Quantities/Cell/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Quantities/Vertex/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Mesh/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Material/Equation_of_state/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Material/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Rezone_and_Advect/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Time_step/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Diagnostics/cmake_install.cmake")
-  include("/home/reemh/ScalSALE-GPU/build/Main/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Parallel/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/General/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Input/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Boundary_conditions/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Quantities/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Boundary_conditions/Vertex/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Boundary_conditions/Cell/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Quantities/Cell/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Quantities/Vertex/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Mesh/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Material/Equation_of_state/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Material/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Rezone_and_Advect/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Time_step/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Diagnostics/cmake_install.cmake")
+  include("/home/u39966a550667980b66e637513213840/ScalSALE/build/Main/cmake_install.cmake")
 
 endif()
 
@@ -71,5 +71,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/reemh/ScalSALE-GPU/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/u39966a550667980b66e637513213840/ScalSALE/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
