@@ -141,18 +141,12 @@ contains
 
       integer :: i, i1, i2, j, j1, j2
 
-
-
-
       call this%mesh%Point_to_data(x, y)
       call this%velocity%Point_to_data(velocity_x, velocity_y)
       call this%material_coordinates%Point_to_data (material_x, material_y)
       call this%mesh_velocity%Point_to_data(mesh_velocity_x, mesh_velocity_y)
       call this%vertex_mass%Point_to_data(vertex_mass)
       call this%material_volume%Point_to_data(mat_vol)
-
-
-
 
       material_x = x + velocity_x * dt
       material_y = y + velocity_y * dt
@@ -162,16 +156,6 @@ contains
 
       mesh_velocity_x = velocity_x
       mesh_velocity_y = velocity_y
-
-
-
-
-
-
-
-
-
-
 
       do j = 1, this%nyp
          do i = 1, this%nxp
@@ -187,16 +171,12 @@ contains
       select case (this%rezone_type)
          case (0)
 
-
             mesh_velocity_x = velocity_x
             mesh_velocity_y = velocity_y
 
          case (1)
             mesh_velocity_x = 0d0
             mesh_velocity_y = 0d0
-
-
-
          case default
 
       end select
@@ -242,13 +222,11 @@ contains
       call this%mesh_velocity%Point_to_data(mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
       call this%vertex_mass%Point_to_data(vertex_mass)
 
-
-
-
-
-
-
-
+      !x,y,z are updated on the GPU
+      !$omp target update to(vertex_mass) depend(out:dep1) nowait
+      !$omp target update to(velocity_x, velocity_y, velocity_z)
+      
+      !$omp target teams distribute parallel do collapse(3) 
       do k = 0, this%nzp + 1
          do j = 0, this%nyp + 1
             do i = 0, this%nxp + 1
@@ -258,15 +236,15 @@ contains
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+      
+      !TODO: can we calculate material volume on gpu? because mterial_x_y_z are already on the gpu...
+      !$omp target update from(material_x, material_y, material_z)
 
       call this%material_volume%Calculate(this%material_coordinates)
       call this%material_volume%Exchange_virtual_space_nonblocking()
 
-
-
-
-
-
+      !$omp target teams distribute parallel do collapse(3) private(velocity_sq, factor) depend(in:dep1)
       do k = 1, this%nzp
          do j = 1, this%nyp
             do i = 1, this%nxp
@@ -283,11 +261,12 @@ contains
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+
 
       select case (this%rezone_type)
          case(0)
-
-
+            !$omp target teams distribute parallel do collapse(3)
             do k = 1, this%nzp
                do j = 1, this%nyp
                   do i = 1, this%nxp
@@ -297,8 +276,9 @@ contains
                   end do
                end do
             end do
-
+            !$omp end target teams distribute parallel do
          case(1)
+            !$omp target teams distribute parallel do collapse(3)
             do k = 1, this%nzp
                do j = 1, this%nyp
                   do i = 1, this%nxp
@@ -308,10 +288,11 @@ contains
                   end do
                end do
             end do
-
+            !$omp end target teams distribute parallel do
          case default
 
       end select
+      !$omp target update from(velocity_x, velocity_y, velocity_z, mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
 
       call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data)
       call this%material_volume%Exchange_end()

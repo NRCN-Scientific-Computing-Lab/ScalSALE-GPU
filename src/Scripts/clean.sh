@@ -15,7 +15,7 @@ cd ../../build
 
 if test "$1" = "NVHPC"
 then
-  echo "@@@@ GNU @@@@"
+  echo "@@@@ NVHPC @@@@"
   FC=mpif90 cmake ../src/
 else
   echo "@@@@ INTEL @@@@"

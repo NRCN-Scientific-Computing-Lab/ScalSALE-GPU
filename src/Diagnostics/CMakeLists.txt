@@ -5,8 +5,12 @@ link_directories($ENV{SILO_PATH}/lib)
 
 #add_library(Silo SHARED silo_module.c silo_fortran_to_c_interface.f90)
 #target_link_libraries(Silo silo)
+include_directories($ENV{JSONFORTRAN})
+link_directories($ENV{JSONFORTRAN}/lib)
+
 
 add_library(Diagnostics SHARED textual_diagnostic.f90 )#silo_diagnostic.f90 )#textual_diagnostic_hdf5.f90 silo_diagnostic.f90 plot_diagnostic.f90)
+target_link_libraries(Diagnostics jsonfortran)
 #target_link_libraries(Diagnostics Silo)
 #target_link_libraries(Diagnostics hdf5 )
 

@@ -134,6 +134,8 @@ contains
          else
             call coords%Point_to_data(x_tag, y_tag, z_tag)
          end if
+         
+         !!$omp target teams distribute parallel do collapse(3)
          do k = 1,this%d3
             do j = 1, this%d2
                do i = 1, this%d1

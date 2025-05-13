@@ -5,6 +5,7 @@ enable_language (Fortran)
 
 #set(CMAKE_Fortran_COMPILER mpiifx)
 #set(FC "mpiifx")
+set(FC "mpif90")
 #set(CMAKE_Fortran_FLAGS "-fPIC -O0 -cpp -g -fpp -fpe0 -traceback -fp-model source -fimf-arch-consistency=true -fp-stack-check -debug -check bounds -check format -check output_conversion -check pointers  -check uninit -qopenmp")
 #set(CMAKE_Fortran_FLAGS "-fPIC -O2 -cpp -g -fpp -fpe0 -traceback -fp-model source -fimf-arch-consistency=true -fp-stack-check -debug -check bounds -check format -check output_conversion -check pointers  -check uninit -qopenmp")
 #set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O2 -qopenmp")

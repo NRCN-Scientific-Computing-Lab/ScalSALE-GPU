@@ -57,7 +57,7 @@ contains
    function Deter(a11, a12, a13, a21, a22, a23, a31, a32, a33) result (return_value)
       real(8), intent(in) :: a11, a12, a13, a21, a22, a23, a31, a32, a33  
       real(8) return_value
-
+      !$omp declare target
       return_value = a11 * (a22 * a33 - a23 * a32) &
                     -a12 * (a21 * a33 - a23 * a31) &
                     +a13 * (a21 * a32 - a22 * a31)

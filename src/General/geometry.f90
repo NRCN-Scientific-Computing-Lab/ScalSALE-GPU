@@ -1197,6 +1197,7 @@ contains
       a7a8b4b8b7b8a4a8 = a7a8 * b4b8 - b7b8 * a4a8
 
    end subroutine Vector_grad_planes
+   
 
    function Line_length_in_cell(x1, y1, z1 ,x2, y2, z2 ,x3, y3, z3 ,x4, y4, z4 , &
                                 x5, y5, z5 ,x6, y6, z6 ,x7, y7, z7 ,x8, y8, z8 , &
@@ -1215,7 +1216,7 @@ contains
       real(8) :: len_min_1, len_min_2        
       real(8) :: eps1, eps2                  
       integer :: i                           
-
+      !$omp declare target
       eps1 = 1d-20
       eps2 = 1d-99
 

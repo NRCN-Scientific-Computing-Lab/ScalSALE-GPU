@@ -700,22 +700,42 @@ contains
         
         real(8), dimension(:, :, :), pointer :: x_target     
         real(8), dimension(:, :, :), pointer :: y_target              
-        real(8), dimension(:, :, :), pointer :: z_target 
+        real(8), dimension(:, :, :), pointer :: z_target
+        
+        real(8), dimension(:, :, :), pointer :: mat_x_target     
+        real(8), dimension(:, :, :), pointer :: mat_y_target              
+        real(8), dimension(:, :, :), pointer :: mat_z_target
+
+        real(8), dimension(:, :, :), pointer :: mat_volume_target
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_x_target
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_y_target
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_z_target
         
         real(8), dimension(:, :, :), pointer :: avisc_target              
         real(8), dimension(:, :, :), pointer :: rmv_target              
-                     
+        real(8), dimension(:, :, :), pointer :: pressure_sum_target
 
         real(8), dimension(:, :, :), pointer :: vol_target            
         real(8), dimension(:, :, :), pointer :: vof_target 
 
+        real(8), dimension(:, :, :), pointer :: sound_vel_target
+        real(8), dimension(:, :, :), pointer :: density_target
+        real(8), dimension(:, :, :), pointer :: pressure_target
+        real(8), dimension(:, :, :), pointer :: vertex_mass_target     
+
         real(8) :: checksum_velocity_x, checksum_velocity_y, checksum_velocity_z
         real(8) :: checksum_acceleration_x, checksum_acceleration_y, checksum_acceleration_z
         real(8) :: checksum_x, checksum_y, checksum_z
+        real(8) :: checksum_density, checksum_pressure
+        character(len=8) :: date, time
+        integer :: iunit
+        character(len=30) :: filename
         
         checksum_velocity_x = 0.0
         checksum_velocity_y = 0.0
         checksum_velocity_z = 0.0
+        checksum_density = 0.0
+        checksum_pressure = 0.0
         checksum_acceleration_x = 0.0
         checksum_acceleration_y = 0.0
         checksum_acceleration_z = 0.0
@@ -739,9 +759,9 @@ contains
                         !call this%Write_to_files()
         ncyc = 1
         if (this%rezone_type == 0) then
-            max_ncyc = 11
+            max_ncyc = 3
         else
-            max_ncyc = 11
+            max_ncyc = 3
         end if
 
         if (this%mesh%dimension == 2) then
@@ -764,16 +784,30 @@ contains
             call this%velocity%dvelocity_z_dx%Point_to_data(dvel_z_dx_target)
             call this%velocity%dvelocity_z_dy%Point_to_data(dvel_z_dy_target)
             call this%velocity%dvelocity_z_dz%Point_to_data(dvel_z_dz_target)
+            call this%total_density  %Point_to_data(density_target)
             call this%total_inverse_vertex_mass%Point_to_data(rmv_target)
+            call this%hydro%rezone%vertex_mass%Point_to_data(vertex_mass_target)
             call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
             call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
             call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
             call this%total_vof%       Point_to_data(vof_target)
             call this%a_visc%       Point_to_data(avisc_target)
             call this%total_volume%    Point_to_data(vol_target)
-            
+            call this%total_pressure %Point_to_data(pressure_target)
+            call this%total_pressure_sum%point_to_data(pressure_sum_target)
+            call this%total_sound_vel%Point_to_data(sound_vel_target)
+            ! ============================= REZONE THINGS ========================== !
+            call this%hydro%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
+            call this%hydro%rezone%material_volume%Point_to_data(mat_volume_target)
+            call this%hydro%rezone%mesh_velocity%Point_to_data(mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target)
+
             write(*,*) "Number of Available devices: ", omp_get_num_devices()
-            !$omp target enter data map(to: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target, avisc_target, acceleration_x_target, acceleration_y_target, acceleration_z_target, rmv_target) &
+            !$omp target enter data map(to: x_target, y_target, z_target,&
+            !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
+            !$omp& mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target,&
+            !$omp& mat_x_target, mat_y_target, mat_z_target,&
+            !$omp& vof_target, vol_target, avisc_target, mat_volume_target, pressure_sum_target,&
+            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, rmv_target, sound_vel_target, density_target, pressure_target, vertex_mass_target) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
         
@@ -788,10 +822,11 @@ contains
                 write(*,*) "#####################################################################"
             !      call this%cr%Checkpoint(ckpt_name)
             end do
+        
             
             !$omp target exit data map(delete: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target) &
             !$omp& map(from: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target,&
-            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
+            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target, sound_vel_target, density_target, pressure_target, vertex_mass_target)
 
             do k = 1, this%nzp
             do j = 1, this%nyp
@@ -807,21 +842,32 @@ contains
                 checksum_x = checksum_x + x_target(i, j, k)
                 checksum_y = checksum_y + y_target(i, j, k)
                 checksum_z = checksum_z + z_target(i, j, k)
+
+                checksum_density = checksum_density + density_target(i,j,k)
+                checksum_pressure = checksum_pressure + pressure_target(i,j,k)
         end do
         end do
         end do
 
-write(*,*) "Checksum for velocity_x_target: ", checksum_velocity_x
-write(*,*) "Checksum for velocity_y_target: ", checksum_velocity_y
-write(*,*) "Checksum for velocity_z_target: ", checksum_velocity_z
+        call date_and_time(date, time)
+        write(filename, '(A,"_",A)') "vnv", trim(adjustl(date)) // "_" // trim(adjustl(time))
 
-write(*,*) "Checksum for acceleration_x_target: ", checksum_acceleration_x
-write(*,*) "Checksum for acceleration_y_target: ", checksum_acceleration_y
-write(*,*) "Checksum for acceleration_z_target: ", checksum_acceleration_z
+        iunit = 10
+        open(unit=iunit, file=filename, status="unknown", action="write")
+    
+        write(iunit, '(A,Z17)') "Checksum for velocity_x: ", checksum_velocity_x
+        write(iunit, '(A,Z17)') "Checksum for velocity_y: ", checksum_velocity_y
+        write(iunit, '(A,Z17)') "Checksum for velocity_z: ", checksum_velocity_z
+        write(iunit, '(A,Z17)') "Checksum for acceleration_x: ", checksum_acceleration_x
+        write(iunit, '(A,Z17)') "Checksum for acceleration_y: ", checksum_acceleration_y
+        write(iunit, '(A,Z17)') "Checksum for acceleration_z: ", checksum_acceleration_z
+        write(iunit, '(A,Z17)') "Checksum for x: ", checksum_x
+        write(iunit, '(A,Z17)') "Checksum for y: ", checksum_y
+        write(iunit, '(A,Z17)') "Checksum for z: ", checksum_z
+        write(iunit, '(A,Z17)') "Checksum for density: ", checksum_density
+        write(iunit, '(A,Z17)') "Checksum for pressure: ", checksum_pressure
 
-write(*,*) "Checksum for x_target: ", checksum_x
-write(*,*) "Checksum for y_target: ", checksum_y
-write(*,*) "Checksum for z_target: ", checksum_z
+        close(iunit)
             
         end if
 
@@ -1049,15 +1095,16 @@ write(*,*) "Checksum for z_target: ", checksum_z
 
         integer :: threads
 
-        call omp_set_num_threads(max_threads)
+        !call omp_set_num_threads(max_threads)
 
+        !$omp parallel
         threads = omp_get_num_threads()
-
-        if (threads /= max_threads) then
+        !$omp end parallel
+        !if (threads /= max_threads) then
             write(*,*) "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-            write(*,*) "Warning, number of threads doesn't match number of threads set in datafile"
+            write(*,*) "Number of Threads:", threads
             write(*,*) "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-        end if
+        !end if
     end subroutine Initialize_openmp
 
 

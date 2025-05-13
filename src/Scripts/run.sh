@@ -11,17 +11,59 @@
 rm -rf Silo_Diagnostics/*
 rm *.so 2>/dev/null
 
+# Define color codes
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' # No color
+
+# Remove existing vnv_* files
+rm -rf vnv_*
+
 export SCR_CONF_FILE=`pwd`/../CR/scr_conf.conf
 export SCR_RUNS=4
 if test "$1" = "cr"
 then
 	scr_mpirun -n 1 -mca btl self,sm,openib python ../Main/main.py
 else
-#	mpirun -n 1 -mca btl self,sm,openib ../exec/main
+    #mpirun -n 1 -mca btl self,sm,openib ../exec/main
     #mpirun -n 1 -mca btl self,sm,openib ../exec/main
     #mpirun -n 8 ../exec/main
-    #export OMP_TARGET_OFFLOAD=DISABLED
-    export OMP_TARGET_OFFLOAD=MANDATORY
-    mpirun -n $1 ../exec/main
+    if [[ "$1" == "GPU" ]]; then
+       echo "Running on GPU"
+       export OMP_TARGET_OFFLOAD=MANDATORY
+       num_threads=32
+    elif [[ "$1" == "CPU" ]]; then
+    echo "Running on CPU with 32 threads"
+       num_threads=32
+       export OMP_TARGET_OFFLOAD=DISABLED
+elif [[ "$1" == "SERIAL" ]]; then
+       echo "Running in SERIAL mode"
+       num_threads=1
+       export OMP_TARGET_OFFLOAD=DISABLED
+else
+    echo "Invalid argument: $1"
+    echo "Usage: $0 [GPU|CPU|SERIAL]"
+    exit 1
+fi
+    export OMP_NUM_THREADS=$num_threads
+    mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
     #vtune -collect hotspots mpirun -n $1 ../exec/main
+
+    # Find the latest vnv file
+    latest_vnv=$(ls -t vnv_* 2>/dev/null | head -n 1)
+
+    # Check if the latest vnv file exists
+    if [ -z "$latest_vnv" ]; then
+        echo "Error: No vnv file found."
+        exit 1
+    fi
+
+    # Check if baseline_vnv exists
+    if [ ! -f "baseline_vnv" ]; then
+        echo "Error: baseline_vnv file not found in the current directory."
+        exit 1
+    fi
+
+    # Compare the latest vnv file with baseline_vnv
+    ./smart_diff.sh baseline_vnv "$latest_vnv"
 fi

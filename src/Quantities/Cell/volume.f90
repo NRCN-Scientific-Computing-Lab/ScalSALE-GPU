@@ -116,6 +116,8 @@ contains
 
      is_neg = 0
      nz = this%d3
+     !!$omp target update to(x, y, z)
+     !!$omp target teams distribute parallel do collapse(3) private(ip,jp,kp,x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8)
          do k = 1, nz
             do j = 1, ny
                do i = 1, nx
@@ -157,17 +159,11 @@ contains
                                   +x_proj(y7, z7, y8, z8, y5, z5, y2, z2, y3, z3, y1, z1) * x6 &
                                   +x_proj(y8, z8, y5, z5, y6, z6, y3, z3, y4, z4, y2, z2) * x7 &
                                   +x_proj(y5, z5, y6, z6, y7, z7, y4, z4, y1, z1, y3, z3) * x8 ) / 12d0
-
-
-
                end do
             end do
          end do
 
-
-
-
-
+         !!$omp target update from(vol)
 
       end if
    end subroutine Calculate
