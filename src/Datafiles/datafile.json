@@ -179,9 +179,9 @@
         "rezone_type": "lagrange"
     },
 "parallel":{
-"np":1,
-"npz":1,
-"npy":1,
-"npx":1
+"np":8,
+"npz":2,
+"npy":2,
+"npx":2
 }
 }
