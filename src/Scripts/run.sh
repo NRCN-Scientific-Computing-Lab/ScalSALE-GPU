@@ -48,7 +48,9 @@ elif [[ "$1" == "MPI" ]]; then
        echo "Running in MPI mode with $2 ranks"
        export OMP_TARGET_OFFLOAD=DISABLED
        export OMP_NUM_THREADS=1
-       mpirun -n $2 --mca pml ob1 --mca btl self,tcp ../exec/main
+       #mpirun -n $2 --mca pml ob1 --mca btl self,tcp ../exec/main
+       mpirun -n 8 --mca pml ob1 --mca btl vader,self --mca btl_vader_single_copy_mechanism none ../exec/main
+
 else
     echo "Invalid argument: $1"
     echo "Usage: $0 [GPU|CPU|SERIAL]"

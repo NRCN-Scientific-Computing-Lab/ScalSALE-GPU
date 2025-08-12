@@ -367,7 +367,8 @@ contains
         Constructor%time = time_t(df, Constructor%communication, Constructor%parallel_params)
 
         call Constructor%total_volume%Point_to_data (vol)
-
+  
+        write(*,*) "DEBUG1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
 
         call Constructor%Create_materials (df, bc_c_wrap_arr, Constructor%mat_cells)
@@ -461,7 +462,11 @@ contains
             end if
         end do
 
+        write(*,*) "DEBUG2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+
         call Constructor%Set_communication()
+
+        write(*,*) "DEBUG3 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
         call Constructor%mesh%Exchange_virtual_space_blocking()
         call Constructor%total_vof%Exchange_virtual_space_blocking()
@@ -855,6 +860,7 @@ contains
 
             write(*,*) "Number of Available devices: ", omp_get_num_devices()
             start = omp_get_wtime()
+
             !$omp target enter data map(to: x_target, y_target, z_target,&
             !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
             !$omp& mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target,&
@@ -865,7 +871,8 @@ contains
             !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &           
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
-        
+            
+            
             write(*,*) "Initial target enter data Time:", omp_get_wtime() - start
 
             do while (this%time%Should_continue() .and. ncyc < max_ncyc)
