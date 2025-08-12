@@ -31,24 +31,31 @@ else
     if [[ "$1" == "GPU" ]]; then
        echo "Running on GPU"
        export OMP_TARGET_OFFLOAD=MANDATORY
-       num_threads=32
+       export OMP_NUM_THREADS=32
+       mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+
     elif [[ "$1" == "CPU" ]]; then
-    echo "Running on CPU with 32 threads"
-       num_threads=32
+    echo "Running on CPU with $2 threads"
        export OMP_TARGET_OFFLOAD=DISABLED
+       export OMP_NUM_THREADS=$2
+       mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
 elif [[ "$1" == "SERIAL" ]]; then
        echo "Running in SERIAL mode"
-       num_threads=1
        export OMP_TARGET_OFFLOAD=DISABLED
+       export OMP_NUM_THREADS=1
+       mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+elif [[ "$1" == "MPI" ]]; then
+       echo "Running in MPI mode with $2 ranks"
+       export OMP_TARGET_OFFLOAD=DISABLED
+       export OMP_NUM_THREADS=1
+       mpirun -n $2 --mca pml ob1 --mca btl self,tcp ../exec/main
 else
     echo "Invalid argument: $1"
     echo "Usage: $0 [GPU|CPU|SERIAL]"
     exit 1
 fi
-    export OMP_NUM_THREADS=$num_threads
     #nsys profile --stats=true mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
     #mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
-    mpirun -n 8 --map-by core --mca btl vader,self ../exec/main
     #vtune -collect hotspots mpirun -n $1 ../exec/main
 
     # Find the latest vnv file

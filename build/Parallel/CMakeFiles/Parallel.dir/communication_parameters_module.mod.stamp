@@ -1,6 +1,6 @@
 V34 :0x24 communication_parameters_module
 28 communication_parameters.f90 S624 0
-08/07/2025  09:02:49
+08/12/2025  10:43:40
 use iso_fortran_env private
 use iso_c_binding private
 enduse
