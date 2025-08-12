@@ -20,8 +20,9 @@ else
 #	mpirun -n 1 -mca btl self,sm,openib ../exec/main
     #mpirun -n 1 -mca btl self,sm,openib ../exec/main
     #mpirun -n 8 ../exec/main
-    #export OMP_TARGET_OFFLOAD=DISABLED
-    export OMP_TARGET_OFFLOAD=MANDATORY
-    mpirun -n $1 ../exec/main
+    export OMP_TARGET_OFFLOAD=DISABLED
+    #export OMP_TARGET_OFFLOAD=MANDATORY
+    #mpirun -n $1 ../exec/main
+    mpirun -n 8 --mca pml ob1 --mca btl self,tcp ../exec/main
     #vtune -collect hotspots mpirun -n $1 ../exec/main
 fi
