@@ -53,6 +53,10 @@ contains
       integer :: i, j, k
       gamma1 = gamma_gas - 1d0
       atomic_weight = atomic_mass / AVOGADRO
+
+      write(*,*) ' ideal_gas.f90 do mikbul, it is called from material.f90, from equation_of_state'
+      !!$omp target update to(sie, sound_vel, vof)
+      !$omp target teams distribute parallel do collapse(3)
       do k = 1, nz
          do j = 1, ny
             do i = 1, nx
@@ -77,6 +81,8 @@ contains
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+      !!$omp target update from(pressure, sound_vel, dp_de, dp_drho, dt_de, dt_drho, temperature) 
 
       end subroutine Calculate_ideal_gas
 

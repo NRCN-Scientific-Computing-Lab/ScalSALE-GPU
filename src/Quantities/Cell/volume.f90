@@ -51,6 +51,7 @@ contains
       use quantity_module, only: quantity_t
       use geometry_module, only: x_proj, Polygon_volume
       use general_utils_module, only : Get_axises_num
+      use omp_lib
       implicit none
       class (volume_t)         , intent(in out) :: this   
       class (quantity_t)       , intent(in out) :: coordinates   
@@ -72,6 +73,7 @@ contains
       real(8) :: x1, x2, x3, x4, x5, x6, x7, x8  
       real(8) :: y1, y2, y3, y4, y5, y6, y7, y8  
       real(8) :: z1, z2, z3, z4, z5, z6, z7, z8  
+      real(8) :: start_time
       real(8) :: cyl
       integer :: sw_vertex_mass
       integer                                         :: dimension
@@ -116,8 +118,10 @@ contains
 
      is_neg = 0
      nz = this%d3
+
+     start_time = omp_get_wtime()
      !!$omp target update to(x, y, z)
-     !!$omp target teams distribute parallel do collapse(3) private(ip,jp,kp,x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8)
+     !$omp target teams distribute parallel do collapse(3) private(ip,jp,kp,x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8)
          do k = 1, nz
             do j = 1, ny
                do i = 1, nx
@@ -162,8 +166,9 @@ contains
                end do
             end do
          end do
-
+         !$omp end target teams distribute parallel do
          !!$omp target update from(vol)
+         write(*,'(A70, F12.6)') "Calculate() loop time:", omp_get_wtime() - start_time
 
       end if
    end subroutine Calculate

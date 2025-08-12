@@ -19,7 +19,7 @@ module boundary_mirror_3d_module
 
 
 contains
-    subroutine Boundary_mirror_3d_calculate (this, v_quantity, coordinates, angle, edge_num)
+    subroutine Boundary_mirror_3d_calculate (this, v_quantity, coordinates, angle, edge_num, is_offload)
         use geometry_module, only: Mirror_image_3d
         implicit none
         class (boundary_mirror_3d_t)           , intent (in out) :: this      
@@ -27,7 +27,8 @@ contains
         class(quantity_t), intent (in out) :: v_quantity  
         type(data_t), dimension(:), pointer,intent(inout)        :: coordinates
         real (8)                           , intent (in)     :: angle    
-        integer                            , intent (in)     :: edge_num 
+        integer                            , intent (in)     :: edge_num
+        logical, optional :: is_offload
         integer, save :: cyc = 0
         real(8), dimension(:, :, :), pointer :: vol1, vol2
 
@@ -141,22 +142,22 @@ contains
         cyc = cyc + 1
     end subroutine Boundary_mirror_3d_calculate
 
-    subroutine Calculate_face (this, v_quantity, angle, edge_num)
+    subroutine Calculate_face (this, v_quantity, angle, edge_num, is_offload)
         class (boundary_mirror_3d_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
-
+        logical, optional :: is_offload
     end subroutine
 
-    subroutine Calculate_corner (this, v_quantity, angle, edge_num)
+    subroutine Calculate_corner (this, v_quantity, angle, edge_num, is_offload)
         implicit none
         class (boundary_mirror_3d_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
-
+        logical, optional :: is_offload
     end subroutine
 end module Boundary_mirror_3d_module

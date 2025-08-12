@@ -988,6 +988,7 @@ contains
       implicit none
       real(8) :: x_area
       real(8), intent(in) :: y2, z2, y3, z3, y4, z4, y5, z5, y6, z6, y8, z8  
+      !$omp declare target
 
       x_area = y2 * z3 + y2 * z4 - y2 * z5 - y2 * z6 - y3 * z2 + y3 * z4 &
              - y4 * z2 - y4 * z3 + y4 * z5 + y4 * z8 + y5 * z2 - y5 * z4 &
@@ -1000,7 +1001,7 @@ contains
       real(8) :: vol
       real(8), intent(in) :: x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3
       real(8) :: ax, ay, az, bx, by, bz, cx, cy, cz
-
+      !$omp declare target
       ax = x1 - x0
       ay = y1 - y0
       az = z1 - z0
@@ -1777,6 +1778,7 @@ contains
         integer, intent(in) :: virt_nyp
         integer, intent(in) :: virt_nzp
         logical :: is_corner
+        !$omp declare target
         is_corner = .false.
 
         if ( (ivirt == 1 .or. ivirt == virt_nxp) .and.&

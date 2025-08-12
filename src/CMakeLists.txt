@@ -14,7 +14,7 @@ add_definitions($ENV{DEFS})
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
 set(ENV{JSONFORTRAN} "/home/reemh/json-fortran/build_nvhpc")
-set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc80 -Minfo=accel,mp -mp=gpu -cpp -fopenmp -O3 -g ")
+set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc80 -Minfo=accel,mp -mp=gpu -cpp -fopenmp -O3")
 #-mavx512f -Ofast
 else()
 set(ENV{JSONFORTRAN} "/home/u39966a550667980b66e637513213840/json-fortran/json-fortran/build")

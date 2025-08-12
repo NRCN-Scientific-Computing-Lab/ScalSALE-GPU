@@ -58,23 +58,32 @@ contains
       call this%Clean_vertex_quantity ()
    end subroutine Clean_coordinates
 
-   subroutine Apply_coordinates_boundary(this, coordinates_values, is_blocking)
+   subroutine Apply_coordinates_boundary(this, coordinates_values, is_blocking, is_offload)
       use data_module, only : data_t
       implicit none
       class (coordinates_t)        , intent(in out) :: this
       type(data_t), dimension(:), pointer,intent(inout)        :: coordinates_values
       logical, optional :: is_blocking 
+      logical, optional :: is_offload
       integer, dimension(:)            , pointer        :: ed_num
       integer, dimension(:,:)          , pointer        :: b_map
       integer                                           :: i, b_size, edge
       integer                                           :: ind_i, ind_j, ind_k
       logical :: is_blocking_local
+      logical :: is_offload_local
 
       if (.not. present(is_blocking)) then
          is_blocking_local = .True.  
       else
          is_blocking_local = is_blocking   
       end if
+
+      if (.not. present(is_offload)) then
+         is_offload_local = .False.  
+      else
+         is_offload_local = is_offload   
+      end if
+
 
        call this%boundary_conditions(1)%bc% Calculate (this &
                                     ,   this%data, 0d0, 1)
@@ -89,6 +98,7 @@ contains
 
    subroutine Calculate(this, dt, velocity, coords)
       use vertex_quantity_module, only : vertex_quantity_t
+      use omp_lib
       implicit none
       class (coordinates_t)                       , intent(inout)  :: this
       class (vertex_quantity_t)          , intent(inout)  :: velocity
@@ -104,7 +114,8 @@ contains
       real(8), dimension(:, :, :), pointer :: z      
       real(8), dimension(:, :, :), pointer :: x_tag      
       real(8), dimension(:, :, :), pointer :: y_tag      
-      real(8), dimension(:, :, :), pointer :: z_tag      
+      real(8), dimension(:, :, :), pointer :: z_tag    
+      real(8) :: start_time  
 
       integer                                                        :: dimension
 
@@ -134,8 +145,10 @@ contains
          else
             call coords%Point_to_data(x_tag, y_tag, z_tag)
          end if
-         
-         !!$omp target teams distribute parallel do collapse(3)
+
+         start_time = omp_get_wtime()
+         !!$omp target update to(x_tag, y_tag, z_tag, velocity_x, velocity_y, velocity_z)
+         !$omp target teams distribute parallel do collapse(3) 
          do k = 1,this%d3
             do j = 1, this%d2
                do i = 1, this%d1
@@ -145,6 +158,9 @@ contains
                end do
             end do
          end do
+         !$omp end target teams distribute parallel do
+         !!$omp target update from(x,y,z)
+         write(*,'(A70, F12.6)') "coordinated Calculate() loop time:", omp_get_wtime() - start_time
       end if
    end subroutine Calculate
 

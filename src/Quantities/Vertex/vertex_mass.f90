@@ -183,7 +183,23 @@ contains
       call tot_density%Point_to_data(density)
       call coordinates%Point_to_data(x, y, z)
 
-         vertex_mass(1:nxp, 1:nyp , 1:nzp) = 0d0
+      !vertex_mass(1:nxp, 1:nyp , 1:nzp) = 0d0
+
+      !TODO: map vertex_mass at the beginning (no need to copy)
+      !$omp target teams distribute parallel do collapse(3)
+      do k = 1, nzp
+        do j = 1, nyp
+          do i = 1, nxp
+            vertex_mass(i,j,k) = 0.0d0
+          end do
+        end do
+      end do
+      !$omp end target teams distribute parallel do
+      
+      !!$omp target update to(density)
+      !!$omp target update to(x,y,z)
+
+      !$omp target teams distribute parallel do collapse(3) map(to: i_tetr, j_tetr, k_tetr, i_virt, j_virt, k_virt) private(i, j, k, t, kk, jj, ii, i1, i2, i3, j1, j2, j3, k1, k2, k3)
          do k = 1, nzp
             do j = 1, nyp
                do i = 1, nxp
@@ -222,6 +238,7 @@ contains
                end do
             end do
          end do
+         !$omp end target teams distribute parallel do        
 
 
 

@@ -271,7 +271,6 @@ contains
             , df%mesh_type, df%boundary_conditions)
 
 
-
         if (df%dimension == 2) then
             if (df%mesh_type == 2) then
                 bc_v_wrap%bc => s_v_bc
@@ -469,6 +468,7 @@ contains
 
         write(*,*) "Done diagnostics"
 
+
         if(Constructor%dimension == 3) then
 
             call Constructor%boundary_params%Calculate_edge_vector_3d(Constructor%mesh%coordinates%data)
@@ -476,6 +476,7 @@ contains
 
 
             call Constructor%mesh%coordinates%Apply_boundary(Constructor%mesh%coordinates%data)
+
             call Constructor%mesh%coordinates%Exchange_virtual_space_blocking()
 
             call Constructor%mesh%Calculate_average_coordinates()
@@ -507,6 +508,7 @@ contains
 
         end if
 
+
         if (Constructor%wilkins_scheme == 1) then
             call Constructor%previous_cell_mass%Calculate_cell_mass(Constructor%total_volume, Constructor%total_density)
 
@@ -522,7 +524,9 @@ contains
 
         end if
 
+
         call Constructor%velocity%Apply_boundary (Constructor%mesh%coordinates%data)
+
 
         call Constructor%total_vertex_mass%Exchange_virtual_space_blocking()
 
@@ -537,6 +541,7 @@ contains
             do j = 1, Constructor%ny
                 do i = 1, Constructor%nx
                     do tmp_mat=1, Constructor%n_materials
+                        !TODO: to initilize on GPU directly
                         cell_mass_vof(tmp_mat, i,j,k) = vol(i,j,k) * density_vof(tmp_mat,i,j,k)
                     end do
                 end do
@@ -664,7 +669,7 @@ contains
         integer :: first_comm, comm, rank
         integer :: left, right, rear, front, down, up
         integer :: npx, npy, npz 
-        integer :: i, j, k, n_l, xs, ys, zs
+        integer :: i, j, k, n_l, xs, ys, zs, m
       
         real(8), dimension(:,:,:), pointer  :: values
         real(8), dimension(:), allocatable  :: array
@@ -711,22 +716,44 @@ contains
         real(8), dimension(:, :, :), pointer :: mesh_velocity_y_target
         real(8), dimension(:, :, :), pointer :: mesh_velocity_z_target
         
+        
         real(8), dimension(:, :, :), pointer :: avisc_target              
-        real(8), dimension(:, :, :), pointer :: rmv_target              
+        real(8), dimension(:, :, :), pointer :: inverse_vertex_mass_target            
         real(8), dimension(:, :, :), pointer :: pressure_sum_target
 
         real(8), dimension(:, :, :), pointer :: vol_target            
         real(8), dimension(:, :, :), pointer :: vof_target 
+        real(8), dimension(:, :, :), pointer :: sie_target 
+        real(8), dimension(:, :, :,:), pointer :: sie_vof_target 
+        real(8), dimension(:, :, :,:), pointer :: mat_vof_target
 
         real(8), dimension(:, :, :), pointer :: sound_vel_target
         real(8), dimension(:, :, :), pointer :: density_target
         real(8), dimension(:, :, :), pointer :: pressure_target
-        real(8), dimension(:, :, :), pointer :: vertex_mass_target     
+        real(8), dimension(:, :, :), pointer :: vertex_mass_target  
+
+        real(8), dimension(:, :, :), pointer :: dp_drho_target
+        real(8), dimension(:, :, :), pointer :: dp_de_target
+        real(8), dimension(:, :, :), pointer :: temperature_target
+        real(8), dimension(:, :, :),   pointer :: cell_mass_target
+
+        real(8), dimension(:, :, :,:), pointer :: pressure_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dp_drho_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dt_drho_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dp_de_vof_target
+        real(8), dimension(:, :, :,:), pointer :: cell_mass_vof_target
+        real(8), dimension(:, :, :,:), pointer :: density_vof_target
+
+        real(8), dimension(:, :, :,:), pointer :: temperature_vof_target
+        real(8), dimension(:, :, :,:), pointer :: old_temperature_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dt_de_vof_target
+        real(8), dimension(:, :, :,:), pointer :: sound_vel_vof_target
+
 
         real(8) :: checksum_velocity_x, checksum_velocity_y, checksum_velocity_z
         real(8) :: checksum_acceleration_x, checksum_acceleration_y, checksum_acceleration_z
-        real(8) :: checksum_x, checksum_y, checksum_z
-        real(8) :: checksum_density, checksum_pressure
+        real(8) :: checksum_x, checksum_y, checksum_z, checksum_sie_vof, checksum_pressure_vof
+        real(8) :: checksum_density, checksum_pressure, checksum_total_sie
         character(len=8) :: date, time
         integer :: iunit
         character(len=30) :: filename
@@ -742,6 +769,9 @@ contains
         checksum_x = 0.0
         checksum_y = 0.0
         checksum_z = 0.0
+        checksum_sie_vof = 0.0
+        checksum_pressure_vof = 0.0
+        checksum_total_sie = 0.0
       
         !        call this%cr%Get_ckpt_name(this%name, ckpt_name)
 #ifdef DEBUG
@@ -759,9 +789,9 @@ contains
                         !call this%Write_to_files()
         ncyc = 1
         if (this%rezone_type == 0) then
-            max_ncyc = 3
+            max_ncyc = 11
         else
-            max_ncyc = 3
+            max_ncyc = 11
         end if
 
         if (this%mesh%dimension == 2) then
@@ -785,7 +815,7 @@ contains
             call this%velocity%dvelocity_z_dy%Point_to_data(dvel_z_dy_target)
             call this%velocity%dvelocity_z_dz%Point_to_data(dvel_z_dz_target)
             call this%total_density  %Point_to_data(density_target)
-            call this%total_inverse_vertex_mass%Point_to_data(rmv_target)
+            call this%total_inverse_vertex_mass%Point_to_data(inverse_vertex_mass_target)
             call this%hydro%rezone%vertex_mass%Point_to_data(vertex_mass_target)
             call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
             call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
@@ -793,24 +823,51 @@ contains
             call this%total_vof%       Point_to_data(vof_target)
             call this%a_visc%       Point_to_data(avisc_target)
             call this%total_volume%    Point_to_data(vol_target)
-            call this%total_pressure %Point_to_data(pressure_target)
+            call this%hydro%total_sie%    Point_to_data(sie_target)
+            call this%hydro%total_pressure %Point_to_data(pressure_target)
             call this%total_pressure_sum%point_to_data(pressure_sum_target)
-            call this%total_sound_vel%Point_to_data(sound_vel_target)
+
+            call this%hydro%total_sound_vel%Point_to_data(sound_vel_target)
+            call this%hydro%total_dp_drho       %Point_to_data(dp_drho_target)
+            call this%hydro%total_dp_de         %Point_to_data(dp_de_target)   
+            call this%hydro%total_temperature    %Point_to_data(temperature_target)
+            call this%hydro%total_cell_mass    %Point_to_data(cell_mass_target)
+
+            call this%materials%vof             %Point_to_data(mat_vof_target)
+            call this%materials%sie             %Point_to_data(sie_vof_target)
+            call this%materials%pressure        %Point_to_data(pressure_vof_target)
+            call this%materials%dp_drho         %Point_to_data(dp_drho_vof_target)
+            call this%materials%dp_de           %Point_to_data(dp_de_vof_target)
+            call this%materials%dt_drho         %Point_to_data(dt_drho_vof_target)
+            call this%materials%cell_mass       %Point_to_data(cell_mass_vof_target)
+            call this%materials%temperature     %Point_to_data(temperature_vof_target)
+            call this%materials%temperature_old %Point_to_data(old_temperature_vof_target)
+            call this%materials%dt_de           %Point_to_data(dt_de_vof_target)
+            call this%materials%density         %Point_to_data(density_vof_target)
+            call this%materials%sound_vel       %Point_to_data(sound_vel_vof_target)
+            
+
+
             ! ============================= REZONE THINGS ========================== !
             call this%hydro%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
             call this%hydro%rezone%material_volume%Point_to_data(mat_volume_target)
             call this%hydro%rezone%mesh_velocity%Point_to_data(mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target)
 
             write(*,*) "Number of Available devices: ", omp_get_num_devices()
+            start = omp_get_wtime()
             !$omp target enter data map(to: x_target, y_target, z_target,&
             !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
             !$omp& mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target,&
             !$omp& mat_x_target, mat_y_target, mat_z_target,&
             !$omp& vof_target, vol_target, avisc_target, mat_volume_target, pressure_sum_target,&
-            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, rmv_target, sound_vel_target, density_target, pressure_target, vertex_mass_target) &
-            !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &
+            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, inverse_vertex_mass_target, density_target, density_vof_target, vertex_mass_target, &
+            !$omp& temperature_vof_target, temperature_target, pressure_vof_target, pressure_target, old_temperature_vof_target, sound_vel_vof_target, dp_drho_vof_target, dp_drho_target, dp_de_target, dt_de_vof_target, sound_vel_target, &
+            !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target) &
+            !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &           
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
         
+            write(*,*) "Initial target enter data Time:", omp_get_wtime() - start
+
             do while (this%time%Should_continue() .and. ncyc < max_ncyc)
                 start = omp_get_wtime()
                 call this%hydro%do_time_step_3d(this%time)
@@ -824,13 +881,18 @@ contains
             end do
         
             
-            !$omp target exit data map(delete: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target) &
-            !$omp& map(from: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target,&
-            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target, sound_vel_target, density_target, pressure_target, vertex_mass_target)
+            !$omp target exit data map(from: x_target, y_target, z_target,&
+            !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
+            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, density_target, pressure_target, sie_vof_target, pressure_vof_target, sie_target)
+
+            !total time ends before checksum!
+            write(*,*) "Total Time:", omp_get_wtime() - finish
+            write(*,*) "ncyc: ", ncyc-1
 
             do k = 1, this%nzp
             do j = 1, this%nyp
             do i = 1, this%nxp
+
                 checksum_velocity_x = checksum_velocity_x + velocity_x_target(i, j, k)
                 checksum_velocity_y = checksum_velocity_y + velocity_y_target(i, j, k)
                 checksum_velocity_z = checksum_velocity_z + velocity_z_target(i, j, k)
@@ -845,9 +907,22 @@ contains
 
                 checksum_density = checksum_density + density_target(i,j,k)
                 checksum_pressure = checksum_pressure + pressure_target(i,j,k)
+                checksum_total_sie = checksum_total_sie + sie_target(i,j,k)
         end do
         end do
         end do
+
+        do k = 1, this%nzp
+        do j = 1, this%nyp
+        do i = 1, this%nxp
+        do m=1, this%hydro%nmats
+            checksum_sie_vof = checksum_sie_vof + sie_vof_target(m, i, j, k)
+            checksum_pressure_vof = checksum_pressure_vof + pressure_vof_target(m, i, j, k)
+        end do
+        end do
+        end do
+        end do
+
 
         call date_and_time(date, time)
         write(filename, '(A,"_",A)') "vnv", trim(adjustl(date)) // "_" // trim(adjustl(time))
@@ -866,7 +941,9 @@ contains
         write(iunit, '(A,Z17)') "Checksum for z: ", checksum_z
         write(iunit, '(A,Z17)') "Checksum for density: ", checksum_density
         write(iunit, '(A,Z17)') "Checksum for pressure: ", checksum_pressure
-
+        write(iunit, '(A,Z17)') "Checksum for total_sie: ", checksum_total_sie
+        write(iunit, '(A,Z17)') "Checksum for sie_vof: ", checksum_sie_vof
+        write(iunit, '(A,Z17)') "Checksum for pressure_vof: ", checksum_pressure_vof
         close(iunit)
             
         end if
@@ -875,8 +952,6 @@ contains
         !you should expect the same result for each correct execution you make. 
         !we print the values in a stride of 10 in each axis to save on storage and I/O operations.
         !these values should indicate whether your code is correct or not.
-        write(*,*) "Total Time:", omp_get_wtime() - finish
-        write(*,*) "ncyc: ", ncyc-1
 
         !open (unit=411, file='total_pressure_result.txt', status = 'replace')  
         !write(411,*) this%total_pressure%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
@@ -990,7 +1065,7 @@ contains
 
         call this%total_sie%Point_to_data(sie)
         call this%total_cell_mass%Point_to_data(cell_mass)
-        call this%materials%Apply_eos(this%nx, this%ny, this%nz,emf,.false.)
+        call this%materials%Apply_eos(this%nx, this%ny, this%nz,emf,.false.) !TODO yoni: can do on GPU?
 
 
 

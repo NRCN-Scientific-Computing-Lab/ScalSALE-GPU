@@ -15,14 +15,24 @@ module slip_cell_module
     end type Slip_cell_t
 
 contains
-    subroutine Slip_cell_calculate (this, c_quantity, edge_num)
+    subroutine Slip_cell_calculate (this, c_quantity, edge_num, is_offload)
         class (slip_cell_t) , intent (in out)     :: this      
         class(quantity_t)   , intent (in out)     :: c_quantity  
         integer             , intent (in)         :: edge_num  
+        logical, optional :: is_offload
 
         real(8), dimension(:,:,:), pointer :: values
         real(8), dimension(:, :,:,:), pointer :: values_4d
         integer :: i, j, nxp, nyp, nmats, m
+
+        logical :: is_offload_local
+
+        if (.not. present(is_offload)) then
+            is_offload_local = .False.  
+        else
+            is_offload_local = is_offload  
+        end if
+
         nxp = c_quantity%d1 + 1
         nyp = c_quantity%d2 + 1
 

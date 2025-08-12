@@ -140,7 +140,7 @@ contains
         Constructor%sound_vel = material_quantity_t (0d0, nxp, nyp, nzp, nmats, bc_cell, bc_params)
 
         allocate(eos_c_wrap)
-        eos_c_wrap%eos => ig_eos_c
+        eos_c_wrap%eos => ig_eos_c !yoni: we now use only ideal gas eos => only support this on GPU
 
         do i = 1, nmats
             Constructor%equation_of_state(i) = eos_c_wrap
@@ -220,10 +220,12 @@ contains
             call this%temperature%Point_to_data(t)
         end if
         do m = 1, this%nmats
+            write(*,*) "Apply_eos call to equation_of_state (ideal_gas) for a material"
             call this%equation_of_state(m)%eos%Calculate(p, sound_vel, rho, e, &
                 dp_de_p, dp_drho_p, dt_de_p, dt_drho_p, this%gamma_gas(m), this%atomic_mass(m), &
                 t, m, this%nrg_calc(m),&
                 nx, ny, nz, mat_vof, emf)
+                !yoni: go see Equation_of_state/ideal_gas.f90
         end do
         this%nrg_calc = 0
 

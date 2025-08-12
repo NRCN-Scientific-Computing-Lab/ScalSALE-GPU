@@ -227,9 +227,11 @@ contains
         call total_vof   %Point_to_data(vof)
         call total_volume%Point_to_data(vol)
         
-       start_time = omp_get_wtime()
-
-    !$omp target update to(x, y, z, velocity_x, velocity_y, velocity_z, vof, vol)    
+    start_time = omp_get_wtime()
+    
+    !PLEASE CHECK IF X,Y,Z ARE UPDATED BEFORE EACH CALL AND THEN REMOVE IT FROM HERE
+    !!$omp target update to(x, y, z, velocity_x, velocity_y, velocity_z) 
+    !$omp target update to(vof, vol)   
 
     !$omp target teams distribute parallel do collapse(3) &
     !$omp& private(ip, jp, kp, x1, x2, x3, x4, x5, x6, x7, x8, &
@@ -473,9 +475,9 @@ contains
                 end do
             end do
         end do
-        !$omp end target teams distribute parallel do 
+        !$omp end target teams distribute parallel do     
+        !!$omp target update from(dvel_x_dx, dvel_x_dy, dvel_x_dz, dvel_y_dx, dvel_y_dy, dvel_y_dz, dvel_z_dx, dvel_z_dy, dvel_z_dz)
         write(*,'(A70, F12.6)') "Derivatives Kernel time:", omp_get_wtime() - start_time
-        !$omp target update from(dvel_x_dx, dvel_x_dy, dvel_x_dz, dvel_y_dx, dvel_y_dy, dvel_y_dz, dvel_z_dx, dvel_z_dy, dvel_z_dz)
         cntr = cntr  + 1
     end subroutine Calculate_derivatives
 
@@ -581,6 +583,7 @@ contains
         nyp = this%d2
         nzp = this%d3
         k = this%no_move_index
+        !$omp target teams distribute parallel do collapse(2) private(vel_x_tmp, vel_y_tmp, vel_z_tmp, vel) reduction(min: radial_vel)
         do j = 1, nyp
             do i = 1, nxp
                           vel_x_tmp = velocity_x(i, j, k)
@@ -591,12 +594,14 @@ contains
                 radial_vel = min(radial_vel, vel)
             end do
         end do
-
+        !$omp end target teams distribute parallel do
+    
         if (radial_vel < -1d-10) then
             this%no_move_flag = .false.
         end if
         if (this%no_move_flag .eqv. .false.) return
 
+        !$omp target teams distribute parallel do collapse(2) 
         do j = 1, nyp
             do i = 1, nxp
                 velocity_x(i, j, k) = 0d0
@@ -604,6 +609,7 @@ contains
                 velocity_z(i, j, k) = 0d0
             end do
         end do
+        !$omp end target teams distribute parallel do
     end subroutine Impose_no_move_3d
 
     subroutine Initialize(this,  i_sphere, i_sphere_up, no_move_layer, start_index)

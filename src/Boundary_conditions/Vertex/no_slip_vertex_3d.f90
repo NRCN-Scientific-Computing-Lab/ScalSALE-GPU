@@ -18,12 +18,13 @@ module no_slip_vertex_3d_module
 
 
 contains
-    subroutine No_slip_vertex_3d_calculate (this, v_quantity, coordinates, angle, edge_num)
+    subroutine No_slip_vertex_3d_calculate (this, v_quantity, coordinates, angle, edge_num, is_offload)
         class (no_slip_vertex_3d_t)           , intent (in out) :: this      
         class(quantity_t), intent (in out) :: v_quantity  
         type(data_t), dimension(:), pointer,intent(inout)        :: coordinates
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
         real(8) :: normal_vel      
 
@@ -120,22 +121,23 @@ contains
         end select
     end subroutine No_slip_vertex_3d_calculate
 
-    subroutine Calculate_face (this, v_quantity, angle, edge_num)
+    subroutine Calculate_face (this, v_quantity, angle, edge_num, is_offload)
         class (no_slip_vertex_3d_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
-
+        logical, optional :: is_offload
     end subroutine
 
-    subroutine Calculate_corner (this, v_quantity, angle, edge_num)
+    subroutine Calculate_corner (this, v_quantity, angle, edge_num, is_offload)
         implicit none
         class (no_slip_vertex_3d_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
     end subroutine
 end module no_slip_vertex_3d_module

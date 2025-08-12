@@ -14,10 +14,12 @@ module lagrange_surface_cell_module
     end type lagrange_surface_cell_t
 
 contains
-    subroutine lagrange_surface_cell_calculate (this, c_quantity, edge_num)
+    subroutine lagrange_surface_cell_calculate (this, c_quantity, edge_num, is_offload)
         class (lagrange_surface_cell_t) , intent (in out)     :: this      
         class(quantity_t)   , intent (in out)     :: c_quantity  
         integer             , intent (in)         :: edge_num  
+        logical, optional :: is_offload
+
     end subroutine
 
 end module lagrange_surface_cell_module

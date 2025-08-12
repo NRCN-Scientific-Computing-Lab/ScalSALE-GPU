@@ -46,7 +46,9 @@ else
     exit 1
 fi
     export OMP_NUM_THREADS=$num_threads
-    mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+    #nsys profile --stats=true mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+    #mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+    mpirun -n 8 --map-by core --mca btl vader,self ../exec/main
     #vtune -collect hotspots mpirun -n $1 ../exec/main
 
     # Find the latest vnv file
@@ -59,11 +61,13 @@ fi
     fi
 
     # Check if baseline_vnv exists
-    if [ ! -f "baseline_vnv" ]; then
-        echo "Error: baseline_vnv file not found in the current directory."
-        exit 1
-    fi
+    if [ "$1" != "SERIAL" ]; then
+	    if [ ! -f "baseline_vnv" ]; then
+	        echo "Error: baseline_vnv file not found in the current directory."
+	        exit 1
+	    fi
 
     # Compare the latest vnv file with baseline_vnv
     ./smart_diff.sh baseline_vnv "$latest_vnv"
+    fi
 fi

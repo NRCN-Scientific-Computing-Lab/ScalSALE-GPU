@@ -152,7 +152,7 @@ contains
       material_y = y + velocity_y * dt
 
       call this%material_coordinates%Calculate(dt, this%velocity, coords=this%mesh%coordinates)
-      call this%material_coordinates%Apply_boundary(this%material_coordinates%data)
+      call this%material_coordinates%Apply_boundary(this%material_coordinates%data, is_offload=.False.)
 
       mesh_velocity_x = velocity_x
       mesh_velocity_y = velocity_y
@@ -181,7 +181,7 @@ contains
 
       end select
 
-      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data)
+      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
 
       call this%material_volume%Calculate(this%material_coordinates, cyl_optional=this%mesh%cyl)
 
@@ -223,8 +223,8 @@ contains
       call this%vertex_mass%Point_to_data(vertex_mass)
 
       !x,y,z are updated on the GPU
-      !$omp target update to(vertex_mass) depend(out:dep1) nowait
-      !$omp target update to(velocity_x, velocity_y, velocity_z)
+      !!$omp target update to(vertex_mass)
+      !!$omp target update to(velocity_x, velocity_y, velocity_z)
       
       !$omp target teams distribute parallel do collapse(3) 
       do k = 0, this%nzp + 1
@@ -239,12 +239,12 @@ contains
       !$omp end target teams distribute parallel do
       
       !TODO: can we calculate material volume on gpu? because mterial_x_y_z are already on the gpu...
-      !$omp target update from(material_x, material_y, material_z)
+      !!$omp target update from(material_x, material_y, material_z)
 
-      call this%material_volume%Calculate(this%material_coordinates)
+      call this%material_volume%Calculate(this%material_coordinates) !on GPU
       call this%material_volume%Exchange_virtual_space_nonblocking()
 
-      !$omp target teams distribute parallel do collapse(3) private(velocity_sq, factor) depend(in:dep1)
+      !$omp target teams distribute parallel do collapse(3) private(velocity_sq, factor) 
       do k = 1, this%nzp
          do j = 1, this%nyp
             do i = 1, this%nxp
@@ -292,9 +292,9 @@ contains
          case default
 
       end select
-      !$omp target update from(velocity_x, velocity_y, velocity_z, mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
+      !!$omp target update from(velocity_x, velocity_y, velocity_z, mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
 
-      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data)
+      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data, is_offload=.True.)
       call this%material_volume%Exchange_end()
 
       this%cyc_delete = this%cyc_delete + 1

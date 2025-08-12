@@ -60,6 +60,14 @@ ml pgi nvhpc-openmpi3
 
 Note: The current implementation supports only a single MPI rank, which offloads computations to a single GPU. Support for multiple MPI ranks and multi-GPU execution will be added in the future.
 
+
+## GPU Profiling:
+
+export NVCOMPILER_ACC_NOTIFY=1
+export NVCOMPILER_ACC_TIME=1
+
+nsys profile -t cuda,openmp,nvtx --stats=true -o profile_output ./run.sh GPU
+
   ## V&V
 Pay attention to the V&V results, which will be marked as either PASSED (green) or FAILED (red).
 The verification compares checksums of the following arrays: ```x, y, z, velocity_x, velocity_y, velocity_z, acceleration_x, acceleration_y, acceleration_z, density, pressure```.

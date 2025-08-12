@@ -18,32 +18,34 @@ module lagrange_surface_vertex_module
 
 
 contains
-    subroutine lagrange_surface_vertex_calculate (this, v_quantity, coordinates, angle, edge_num)
+    subroutine lagrange_surface_vertex_calculate (this, v_quantity, coordinates, angle, edge_num, is_offload)
         class (lagrange_surface_vertex_t)           , intent (in out) :: this      
         class(quantity_t), intent (in out) :: v_quantity  
         type(data_t), dimension(:), pointer,intent(inout)        :: coordinates
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
 
     end subroutine lagrange_surface_vertex_calculate
 
-    subroutine Calculate_face (this, v_quantity, angle, edge_num)
+    subroutine Calculate_face (this, v_quantity, angle, edge_num, is_offload)
         class (lagrange_surface_vertex_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
-
+        logical, optional :: is_offload
     end subroutine
 
-    subroutine Calculate_corner (this, v_quantity, angle, edge_num)
+    subroutine Calculate_corner (this, v_quantity, angle, edge_num, is_offload)
         implicit none
         class (lagrange_surface_vertex_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
     end subroutine
 end module lagrange_surface_vertex_module
