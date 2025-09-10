@@ -1,0 +1,98 @@
+Running on CPU with 32 threads
+--------------------------------------------------------------------------
+[[52705,1],0]: A high-performance Open MPI point-to-point messaging module
+was unable to find any relevant network interfaces:
+
+Module: OpenFabrics (openib)
+  Host: gpu002
+
+Another transport will be used instead, although this may result in
+lower performance.
+
+NOTE: You can disable this warning by setting the MCA parameter
+btl_base_warn_component_unused to 0.
+--------------------------------------------------------------------------
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:           32
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ 0
+  making sedov-taylor
+ done mesh
+ Done diagnostics
+                                                Calculate() loop time:    0.198115
+ finished building problem
+ Number of Available devices:             0
+ Initial target enter data Time:   1.0013580322265625E-005
+ [38;5;208m
+                           Calculate_thermodynamics ----- part 1 time:    0.000008
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.124848
+                           Calculate_thermodynamics ----- part 3 time:    0.331001
+                           Calculate_thermodynamics ----- part 4 time:    0.293969
+                           Calculate_thermodynamics ----- part 5 time:    0.195734
+                           Calculate_thermodynamics ----- part 6 time:    0.116187
+                           Calculate_thermodynamics ----- part 7 time:    0.017178
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    0.812410
+                           Calculate_thermodynamics ----- part 9 time:    0.000005
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.031280
+                    Calculate_thermodynamics time:    1.924555
+ [34m
+                                Calculate_dt time:    0.553280
+ [38;5;208m
+                                              Derivatives Kernel time:    1.451809
+                   Calculate_acceleration_3d time:    1.614179
+ [34m
+           Calculate_artificial_viscosity_3d time:    0.408201
+ [38;5;208m
+                            Calculate_velocity_3d----- main loop time:    0.199719
+                                              Derivatives Kernel time:    0.537946
+                       Calculate_velocity_3d time:    0.741203
+ [34m
+                                                Calculate() loop time:    0.197323
+                         Calculate_rezone_3d time:    0.447486
+ [38;5;208m
+                         Calculate_energy_3d time:    0.210824
+ [34m
+                                    coordinated Calculate() loop time:    0.091508
+                                                Calculate() loop time:    0.198177
+                           Calculate_mesh_3d time:    0.440394
+ [0m
+            Total cycle time:     6.342330
+ #####################################################################
+ [38;5;208m
+                           Calculate_thermodynamics ----- part 1 time:    0.000005
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.124144
+                           Calculate_thermodynamics ----- part 3 time:    0.330089
+                           Calculate_thermodynamics ----- part 4 time:    0.308794
+                           Calculate_thermodynamics ----- part 5 time:    0.195481
+                           Calculate_thermodynamics ----- part 6 time:    0.114521
+                           Calculate_thermodynamics ----- part 7 time:    0.014738
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    0.823184
+                           Calculate_thermodynamics ----- part 9 time:    0.000005
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.031319
+                    Calculate_thermodynamics time:    1.944649
+ [34m
+                                Calculate_dt time:    0.531384
+ [38;5;208m
+                                              Derivatives Kernel time:    0.537406
+                   Calculate_acceleration_3d time:    0.699645
+ [34m
+           Calculate_artificial_viscosity_3d time:    0.412720
+ [38;5;208m
+                            Calculate_velocity_3d----- main loop time:    0.199385
+                                              Derivatives Kernel time:    0.537695
+                       Calculate_velocity_3d time:    0.740479
+ [34m
+                                                Calculate() loop time:    0.197382
+                         Calculate_rezone_3d time:    0.467370
+ [38;5;208m
+                         Calculate_energy_3d time:    0.210411
+ [34m
+                                    coordinated Calculate() loop time:    0.091545
+                                                Calculate() loop time:    0.198054
+                           Calculate_mesh_3d time:    0.439729
+ [0m
+            Total cycle time:     5.448664
+ #####################################################################
+ Total Time:    11.79156804084778     
+ ncyc:             2
+[0;32mV&V - PASSED![0m

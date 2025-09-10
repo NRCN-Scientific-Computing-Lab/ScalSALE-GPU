@@ -231,7 +231,7 @@ contains
     
     !PLEASE CHECK IF X,Y,Z ARE UPDATED BEFORE EACH CALL AND THEN REMOVE IT FROM HERE
     !!$omp target update to(x, y, z, velocity_x, velocity_y, velocity_z) 
-    !$omp target update to(vof, vol)   
+    !!$omp target update to(vof, vol)   
 
     !$omp target teams distribute parallel do collapse(3) &
     !$omp& private(ip, jp, kp, x1, x2, x3, x4, x5, x6, x7, x8, &

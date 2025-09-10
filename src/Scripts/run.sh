@@ -32,24 +32,25 @@ else
        echo "Running on GPU"
        export OMP_TARGET_OFFLOAD=MANDATORY
        export OMP_NUM_THREADS=32
-       mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+       #nsys profile --stats=true mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
+       mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
 
     elif [[ "$1" == "CPU" ]]; then
     echo "Running on CPU with $2 threads"
        export OMP_TARGET_OFFLOAD=DISABLED
        export OMP_NUM_THREADS=$2
-       mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+       mpirun -n 1 --map-by ppr:1:node:pe=$2 ../exec/main
 elif [[ "$1" == "SERIAL" ]]; then
        echo "Running in SERIAL mode"
        export OMP_TARGET_OFFLOAD=DISABLED
        export OMP_NUM_THREADS=1
-       mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
+       mpirun -n 1 --map-by ppr:1:node:pe=1 ../exec/main
 elif [[ "$1" == "MPI" ]]; then
        echo "Running in MPI mode with $2 ranks"
        export OMP_TARGET_OFFLOAD=DISABLED
        export OMP_NUM_THREADS=1
        #mpirun -n $2 --mca pml ob1 --mca btl self,tcp ../exec/main
-       mpirun -n 8 --mca pml ob1 --mca btl vader,self --mca btl_vader_single_copy_mechanism none ../exec/main
+       mpirun -n $2 --mca pml ob1 --mca btl vader,self --mca btl_vader_single_copy_mechanism none ../exec/main
 
 else
     echo "Invalid argument: $1"

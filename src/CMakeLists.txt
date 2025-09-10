@@ -9,12 +9,13 @@ set(FC "mpif90")
 #set(CMAKE_Fortran_FLAGS "-fPIC -O0 -cpp -g -fpp -fpe0 -traceback -fp-model source -fimf-arch-consistency=true -fp-stack-check -debug -check bounds -check format -check output_conversion -check pointers  -check uninit -qopenmp")
 #set(CMAKE_Fortran_FLAGS "-fPIC -O2 -cpp -g -fpp -fpe0 -traceback -fp-model source -fimf-arch-consistency=true -fp-stack-check -debug -check bounds -check format -check output_conversion -check pointers  -check uninit -qopenmp")
 #set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O2 -qopenmp")
+set(CMAKE_VERBOSE_MAKEFILE ON)
 add_definitions($ENV{DEFS})
 
 
 if (CMAKE_Fortran_COMPILER_ID STREQUAL "NVHPC")
 set(ENV{JSONFORTRAN} "/home/reemh/json-fortran/build_nvhpc")
-set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc80 -Minfo=accel,mp -mp=gpu -cpp -fopenmp -O3")
+set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc80 -Minfo=accel,mp -mp=gpu -cpp -fopenmp -O3 -nofma") #-DNAIVE_GPU 
 #-mavx512f -Ofast
 else()
 set(ENV{JSONFORTRAN} "/home/u39966a550667980b66e637513213840/json-fortran/json-fortran/build")

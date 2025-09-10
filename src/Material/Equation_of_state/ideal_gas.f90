@@ -54,7 +54,7 @@ contains
       gamma1 = gamma_gas - 1d0
       atomic_weight = atomic_mass / AVOGADRO
 
-      write(*,*) ' ideal_gas.f90 do mikbul, it is called from material.f90, from equation_of_state'
+      !write(*,*) ' ideal_gas.f90 do mikbul, it is called from material.f90, from equation_of_state'
       !!$omp target update to(sie, sound_vel, vof)
       !$omp target teams distribute parallel do collapse(3)
       do k = 1, nz

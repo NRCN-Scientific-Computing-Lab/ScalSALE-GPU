@@ -220,7 +220,7 @@ contains
             call this%temperature%Point_to_data(t)
         end if
         do m = 1, this%nmats
-            write(*,*) "Apply_eos call to equation_of_state (ideal_gas) for a material"
+            !write(*,*) "Apply_eos call to equation_of_state (ideal_gas) for a material"
             call this%equation_of_state(m)%eos%Calculate(p, sound_vel, rho, e, &
                 dp_de_p, dp_drho_p, dt_de_p, dt_drho_p, this%gamma_gas(m), this%atomic_mass(m), &
                 t, m, this%nrg_calc(m),&

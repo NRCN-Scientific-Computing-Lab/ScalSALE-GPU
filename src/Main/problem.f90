@@ -367,8 +367,6 @@ contains
         Constructor%time = time_t(df, Constructor%communication, Constructor%parallel_params)
 
         call Constructor%total_volume%Point_to_data (vol)
-  
-        write(*,*) "DEBUG1 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
 
         call Constructor%Create_materials (df, bc_c_wrap_arr, Constructor%mat_cells)
@@ -462,11 +460,8 @@ contains
             end if
         end do
 
-        write(*,*) "DEBUG2 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-
         call Constructor%Set_communication()
 
-        write(*,*) "DEBUG3 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 
         call Constructor%mesh%Exchange_virtual_space_blocking()
         call Constructor%total_vof%Exchange_virtual_space_blocking()
@@ -753,6 +748,7 @@ contains
         real(8), dimension(:, :, :,:), pointer :: old_temperature_vof_target
         real(8), dimension(:, :, :,:), pointer :: dt_de_vof_target
         real(8), dimension(:, :, :,:), pointer :: sound_vel_vof_target
+        real(8), dimension(:,:,:), pointer :: xl_visc_mat_target
 
 
         real(8) :: checksum_velocity_x, checksum_velocity_y, checksum_velocity_z
@@ -794,9 +790,9 @@ contains
                         !call this%Write_to_files()
         ncyc = 1
         if (this%rezone_type == 0) then
-            max_ncyc = 11
+            max_ncyc = 3
         else
-            max_ncyc = 11
+            max_ncyc = 3
         end if
 
         if (this%mesh%dimension == 2) then
@@ -837,7 +833,7 @@ contains
             call this%hydro%total_dp_de         %Point_to_data(dp_de_target)   
             call this%hydro%total_temperature    %Point_to_data(temperature_target)
             call this%hydro%total_cell_mass    %Point_to_data(cell_mass_target)
-
+            
             call this%materials%vof             %Point_to_data(mat_vof_target)
             call this%materials%sie             %Point_to_data(sie_vof_target)
             call this%materials%pressure        %Point_to_data(pressure_vof_target)
@@ -851,6 +847,8 @@ contains
             call this%materials%density         %Point_to_data(density_vof_target)
             call this%materials%sound_vel       %Point_to_data(sound_vel_vof_target)
             
+            !not sure if works, but for now not needed, because we explicitly use the value 0.2 in hydro_step.f90 in Calculate_artificial_viscosity_3d.
+            xl_visc_mat_target => this%a_visc%xl_visc_mat
 
 
             ! ============================= REZONE THINGS ========================== !
@@ -858,8 +856,13 @@ contains
             call this%hydro%rezone%material_volume%Point_to_data(mat_volume_target)
             call this%hydro%rezone%mesh_velocity%Point_to_data(mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target)
 
-            write(*,*) "Number of Available devices: ", omp_get_num_devices()
+           
             start = omp_get_wtime()
+
+            if(this%parallel_params%my_rank == 0) then
+             write(*,*) "Number of Available devices: ", omp_get_num_devices()
+            endif
+            call omp_set_default_device(this%parallel_params%my_rank)
 
             !$omp target enter data map(to: x_target, y_target, z_target,&
             !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
@@ -870,7 +873,7 @@ contains
             !$omp& temperature_vof_target, temperature_target, pressure_vof_target, pressure_target, old_temperature_vof_target, sound_vel_vof_target, dp_drho_vof_target, dp_drho_target, dp_de_target, dt_de_vof_target, sound_vel_target, &
             !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &           
-            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
+            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target, xl_visc_mat_target)
             
             
             write(*,*) "Initial target enter data Time:", omp_get_wtime() - start

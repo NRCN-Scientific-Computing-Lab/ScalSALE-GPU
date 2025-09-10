@@ -32,7 +32,7 @@ fi
 #else
  # FC=mpiifort cmake ../src/
 #fi
-make
+make VERBOSE=1
 cd ../src/Scripts
 rm core* 2>/dev/null
 rm *.so 2>/dev/null

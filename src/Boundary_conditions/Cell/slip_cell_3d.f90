@@ -29,7 +29,7 @@ contains
 
         if (.not. present(is_offload)) then
         
-            write(*,*) "Slip_cell_3d_calculate is_offload_local NOT PRESENT!"
+            !write(*,*) "Slip_cell_3d_calculate is_offload_local NOT PRESENT!"
             is_offload_local = .False.  
         
         else
@@ -38,7 +38,7 @@ contains
 
         !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! yoni for now to make sure:
         !is_offload_local = .True.
-        write(*,*) "Slip_cell_3d_calculate called, is_offload_local=", is_offload_local
+        !write(*,*) "Slip_cell_3d_calculate called, is_offload_local=", is_offload_local
         nxp = c_quantity%d1 + 1
         nyp = c_quantity%d2 + 1
         nzp = c_quantity%d3 + 1

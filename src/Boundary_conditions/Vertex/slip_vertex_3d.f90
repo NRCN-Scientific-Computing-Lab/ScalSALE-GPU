@@ -59,14 +59,14 @@ contains
 
         if (.not. present(is_offload)) then
         
-            write(*,*) "Slip_vertex_3d_calculate is_offload_local NOT PRESENT!"
+            !write(*,*) "Slip_vertex_3d_calculate is_offload_local NOT PRESENT!"
             is_offload_local = .False.  
         
         else
             is_offload_local = is_offload  
         end if
 
-        write(*,*) "Slip_vertex_calculate_3d"
+        !write(*,*) "Slip_vertex_calculate_3d"
         call v_quantity%Point_to_data(values_dim1, values_dim2, values_dim3)
         call v_quantity%boundary_params%Point_to_edge_vectors(edge_vector_x, edge_vector_y, edge_vector_z)
 
@@ -164,7 +164,7 @@ contains
             case(6) 
                 k = nzp
                 normal_vec = v_quantity%boundary_params%normal_knzp
-                !$omp target teams distribute parallel do collapse(2) firstprivate(i) private(normal_vel) if(is_offload_local)
+                !$omp target teams distribute parallel do collapse(2) firstprivate(k) private(normal_vel) if(is_offload_local)
                 do j = 1, nyp
                     do i = 1, nxp
                         normal_vel = values_dim1(i, j, k) * normal_vec(1)&
@@ -225,7 +225,7 @@ contains
 
         integer :: vec_e_num
         vec_e_num = -1
-        write(*,*) "calculate_edge"
+        !write(*,*) "calculate_edge"
 
         if (jvirt == 1        .and. kvirt == 1   ) then
             vec_e_num = 1
@@ -316,14 +316,14 @@ contains
 
         if (.not. present(is_offload)) then
         
-            write(*,*) "calculate_face is_offload_local NOT PRESENT!"
+            !write(*,*) "calculate_face is_offload_local NOT PRESENT!"
             is_offload_local = .False.  
         
         else
             is_offload_local = is_offload  
         end if
 
-        write(*,*) "calculate_face"
+        !write(*,*) "calculate_face"
 
         call v_quantity%Point_to_data(values_dim1, values_dim2, values_dim3)
         call v_quantity%boundary_params%Point_to_edge_vectors(edge_vector_x, edge_vector_y, edge_vector_z)
@@ -519,14 +519,14 @@ contains
 
         if (.not. present(is_offload)) then
         
-            write(*,*) "calculate_corner is_offload_local NOT PRESENT!"
+            !write(*,*) "calculate_corner is_offload_local NOT PRESENT!"
             is_offload_local = .False.  
         
         else
             is_offload_local = is_offload  
         end if
 
-        write(*,*) "calculate_corner"
+        !write(*,*) "calculate_corner"
 
         call v_quantity%Point_to_data(values_dim1, values_dim2, values_dim3)
 

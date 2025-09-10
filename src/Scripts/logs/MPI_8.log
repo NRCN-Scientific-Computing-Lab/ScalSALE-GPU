@@ -1,0 +1,680 @@
+Running in MPI mode with 8 ranks
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ 5
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ 6
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ Number of Threads:            1
+ @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ 7
+ 0
+ 1
+ 2
+ 3
+ 4
+  making sedov-taylor
+  making sedov-taylor
+  making sedov-taylor
+  making sedov-taylor
+  making sedov-taylor
+  making sedov-taylor
+  making sedov-taylor
+  making sedov-taylor
+ done mesh
+ done mesh
+ done mesh
+ done mesh
+ done mesh
+ done mesh
+ done mesh
+ done mesh
+ Done diagnostics
+ Done diagnostics
+ Done diagnostics
+ Done diagnostics
+ Done diagnostics
+ Done diagnostics
+ Done diagnostics
+ Done diagnostics
+                                                Calculate() loop time:    0.381920
+                                                Calculate() loop time:    0.381938
+                                                Calculate() loop time:    0.381962
+                                                Calculate() loop time:    0.381976
+                                                Calculate() loop time:    0.381913
+                                                Calculate() loop time:    0.381960
+                                                Calculate() loop time:    0.382017
+                                                Calculate() loop time:    0.382195
+ finished building problem
+ Number of Available devices:             0
+ Initial target enter data Time:   1.0013580322265625E-005
+ [38;5;208m
+ finished building problem
+ Number of Available devices:             0
+ Initial target enter data Time:   5.0067901611328125E-006
+ [38;5;208m
+ finished building problem
+ Number of Available devices:             0
+ Initial target enter data Time:   5.0067901611328125E-006
+ [38;5;208m
+ finished building problem
+ Number of Available devices:             0
+ Initial target enter data Time:   3.8146972656250000E-006
+ [38;5;208m
+ finished building problem
+ Number of Available devices:             0
+ Initial target enter data Time:   8.1062316894531250E-006
+ [38;5;208m
+ finished building problem
+ Number of Available devices:             0
+ Initial target enter data Time:   5.0067901611328125E-006
+ [38;5;208m
+ finished building problem
+ Number of Available devices:             0
+ finished building problem
+ Initial target enter data Time:   5.0067901611328125E-006
+ Number of Available devices:             0
+ [38;5;208m
+ Initial target enter data Time:   4.0531158447265625E-006
+ [38;5;208m
+                           Calculate_thermodynamics ----- part 1 time:    0.101832
+                           Calculate_thermodynamics ----- part 1 time:    0.101995
+                           Calculate_thermodynamics ----- part 1 time:    0.101849
+                           Calculate_thermodynamics ----- part 1 time:    0.101530
+                           Calculate_thermodynamics ----- part 1 time:    0.101757
+                           Calculate_thermodynamics ----- part 1 time:    0.102277
+                           Calculate_thermodynamics ----- part 1 time:    0.102138
+                           Calculate_thermodynamics ----- part 1 time:    0.102190
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134341
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134082
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134011
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.133556
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134452
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.133376
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.133659
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134176
+                           Calculate_thermodynamics ----- part 3 time:    0.186628
+                           Calculate_thermodynamics ----- part 3 time:    0.186567
+                           Calculate_thermodynamics ----- part 3 time:    0.186965
+                           Calculate_thermodynamics ----- part 3 time:    0.186667
+                           Calculate_thermodynamics ----- part 3 time:    0.187237
+                           Calculate_thermodynamics ----- part 3 time:    0.187323
+                           Calculate_thermodynamics ----- part 3 time:    0.187292
+                           Calculate_thermodynamics ----- part 3 time:    0.187166
+                           Calculate_thermodynamics ----- part 4 time:    0.324358
+                           Calculate_thermodynamics ----- part 4 time:    0.324232
+                           Calculate_thermodynamics ----- part 4 time:    0.322850
+                           Calculate_thermodynamics ----- part 4 time:    0.323281
+                           Calculate_thermodynamics ----- part 4 time:    0.322973
+                           Calculate_thermodynamics ----- part 4 time:    0.326466
+                           Calculate_thermodynamics ----- part 4 time:    0.325933
+                           Calculate_thermodynamics ----- part 4 time:    0.325701
+                           Calculate_thermodynamics ----- part 5 time:    0.198691
+                           Calculate_thermodynamics ----- part 5 time:    0.201216
+                           Calculate_thermodynamics ----- part 5 time:    0.199999
+                           Calculate_thermodynamics ----- part 5 time:    0.200167
+                           Calculate_thermodynamics ----- part 5 time:    0.199550
+                           Calculate_thermodynamics ----- part 5 time:    0.199973
+                           Calculate_thermodynamics ----- part 5 time:    0.200127
+                           Calculate_thermodynamics ----- part 5 time:    0.201786
+                           Calculate_thermodynamics ----- part 6 time:    0.106411
+                           Calculate_thermodynamics ----- part 6 time:    0.108896
+                           Calculate_thermodynamics ----- part 6 time:    0.110178
+                           Calculate_thermodynamics ----- part 6 time:    0.109617
+                           Calculate_thermodynamics ----- part 6 time:    0.110383
+                           Calculate_thermodynamics ----- part 6 time:    0.106279
+                           Calculate_thermodynamics ----- part 6 time:    0.109561
+                           Calculate_thermodynamics ----- part 6 time:    0.108785
+                           Calculate_thermodynamics ----- part 7 time:    0.143418
+                           Calculate_thermodynamics ----- part 7 time:    0.141790
+                           Calculate_thermodynamics ----- part 7 time:    0.141468
+                           Calculate_thermodynamics ----- part 7 time:    0.141984
+                           Calculate_thermodynamics ----- part 7 time:    0.141653
+                           Calculate_thermodynamics ----- part 7 time:    0.142142
+                           Calculate_thermodynamics ----- part 7 time:    0.143028
+                           Calculate_thermodynamics ----- part 7 time:    0.143376
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481354
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.480931
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.480709
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481503
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481972
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481130
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481240
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.487915
+                           Calculate_thermodynamics ----- part 9 time:    0.147876
+                           Calculate_thermodynamics ----- part 9 time:    0.145978
+                           Calculate_thermodynamics ----- part 9 time:    0.147675
+                           Calculate_thermodynamics ----- part 9 time:    0.147322
+                           Calculate_thermodynamics ----- part 9 time:    0.146242
+                           Calculate_thermodynamics ----- part 9 time:    0.140967
+                           Calculate_thermodynamics ----- part 9 time:    0.147540
+                           Calculate_thermodynamics ----- part 9 time:    0.146733
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038864
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038864
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038859
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038887
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.039058
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.039117
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.039194
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.039129
+                    Calculate_thermodynamics time:    2.868445
+                    Calculate_thermodynamics time:    2.869275
+ [34m
+ [34m
+                    Calculate_thermodynamics time:    2.867321
+ [34m
+                    Calculate_thermodynamics time:    2.868067
+ [34m
+                    Calculate_thermodynamics time:    2.865978
+ [34m
+                    Calculate_thermodynamics time:    2.866352
+ [34m
+                    Calculate_thermodynamics time:    2.866983
+ [34m
+                    Calculate_thermodynamics time:    2.866050
+ [34m
+                                Calculate_dt time:    0.076984
+ [38;5;208m
+                                Calculate_dt time:    0.077010
+ [38;5;208m
+                                Calculate_dt time:    0.076831
+ [38;5;208m
+                                Calculate_dt time:    0.076845
+ [38;5;208m
+                                Calculate_dt time:    0.076960
+ [38;5;208m
+                                Calculate_dt time:    0.077016
+ [38;5;208m
+                                Calculate_dt time:    0.076909
+ [38;5;208m
+                                Calculate_dt time:    0.076818
+ [38;5;208m
+                                              Derivatives Kernel time:    1.132946
+                   Calculate_acceleration_3d time:    1.395500
+ [34m
+                                              Derivatives Kernel time:    1.133232
+                   Calculate_acceleration_3d time:    1.395793
+ [34m
+                                              Derivatives Kernel time:    1.133965
+                   Calculate_acceleration_3d time:    1.396422
+ [34m
+                                              Derivatives Kernel time:    1.134496
+                   Calculate_acceleration_3d time:    1.397076
+ [34m
+                                              Derivatives Kernel time:    1.137637
+                   Calculate_acceleration_3d time:    1.400302
+ [34m
+                                              Derivatives Kernel time:    1.137724
+                   Calculate_acceleration_3d time:    1.400583
+ [34m
+                                              Derivatives Kernel time:    1.139561
+                   Calculate_acceleration_3d time:    1.402243
+ [34m
+                                              Derivatives Kernel time:    1.140923
+                   Calculate_acceleration_3d time:    1.403496
+ [34m
+           Calculate_artificial_viscosity_3d time:    0.309463
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.310673
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.311924
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.307332
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.307344
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.312172
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.304640
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.306809
+ [38;5;208m
+                            Calculate_velocity_3d----- main loop time:    0.250692
+                            Calculate_velocity_3d----- main loop time:    0.251784
+                            Calculate_velocity_3d----- main loop time:    0.251890
+                            Calculate_velocity_3d----- main loop time:    0.251922
+                            Calculate_velocity_3d----- main loop time:    0.252031
+                            Calculate_velocity_3d----- main loop time:    0.252257
+                            Calculate_velocity_3d----- main loop time:    0.252334
+                            Calculate_velocity_3d----- main loop time:    0.252325
+                                              Derivatives Kernel time:    1.091625
+                                              Derivatives Kernel time:    1.091906
+                                              Derivatives Kernel time:    1.092045
+                                              Derivatives Kernel time:    1.092075
+                                              Derivatives Kernel time:    1.092069
+                                              Derivatives Kernel time:    1.094119
+                                              Derivatives Kernel time:    1.093415
+                                              Derivatives Kernel time:    1.095191
+                       Calculate_velocity_3d time:    1.352952
+ [34m
+                       Calculate_velocity_3d time:    1.355003
+ [34m
+                       Calculate_velocity_3d time:    1.355049
+ [34m
+                       Calculate_velocity_3d time:    1.355341
+ [34m
+                       Calculate_velocity_3d time:    1.356094
+ [34m
+                       Calculate_velocity_3d time:    1.354142
+ [34m
+                       Calculate_velocity_3d time:    1.355799
+ [34m
+                       Calculate_velocity_3d time:    1.356683
+ [34m
+                                                Calculate() loop time:    0.381910
+                                                Calculate() loop time:    0.381869
+                                                Calculate() loop time:    0.381787
+                                                Calculate() loop time:    0.381852
+                                                Calculate() loop time:    0.381918
+                                                Calculate() loop time:    0.381831
+                                                Calculate() loop time:    0.381931
+                                                Calculate() loop time:    0.381941
+                         Calculate_rezone_3d time:    0.615977
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.615957
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.615966
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.616210
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.616230
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.616225
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.618129
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.616058
+ [38;5;208m
+                         Calculate_energy_3d time:    0.230765
+ [34m
+                         Calculate_energy_3d time:    0.231601
+ [34m
+                         Calculate_energy_3d time:    0.231527
+ [34m
+                         Calculate_energy_3d time:    0.231662
+ [34m
+                         Calculate_energy_3d time:    0.232014
+ [34m
+                         Calculate_energy_3d time:    0.232218
+ [34m
+                         Calculate_energy_3d time:    0.232528
+ [34m
+                         Calculate_energy_3d time:    0.232783
+ [34m
+                                    coordinated Calculate() loop time:    0.097874
+                                    coordinated Calculate() loop time:    0.097775
+                                    coordinated Calculate() loop time:    0.097820
+                                    coordinated Calculate() loop time:    0.098046
+                                    coordinated Calculate() loop time:    0.097788
+                                    coordinated Calculate() loop time:    0.097879
+                                    coordinated Calculate() loop time:    0.097804
+                                    coordinated Calculate() loop time:    0.098012
+                                                Calculate() loop time:    0.381883
+                                                Calculate() loop time:    0.381858
+                                                Calculate() loop time:    0.381845
+                                                Calculate() loop time:    0.381905
+                                                Calculate() loop time:    0.381875
+                                                Calculate() loop time:    0.381928
+                                                Calculate() loop time:    0.382008
+                                                Calculate() loop time:    0.382070
+                           Calculate_mesh_3d time:    0.661168
+ [0m
+            Total cycle time:     7.517268
+ #####################################################################
+                           Calculate_mesh_3d time:    0.662937
+ [0m
+            Total cycle time:     7.516177
+ #####################################################################
+ [38;5;208m
+                           Calculate_mesh_3d time:    0.661712
+ [0m
+            Total cycle time:     7.516809
+ #####################################################################
+                           Calculate_mesh_3d time:    0.662078
+ [0m
+            Total cycle time:     7.518440
+ #####################################################################
+ [38;5;208m
+ [38;5;208m
+                           Calculate_mesh_3d time:    0.662158
+ [0m
+            Total cycle time:     7.515895
+ #####################################################################
+ [38;5;208m
+ [38;5;208m
+                           Calculate_mesh_3d time:    0.660940
+ [0m
+            Total cycle time:     7.515885
+ #####################################################################
+                           Calculate_mesh_3d time:    0.662162
+ [0m
+            Total cycle time:     7.519305
+ #####################################################################
+ [38;5;208m
+                           Calculate_mesh_3d time:    0.661540
+ [0m
+            Total cycle time:     7.518052
+ #####################################################################
+ [38;5;208m
+ [38;5;208m
+                           Calculate_thermodynamics ----- part 1 time:    0.099796
+                           Calculate_thermodynamics ----- part 1 time:    0.099803
+                           Calculate_thermodynamics ----- part 1 time:    0.100086
+                           Calculate_thermodynamics ----- part 1 time:    0.100385
+                           Calculate_thermodynamics ----- part 1 time:    0.100357
+                           Calculate_thermodynamics ----- part 1 time:    0.100535
+                           Calculate_thermodynamics ----- part 1 time:    0.100540
+                           Calculate_thermodynamics ----- part 1 time:    0.101011
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.133651
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134088
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.133663
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.133810
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134059
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134499
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134423
+                 Calculate_thermodynamics ----- (density) part 2 time:    0.134430
+                           Calculate_thermodynamics ----- part 3 time:    0.177480
+                           Calculate_thermodynamics ----- part 3 time:    0.177530
+                           Calculate_thermodynamics ----- part 3 time:    0.177658
+                           Calculate_thermodynamics ----- part 3 time:    0.177547
+                           Calculate_thermodynamics ----- part 3 time:    0.177613
+                           Calculate_thermodynamics ----- part 3 time:    0.177558
+                           Calculate_thermodynamics ----- part 3 time:    0.177429
+                           Calculate_thermodynamics ----- part 3 time:    0.177733
+                           Calculate_thermodynamics ----- part 4 time:    0.315799
+                           Calculate_thermodynamics ----- part 4 time:    0.317207
+                           Calculate_thermodynamics ----- part 4 time:    0.317960
+                           Calculate_thermodynamics ----- part 4 time:    0.317802
+                           Calculate_thermodynamics ----- part 4 time:    0.318454
+                           Calculate_thermodynamics ----- part 4 time:    0.318357
+                           Calculate_thermodynamics ----- part 4 time:    0.319724
+                           Calculate_thermodynamics ----- part 4 time:    0.320837
+                           Calculate_thermodynamics ----- part 5 time:    0.198718
+                           Calculate_thermodynamics ----- part 5 time:    0.199251
+                           Calculate_thermodynamics ----- part 5 time:    0.200307
+                           Calculate_thermodynamics ----- part 5 time:    0.201264
+                           Calculate_thermodynamics ----- part 5 time:    0.200829
+                           Calculate_thermodynamics ----- part 5 time:    0.201117
+                           Calculate_thermodynamics ----- part 5 time:    0.200110
+                           Calculate_thermodynamics ----- part 5 time:    0.200935
+                           Calculate_thermodynamics ----- part 6 time:    0.107643
+                           Calculate_thermodynamics ----- part 6 time:    0.107216
+                           Calculate_thermodynamics ----- part 6 time:    0.108037
+                           Calculate_thermodynamics ----- part 6 time:    0.106199
+                           Calculate_thermodynamics ----- part 6 time:    0.107760
+                           Calculate_thermodynamics ----- part 6 time:    0.110510
+                           Calculate_thermodynamics ----- part 6 time:    0.106920
+                           Calculate_thermodynamics ----- part 6 time:    0.106102
+                           Calculate_thermodynamics ----- part 7 time:    0.141798
+                           Calculate_thermodynamics ----- part 7 time:    0.142246
+                           Calculate_thermodynamics ----- part 7 time:    0.142300
+                           Calculate_thermodynamics ----- part 7 time:    0.142251
+                           Calculate_thermodynamics ----- part 7 time:    0.142485
+                           Calculate_thermodynamics ----- part 7 time:    0.142517
+                           Calculate_thermodynamics ----- part 7 time:    0.142624
+                           Calculate_thermodynamics ----- part 7 time:    0.143323
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.480982
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.480933
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481193
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481345
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481135
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481993
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.481466
+          Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:    1.488316
+                           Calculate_thermodynamics ----- part 9 time:    0.151370
+                           Calculate_thermodynamics ----- part 9 time:    0.150293
+                           Calculate_thermodynamics ----- part 9 time:    0.151453
+                           Calculate_thermodynamics ----- part 9 time:    0.152252
+                           Calculate_thermodynamics ----- part 9 time:    0.151870
+                           Calculate_thermodynamics ----- part 9 time:    0.144723
+                           Calculate_thermodynamics ----- part 9 time:    0.152437
+                           Calculate_thermodynamics ----- part 9 time:    0.150591
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038860
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038862
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038858
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038897
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038898
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.038924
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.039050
+    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time    0.039022
+                    Calculate_thermodynamics time:    2.853408
+ [34m
+                    Calculate_thermodynamics time:    2.853398
+ [34m
+                    Calculate_thermodynamics time:    2.853433
+ [34m
+                    Calculate_thermodynamics time:    2.853434
+ [34m
+                    Calculate_thermodynamics time:    2.853473
+ [34m
+                    Calculate_thermodynamics time:    2.853536
+ [34m
+                    Calculate_thermodynamics time:    2.853558
+ [34m
+                    Calculate_thermodynamics time:    2.853540
+ [34m
+                                Calculate_dt time:    0.074024
+ [38;5;208m
+                                Calculate_dt time:    0.074151
+ [38;5;208m
+                                Calculate_dt time:    0.074107
+ [38;5;208m
+                                Calculate_dt time:    0.074112
+ [38;5;208m
+                                Calculate_dt time:    0.074075
+ [38;5;208m
+                                Calculate_dt time:    0.073990
+ [38;5;208m
+                                Calculate_dt time:    0.073982
+ [38;5;208m
+                                Calculate_dt time:    0.073962
+ [38;5;208m
+                                              Derivatives Kernel time:    1.091270
+                   Calculate_acceleration_3d time:    1.353119
+ [34m
+                                              Derivatives Kernel time:    1.091879
+                   Calculate_acceleration_3d time:    1.353792
+ [34m
+                                              Derivatives Kernel time:    1.091860
+                   Calculate_acceleration_3d time:    1.353898
+ [34m
+                                              Derivatives Kernel time:    1.092165
+                   Calculate_acceleration_3d time:    1.354008
+ [34m
+                                              Derivatives Kernel time:    1.092639
+                   Calculate_acceleration_3d time:    1.354401
+ [34m
+                                              Derivatives Kernel time:    1.092989
+                   Calculate_acceleration_3d time:    1.354743
+ [34m
+                                              Derivatives Kernel time:    1.092709
+                   Calculate_acceleration_3d time:    1.354793
+ [34m
+                                              Derivatives Kernel time:    1.095241
+                   Calculate_acceleration_3d time:    1.357614
+ [34m
+           Calculate_artificial_viscosity_3d time:    0.303420
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.306905
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.306880
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.308354
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.306795
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.307705
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.304023
+ [38;5;208m
+           Calculate_artificial_viscosity_3d time:    0.307543
+ [38;5;208m
+                            Calculate_velocity_3d----- main loop time:    0.250485
+                            Calculate_velocity_3d----- main loop time:    0.251713
+                            Calculate_velocity_3d----- main loop time:    0.251853
+                            Calculate_velocity_3d----- main loop time:    0.251895
+                            Calculate_velocity_3d----- main loop time:    0.251861
+                            Calculate_velocity_3d----- main loop time:    0.252070
+                            Calculate_velocity_3d----- main loop time:    0.252168
+                            Calculate_velocity_3d----- main loop time:    0.252285
+                                              Derivatives Kernel time:    1.091605
+                                              Derivatives Kernel time:    1.091932
+                                              Derivatives Kernel time:    1.091999
+                                              Derivatives Kernel time:    1.092050
+                                              Derivatives Kernel time:    1.092073
+                                              Derivatives Kernel time:    1.093467
+                                              Derivatives Kernel time:    1.093983
+                                              Derivatives Kernel time:    1.094962
+                       Calculate_velocity_3d time:    1.352439
+ [34m
+                       Calculate_velocity_3d time:    1.354161
+ [34m
+                       Calculate_velocity_3d time:    1.354271
+ [34m
+                       Calculate_velocity_3d time:    1.354176
+ [34m
+                       Calculate_velocity_3d time:    1.355267
+ [34m
+                       Calculate_velocity_3d time:    1.353699
+ [34m
+                       Calculate_velocity_3d time:    1.358171
+ [34m
+                       Calculate_velocity_3d time:    1.355122
+ [34m
+                                                Calculate() loop time:    0.382159
+                                                Calculate() loop time:    0.381869
+                                                Calculate() loop time:    0.381880
+                                                Calculate() loop time:    0.381895
+                                                Calculate() loop time:    0.381922
+                                                Calculate() loop time:    0.381968
+                                                Calculate() loop time:    0.381975
+                                                Calculate() loop time:    0.381957
+                         Calculate_rezone_3d time:    0.614298
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.614521
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.614301
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.614291
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.616231
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.614561
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.614529
+ [38;5;208m
+                         Calculate_rezone_3d time:    0.614360
+ [38;5;208m
+                         Calculate_energy_3d time:    0.230436
+ [34m
+                         Calculate_energy_3d time:    0.230508
+ [34m
+                         Calculate_energy_3d time:    0.230643
+ [34m
+                         Calculate_energy_3d time:    0.231076
+ [34m
+                         Calculate_energy_3d time:    0.231450
+ [34m
+                         Calculate_energy_3d time:    0.231564
+ [34m
+                         Calculate_energy_3d time:    0.231688
+ [34m
+                         Calculate_energy_3d time:    0.232186
+ [34m
+                                    coordinated Calculate() loop time:    0.097708
+                                    coordinated Calculate() loop time:    0.097681
+                                    coordinated Calculate() loop time:    0.097894
+                                    coordinated Calculate() loop time:    0.097981
+                                    coordinated Calculate() loop time:    0.097627
+                                    coordinated Calculate() loop time:    0.097960
+                                    coordinated Calculate() loop time:    0.097903
+                                    coordinated Calculate() loop time:    0.098009
+                                                Calculate() loop time:    0.381960
+                                                Calculate() loop time:    0.381877
+                                                Calculate() loop time:    0.381920
+                                                Calculate() loop time:    0.381894
+                                                Calculate() loop time:    0.381996
+                                                Calculate() loop time:    0.381977
+                                                Calculate() loop time:    0.381979
+                                                Calculate() loop time:    0.382178
+                           Calculate_mesh_3d time:    0.661560
+ [0m
+            Total cycle time:     7.450079
+ #####################################################################
+ Total Time:    14.96855998039246     
+ ncyc:             2
+                           Calculate_mesh_3d time:    0.660473
+ [0m
+            Total cycle time:     7.450094
+ #####################################################################
+                           Calculate_mesh_3d time:    0.661777
+ [0m
+            Total cycle time:     7.450142
+ #####################################################################
+                           Calculate_mesh_3d time:    0.660038
+ [0m
+ Total Time:    14.96603107452393     
+ ncyc:             2
+ Total Time:    14.96744608879089     
+ ncyc:             2
+            Total cycle time:     7.450104
+ #####################################################################
+ Total Time:    14.96946501731873     
+ ncyc:             2
+                           Calculate_mesh_3d time:    0.660858
+ [0m
+            Total cycle time:     7.450236
+ #####################################################################
+ Total Time:    14.96645593643188     
+ ncyc:             2
+                           Calculate_mesh_3d time:    0.661830
+ [0m
+            Total cycle time:     7.450251
+ #####################################################################
+                           Calculate_mesh_3d time:    0.660838
+ [0m
+            Total cycle time:     7.450232
+ #####################################################################
+ Total Time:    14.96711301803589     
+ ncyc:             2
+ Total Time:    14.96831989288330     
+ ncyc:             2
+                           Calculate_mesh_3d time:    0.661306
+ [0m
+            Total cycle time:     7.450269
+ #####################################################################
+ Total Time:    14.96619582176208     
+ ncyc:             2
+[0;31mMismatch for Checksum for velocity_x: 3E52516957CC439D vs 7FF8000000000000[0m
+[0;31mMismatch for Checksum for velocity_y: 3EB0662DF2CEF391 vs 7FF8000000000000[0m
+[0;31mMismatch for Checksum for velocity_z: 3E52516957CC439F vs 7FF8000000000000[0m
+[0;31mMismatch for Checksum for acceleration_x: 3E42C3C99222685F vs 58E9595AC1C26800[0m
+[0;31mMismatch for Checksum for acceleration_y: 3EA0CC92F8BAFCA8 vs D980AABD0E3F1200[0m
+[0;31mMismatch for Checksum for acceleration_z: 3E42C3C992226860 vs D926E8FFEC3BB950[0m
+[0;31mMismatch for Checksum for x: 417214CB80000000 vs 7FF8000000000000[0m
+[0;31mMismatch for Checksum for y: 41143269DEB23758 vs 7FF8000000000000[0m
+[0;31mMismatch for Checksum for z: 417214CB7FFFFB60 vs 7FF8000000000000[0m
+[0;31mMismatch for Checksum for density: 417F8B3C10000000 vs 7FF8000000000000[0m
+[0;31mMismatch for Checksum for pressure: 40D89E6ECC8560AB vs 5E01D39A80000000[0m
+[0;31mMismatch for Checksum for total_sie: 40E29AFB851E9309 vs FFF8000000000000[0m
+[0;31mMismatch for Checksum for sie_vof: 40E29AFB8504246C vs FFF8000000000000[0m
+[0;31mMismatch for Checksum for pressure_vof: 40D89E6ECCA58CAD vs 5743D5741C714B85[0m
+[0;31mV&V - FAILED![0m

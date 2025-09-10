@@ -14,5 +14,5 @@ cd ../../build
 #  echo "@@@@ INTEL @@@@"
 #  FC=mpiifort cmake ../src
 #fi
-make
+make VERBOSE=1
 cd ../src/Scripts

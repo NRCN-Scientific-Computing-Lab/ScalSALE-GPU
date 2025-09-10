@@ -437,7 +437,7 @@ contains
         call this%total_sie%Point_to_data(1, x)      
         thermo_time = omp_get_wtime()
 
-        write(*,*) "DEBUG 1: time_step_3d ENTER"
+        !write(*,*) "DEBUG 1: time_step_3d ENTER"
         ! Set color to orange
         write(*,*) CHAR(27)//'[38;5;208m'
         call this%Calculate_thermodynamics()
@@ -634,7 +634,6 @@ contains
         end do
         !$omp end target teams distribute parallel do
 
-        !YONI:maybe we need to move vof on GPU? 
         !$omp target teams distribute parallel do collapse(3) private(tmp_mat)
         do k = 1, nz_
             do j = 1, ny_
@@ -661,6 +660,7 @@ contains
         allocate(dt_de_temp(this%nx, this%ny, this%nz))
 
         !$omp target enter data map(alloc: dt_de_temp) 
+
          do k = 1, nz_
              do j = 1, ny_
                 do i = 1, nx_               
@@ -716,8 +716,15 @@ contains
         !!$omp target update from(density)
 
         call this%total_pressure%Exchange_virtual_space_nonblocking()
-        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.true.) !on GPU
-
+        
+        #ifdef NAIVE_GPU
+        !$omp target update from(density)
+        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.false.) !on CPU
+        !$omp target update to(density)
+        #else
+        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.true.) !on GPU      
+        #endif
+        
         !$omp target teams distribute parallel do collapse(3)
         do k = 1, nz_
             do j = 1, ny_
@@ -758,7 +765,19 @@ contains
 
         !!$omp target update from(pressure_sum, pressure, dp_de, dp_drho, temperature, sound_vel)
 
-        call this%num_mat_cells%Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%num_mat_cells%Apply_boundary(is_blocking=.false., is_offload=.false.) !always false? not mapped at all?
+        
+        #ifdef NAIVE_GPU
+        !$omp target update from(vol, sie, vof, cell_mass_vof, density_vof, sie_vof, mat_vof)
+        call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%total_vof    %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%cell_mass%Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%density  %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%sie      %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        !$omp target update to(vol, sie, vof, cell_mass_vof, density_vof, sie_vof, mat_vof)
+        #else
         call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%total_vof    %Apply_boundary(is_blocking=.false., is_offload=.true.)
@@ -766,6 +785,7 @@ contains
         call this%materials%density  %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%materials%sie      %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        #endif
 
         write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 7 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
@@ -1040,9 +1060,14 @@ contains
 
         !!$omp target update from(acceleration_x, acceleration_y, acceleration_z)
         !IT SEEMS ACCELERATION NEEDS TO MOVE TO CPU BEFORE RUNNING Calculate_artificial_viscosity_3D 
-        write(*,*) "acceleration boundary conditions:"
-        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.True.) !LETS TRY ON GPU
-
+        !write(*,*) "acceleration boundary conditions:"
+        #ifdef NAIVE_GPU
+        !$omp target update from(acceleration_x, acceleration_y, acceleration_z)
+        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.false.)
+        !$omp target update to(acceleration_x, acceleration_y, acceleration_z)
+        #else      
+        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.True.) !ON GPU
+        #endif
         !YONI: calculate_derivatives does not update velocity to GPU. please see if it necessary here or not
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
             this%total_vof, this%total_volume, this%nx, this%ny, this%nz, this%emf)
@@ -1298,7 +1323,8 @@ contains
         i_sphere2       = this%a_visc%from_radial_index_sphere
         mesh_type       = this%mesh%mesh_type
 
-        !$omp target enter data map(to:linear_visc_fac)
+        !TODO: WHY NOT OFFLOAD IN THE BEGINNING?
+        !!$omp target enter data map(to:linear_visc_fac)
 
         call this%velocity%dvelocity_x_dx%Point_to_data(dvel_x_dx)
         call this%velocity%dvelocity_x_dy%Point_to_data(dvel_x_dy)
@@ -1425,8 +1451,9 @@ contains
 
 
                         quad_visc_fac_temp   = quad_visc_fac
-                        linear_visc_fac_temp = linear_visc_fac(i,j,k)
-
+                        !TODO: pay attention:
+                        !linear_visc_fac_temp = linear_visc_fac(i,j,k)
+                        linear_visc_fac_temp = 0.2
 
 
                         a_visc(i, j, k) = density(i, j, k) * eff_length * &
@@ -1449,7 +1476,7 @@ contains
             end do
         end do
         !$omp end target teams distribute parallel do
-        !$omp target exit data map(delete: linear_visc_fac)
+        !!$omp target exit data map(delete: linear_visc_fac)
 
         !WE KEEP a_visc ON GPU!
         !!$omp target update from(a_visc)
@@ -1695,9 +1722,14 @@ contains
         !is offloaded
         call this%velocity%Impose_no_move_3d(this%mesh%coordinates)
 
-        !YONI: on GPU!
-        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.True.) 
-        
+        #ifdef NAIVE_GPU
+        !$omp target update from(velocity_x, velocity_y, velocity_z)
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.False.)
+        !$omp target update to(velocity_x, velocity_y, velocity_z)
+        #else
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.True.) !ON GPU
+        #endif
+
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, this%total_vof, this%total_volume&
             , this%nx, this%ny, this%nz, this%emf)
             call this%velocity%Exchange_end()
@@ -2500,7 +2532,7 @@ call this%materials%sie%exchange_end()
         real(8), dimension(:, :, :), pointer :: mesh_velocity_y 
         real(8), dimension(:, :, :), pointer :: mesh_velocity_z 
         real(8), dimension(:, :, :), pointer :: vertex_mass     
-        real(8), dimension(:, :, :), pointer :: vol             
+        real(8), dimension(:, :, :), pointer :: vol, density            
         real(8), dimension(:, :, :), pointer :: mat_vol             
 
         real(8) :: vel_diff_x   
@@ -2536,24 +2568,44 @@ call this%materials%sie%exchange_end()
         call this%mesh             %Point_to_data(x, y, z)
         call this%vertex_mass%Point_to_data(vertex_mass)
         call this%total_volume     %Point_to_data(vol)
+        call this%total_density     %Point_to_data(density)
         call this%rezone%mesh_velocity  %Point_to_data(mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
 
         ! calculate the coordinates
         call this%mesh%coordinates%Calculate(time%dt, this%rezone%mesh_velocity) !on GPU
         call this%mesh%Exchange_virtual_space_blocking()
 
+        #ifdef NAIVE_GPU
+        !$omp target update from(x, y, z)
+        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
+        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
+        !$omp target update to(x, y, z)
+        #else
         call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.True.)
         call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.True.)
+        #endif
 
         call this%total_vof%Exchange_end()
         call this%materials%vof%Exchange_end()
 
         call this%Calculate_density(this%rezone%material_volume) !on GPU, and keep density and density_vof updated on GPU
         
+        #ifdef NAIVE_GPU
+        !$omp target update from(density)
+        call this%total_density%Apply_boundary(is_offload=.False.)
+        !$omp target update to(density)
+        #else
         call this%total_density%Apply_boundary(is_offload=.True.)
+        #endif
         ! calculate volume bruh
         call this%total_volume%Calculate(this%mesh%coordinates)
+        #ifdef NAIVE_GPU
+        !$omp target update from(vol)
+        call this%total_volume%Apply_boundary(is_offload=.False.)
+        !$omp target update to(vol)
+        #else    
         call this%total_volume%Apply_boundary(is_offload=.True.)
+        #endif
 
 
         return

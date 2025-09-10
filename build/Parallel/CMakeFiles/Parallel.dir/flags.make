@@ -6,5 +6,5 @@ Fortran_DEFINES = -DParallel_EXPORTS
 
 Fortran_INCLUDES = 
 
-Fortran_FLAGS = -fPIC -gpu=cc80 -Minfo=accel,mp -mp=gpu -cpp -fopenmp -O3 -module ../modules -fPIC
+Fortran_FLAGS = -fPIC -gpu=cc80 -Minfo=accel,mp -mp=gpu -cpp -fopenmp -O3 -nofma -module ../modules -fPIC
 
