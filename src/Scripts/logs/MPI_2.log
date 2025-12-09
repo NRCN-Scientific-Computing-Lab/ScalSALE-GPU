@@ -1,8 +1,0 @@
-Running in MPI mode with 2 ranks
-[gpu002:76090] *** An error occurred in MPI_Dist_graph_create_adjacent invalid sources
-[gpu002:76090] *** reported by process [3258253313,7]
-[gpu002:76090] *** on communicator MPI_COMM_WORLD
-[gpu002:76090] *** MPI_ERR_ARG: invalid argument of some other kind
-[gpu002:76090] *** MPI_ERRORS_ARE_FATAL (processes in this communicator will now abort,
-[gpu002:76090] ***    and potentially your MPI job)
-Error: No vnv file found.

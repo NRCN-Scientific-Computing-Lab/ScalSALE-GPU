@@ -5,8 +5,8 @@ json_dir="../Datafiles"
 json_file="${json_dir}/datafile.json"
 backup_file="${json_dir}/datafile_backup.json"
 
-CPU_THREADS=(1 2 4 8 16 32 64)
-MPI_PROCS=(1 2 4 8 16 32 64)
+CPU_THREADS=(1 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64)
+MPI_PROCS=(1 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 64)
 
 # Lines to extract from runs
 GREP_PAT='Mismatch|V&V|Total Time:|Total cycle time'

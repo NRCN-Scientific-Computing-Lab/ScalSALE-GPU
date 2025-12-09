@@ -32,8 +32,8 @@ else
        echo "Running on GPU"
        export OMP_TARGET_OFFLOAD=MANDATORY
        export OMP_NUM_THREADS=32
-       #nsys profile --stats=true mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
-       mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
+       nsys profile --stats=true mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
+       #mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
 
     elif [[ "$1" == "CPU" ]]; then
     echo "Running on CPU with $2 threads"

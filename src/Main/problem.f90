@@ -735,7 +735,8 @@ contains
         real(8), dimension(:, :, :), pointer :: dp_drho_target
         real(8), dimension(:, :, :), pointer :: dp_de_target
         real(8), dimension(:, :, :), pointer :: temperature_target
-        real(8), dimension(:, :, :),   pointer :: cell_mass_target
+        real(8), dimension(:, :, :), pointer :: cell_mass_target
+        real(8), dimension(:, :, :), pointer :: nmats_in_cell_target
 
         real(8), dimension(:, :, :,:), pointer :: pressure_vof_target
         real(8), dimension(:, :, :,:), pointer :: dp_drho_vof_target
@@ -790,9 +791,9 @@ contains
                         !call this%Write_to_files()
         ncyc = 1
         if (this%rezone_type == 0) then
-            max_ncyc = 3
+            max_ncyc = 4
         else
-            max_ncyc = 3
+            max_ncyc = 4
         end if
 
         if (this%mesh%dimension == 2) then
@@ -823,6 +824,7 @@ contains
             call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
             call this%total_vof%       Point_to_data(vof_target)
             call this%a_visc%       Point_to_data(avisc_target)
+            call this%num_mat_cells %       Point_to_data(nmats_in_cell_target)
             call this%total_volume%    Point_to_data(vol_target)
             call this%hydro%total_sie%    Point_to_data(sie_target)
             call this%hydro%total_pressure %Point_to_data(pressure_target)
@@ -871,7 +873,7 @@ contains
             !$omp& vof_target, vol_target, avisc_target, mat_volume_target, pressure_sum_target,&
             !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, inverse_vertex_mass_target, density_target, density_vof_target, vertex_mass_target, &
             !$omp& temperature_vof_target, temperature_target, pressure_vof_target, pressure_target, old_temperature_vof_target, sound_vel_vof_target, dp_drho_vof_target, dp_drho_target, dp_de_target, dt_de_vof_target, sound_vel_target, &
-            !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target) &
+            !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target, nmats_in_cell_target) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &           
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target, xl_visc_mat_target)
             
