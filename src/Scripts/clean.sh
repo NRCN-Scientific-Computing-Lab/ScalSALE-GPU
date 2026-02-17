@@ -1,38 +1,137 @@
-#! /bin/bash
+#!/bin/bash
 
-#module load cmake/X.XX.2 eclipse/2018 gcc/9.1.0 intel/2017 mpi/openmpi-1.6.4-gcc-9.1.0 pFUnit/3.2.9-intel-openmpi hdf5/1.8.9-openmpi-1.6.4-gcc-9.1.0 silo/4.8-openmpi-1.6.4-gcc-9.1.0
-#module load cmake/X.XX.2 gcc/9.1.0 eclipse/2018 intel/2017 json-fortran/intel-2017 mpi/openmpi-1.10.4-intel-2017 pFUnit/3.2.9-openmpi-1.10.4-intel-2017 hdf5/1.8.9-openmpi-1.10.4-intel-2017 silo/4.8-openmpi-1.10.4-intel-2017 scr/1.2.0-openmpi-1.10.4-intel-2017 
-#module purge
-#module load intel/18.0.1.163 openmpi/4.0.4_intel cmake 
-#module load cmake/X.XX.2 eclipse/2018 anaconda/2.5.0 gcc/9.1.0 intel/2017 pFUnit/3.2.9-intel mpi/openmpi-1.6.4-gcc-9.1.0 hdf5/1.8.9-openmpi-1.6.4-gcc-9.1.0 silo/4.8-openmpi-1.6.4-gcc-9.1.0
-#module load anaconda2
-#source activate backus-openmpi-1.10.4-intel-2017
-#SCR_LIB_FLAGS="-lscrf -L${SCR_PATH}/scr/lib64 -lscr"
-#SCR_INCLUDE_FLAGS="-I${SCR_PATH}/scr/include -I/usr/include -I."
-rm -rf ../../build
-mkdir ../../build
-cd ../../build
+# ScalSALE Dual CPU/GPU Build System
+# Usage: ./clean.sh <NVHPC|INTEL> [gpu] [cpu]
+# Examples:
+#   ./clean.sh NVHPC gpu cpu   # Build both versions with NVHPC
+#   ./clean.sh NVHPC gpu       # Build GPU version only
+#   ./clean.sh NVHPC cpu       # Build CPU version only
+#   ./clean.sh NVHPC           # Build both versions by default
 
-if test "$1" = "NVHPC"
-then
-  echo "@@@@ NVHPC @@@@"
-  FC=mpif90 cmake ../src/
-else
-  echo "@@@@ INTEL @@@@"
-  FC=mpiifx cmake ../src 
+# Check if compiler argument is provided
+if [ $# -eq 0 ]; then
+    echo "ERROR: Compiler not specified"
+    echo "Usage: ./clean.sh <NVHPC|INTEL> [gpu] [cpu]"
+    exit 1
 fi
-#if test "$1" = tests
-#then 
-#  echo "@@@@ TEST MODE @@@@"
-#  FC=mpif90 DEFS="-DTEST" cmake ../src/
-#elif test "$1" = debug
-#then
-#  echo "@@@@ DEBUG MODE @@@@"
-#  FC=if90 DEFS="-DDEBUG" cmake ../src/
-#else
- # FC=mpiifort cmake ../src/
-#fi
-make VERBOSE=1
-cd ../src/Scripts
+
+COMPILER=$1
+shift
+
+# Parse build targets from remaining arguments
+BUILD_GPU=0
+BUILD_CPU=0
+
+# If no arguments after compiler, default to building both versions
+if [ $# -eq 0 ]; then
+    BUILD_GPU=1
+    BUILD_CPU=1
+else
+    for arg in "$@"; do
+        if [ "$arg" = "gpu" ]; then
+            BUILD_GPU=1
+        elif [ "$arg" = "cpu" ]; then
+            BUILD_CPU=1
+        else
+            echo "Unknown argument: $arg"
+            echo "Usage: ./clean.sh [NVHPC|INTEL] [gpu] [cpu]"
+            exit 1
+        fi
+    done
+fi
+
+echo "================================================"
+echo "ScalSALE Dual Build System"
+echo "================================================"
+echo "Compiler: $COMPILER"
+echo "Build GPU: $BUILD_GPU"
+echo "Build CPU: $BUILD_CPU"
+echo "================================================"
+
+# Set compiler
+if [ "$COMPILER" = "NVHPC" ]; then
+    FC_COMPILER=mpif90
+    echo "Using NVIDIA HPC Compiler (mpif90)"
+else
+    FC_COMPILER=mpiifx
+    echo "Using Intel Compiler (mpiifx)"
+fi
+
+# Function to build a specific target
+build_target() {
+    local TARGET=$1
+    local BUILD_DIR=$2
+
+    echo ""
+    echo "========================================"
+    echo "Building $TARGET version..."
+    echo "========================================"
+
+    # Clean and create build directory
+    rm -rf $BUILD_DIR
+    mkdir -p $BUILD_DIR
+    cd $BUILD_DIR
+
+    # Configure with CMake
+    FC=$FC_COMPILER BUILD_TARGET=$TARGET cmake ../src/
+
+    # Build serially (no parallelism) to ensure Fortran module dependencies are respected
+    if make; then
+        echo ""
+        echo "SUCCESS: $TARGET build completed"
+        echo "Executable: src/exec/main_${TARGET,,}"
+        echo ""
+    else
+        echo ""
+        echo "ERROR: $TARGET build failed"
+        echo ""
+        cd ../src/Scripts
+        exit 1
+    fi
+
+    cd ../src/Scripts
+}
+
+# Remove old build directories (only for targets being built)
+if [ $BUILD_GPU -eq 1 ]; then
+    rm -rf ../../build_gpu 2>/dev/null
+fi
+if [ $BUILD_CPU -eq 1 ]; then
+    rm -rf ../../build_cpu 2>/dev/null
+fi
+rm -rf ../../build 2>/dev/null
+
+# Build GPU version
+if [ $BUILD_GPU -eq 1 ]; then
+    build_target "GPU" "../../build_gpu"
+fi
+
+# Build CPU version
+if [ $BUILD_CPU -eq 1 ]; then
+    build_target "CPU" "../../build_cpu"
+fi
+
+# Clean up
 rm core* 2>/dev/null
 rm *.so 2>/dev/null
+
+echo ""
+echo "================================================"
+echo "Build Summary"
+echo "================================================"
+if [ $BUILD_GPU -eq 1 ]; then
+    if [ -f ../exec/main_gpu ]; then
+        echo "GPU executable: src/exec/main_gpu [OK]"
+    else
+        echo "GPU executable: [FAILED]"
+    fi
+fi
+
+if [ $BUILD_CPU -eq 1 ]; then
+    if [ -f ../exec/main_cpu ]; then
+        echo "CPU executable: src/exec/main_cpu [OK]"
+    else
+        echo "CPU executable: [FAILED]"
+    fi
+fi
+echo "================================================"

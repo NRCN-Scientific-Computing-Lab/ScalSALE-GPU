@@ -1,4 +1,3 @@
-
 module advect_module
     use vertex_boundary_condition_module, only : vertex_boundary_condition_t, vertex_bc_wrapper_t
     use cell_boundary_condition_module  , only : cell_boundary_condition_t  , cell_bc_wrapper_t
@@ -21,13 +20,39 @@ module advect_module
     use communication_parameters_module , only : communication_parameters_t
     use communication_module            , only : communication_t
     use material_quantity_module        , only : material_quantity_t
+    
+    use omp_lib
+    
+    use datafile_module                 , only : datafile_t
+    
     implicit none
     private
     public :: advect_t
+    
+    !! AVITAY :
+    real(8), dimension(:), allocatable, SAVE :: local_adv_mats_fxtm 
+    ! !$OMP THREADPRIVATE(local_adv_mats_fxtm)
+
+    real(8) :: start1, end1, time1
+    real(8) :: total_time1 = 0.0d0
+
+    real(8) :: start2, end2, time2
+    real(8) :: total_time2 = 0.0d0
+
+    real(8) :: start3, end3, time3
+    real(8) :: total_time3 = 0.0d0
+
+    real(8) :: start4, end4, time4
+    real(8) :: total_time4 = 0.0d0
+
+    real(8) :: start_time, total_time
+
+    
+
+    !! AVITAY
 
     type :: advect_t
         private
-
 
         type (rezone_t), pointer :: rezone
 
@@ -65,6 +90,8 @@ module advect_module
 
         type (data_t)                                   :: vel_adv_weight
 
+        type(datafile_t)                                :: datafile
+
         integer                                         :: advect_init_layer_mat
         integer                                         :: a0
         integer                                         :: b0
@@ -94,9 +121,69 @@ module advect_module
         real(8)                                         :: emf
         real(8)                                         :: emfm
         real(8)                                         :: emf1
+        
+        ! AVITAY
+        integer                                         :: file_unit_hexa
+        integer                                         :: file_unit_decimal
+        integer                                         :: file_unit_intermediate
+        integer                                         :: file_unit_intermediate_top
+        integer                                         :: file_unit_mixing
+        integer         , dimension(:,:,:), allocatable :: cell_colors
+        integer                                         :: num_colors
+
+        real(8) :: timer1_start
+        real(8) :: total_timer1_time = 0.0d0
+        real(8) :: timer2_start
+        real(8) :: total_timer2_time = 0.0d0
+        real(8) :: timer_data_start
+        real(8) :: total_timer_data = 0.0d0
+
+        real(8) :: line_calc_start, line_calc_end, line_calc_time
+        real(8) :: total_line_calc_time = 0.0d0
+
+        real(8) :: line_calc_top_start, line_calc_top_end, line_calc_top_time
+        real(8) :: total_line_calc_top_time = 0.0d0
+
+        real(8) :: line_calc_bottom_start, line_calc_bottom_end, line_calc_bottom_time
+        real(8) :: total_line_calc_bottom_time = 0.0d0
+
+        integer :: line_calc_top_0_count = 0, line_calc_top_1_count = 0
+        integer :: line_calc_bottom_0_count = 0, line_calc_bottom_1_count = 0
+
+        integer :: first_convergence_bottom = 0, first_convergence_top = 0
+        integer :: total_first_convergence_bottom = 0, total_first_convergence_top = 0
+
+        integer :: second_convergence_bottom = 0, second_convergence_top = 0
+        integer :: total_second_convergence_bottom = 0, total_second_convergence_top = 0
+
+        integer(kind=8) :: kernel_vol_frac_counter = 0
+        integer(kind=8) :: total_kernel_vol_frac_counter = 0
+        ! AVITAY: Added comprehensive counters for all geometric function calls in kernel
+        integer(kind=8) :: total_kernel_cut_plane_counter = 0
+        integer(kind=8) :: total_kernel_square_pyramid_counter = 0
+        integer(kind=8) :: total_kernel_physical_tetraeder_counter = 0
+        integer(kind=8) :: total_kernel_tetrahederon_counter = 0
+        ! AVITAY: Added Line_calc_3d geometry counters
+        integer(kind=8) :: total_line_calc_vol_frac_counter = 0
+        integer(kind=8) :: total_line_calc_cut_plane_counter = 0
+        integer(kind=8) :: total_line_calc_square_pyramid_counter = 0
+        integer(kind=8) :: total_line_calc_physical_tetraeder_counter = 0
+        integer(kind=8) :: total_line_calc_tetrahederon_counter = 0
+        ! AVITAY: Added _top and _bottom variants for Line_calc_3d geometry counters
+        integer(kind=8) :: total_line_calc_vol_frac_counter_top = 0
+        integer(kind=8) :: total_line_calc_cut_plane_counter_top = 0
+        integer(kind=8) :: total_line_calc_square_pyramid_counter_top = 0
+        integer(kind=8) :: total_line_calc_physical_tetraeder_counter_top = 0
+        integer(kind=8) :: total_line_calc_tetrahederon_counter_top = 0
+        integer(kind=8) :: total_line_calc_vol_frac_counter_bottom = 0
+        integer(kind=8) :: total_line_calc_cut_plane_counter_bottom = 0
+        integer(kind=8) :: total_line_calc_square_pyramid_counter_bottom = 0
+        integer(kind=8) :: total_line_calc_physical_tetraeder_counter_bottom = 0
+        integer(kind=8) :: total_line_calc_tetrahederon_counter_bottom = 0
+
+        ! AVITAY
 
     contains
-
 
         procedure, public :: Clean_advect
 
@@ -115,6 +202,9 @@ module advect_module
         procedure, public :: Volume_material_3d
 
         procedure, public :: Find_donnor_acceptor
+
+        !
+
 
         procedure, public :: Put_quantities_into_cell
 
@@ -151,15 +241,25 @@ module advect_module
         procedure, public :: Get_all_areas
 
         procedure, public :: Set_communication
+        
+        procedure, public :: Get_gpu_data_pointers
       
         procedure, public :: Write_advect
         generic :: write(unformatted) => Write_advect
 
-
         procedure, public :: Read_advect
         generic :: read(unformatted) => Read_advect
-    end type
 
+        ! AVITAY 
+        procedure, public :: Print_advect_data
+        ! procedure, public :: Get_file_unit
+        procedure, public :: Get_file_units
+        ! procedure, public :: print_3d_dimensions
+        ! procedure, public :: initialize_cell_colors
+        ! procedure, public :: time_region
+        ! AVITAY 
+
+    end type
 
     interface advect_t
         module procedure Constructor
@@ -172,7 +272,7 @@ contains
         materials, mat_cells, num_mat_cells, total_sie, total_vof, total_density, total_cell_mass, &
         vertex_mass, volume, velocity, emf, emfm, wilkins_scheme, parallel_params)
         use boundary_parameters_module      , only : boundary_parameters_t
-
+        use omp_lib
         implicit none
         integer                                 , intent(in) :: nxp
         integer                                 , intent(in) :: nyp
@@ -200,8 +300,10 @@ contains
         type (vertex_bc_wrapper_t), dimension(:), pointer, intent(in) :: bcv
         real(8)                                          , intent(in) :: emf
         real(8)                                          , intent(in) :: emfm
+        integer :: max_threads
 
         integer, intent(in) :: wilkins_scheme
+        character(len=20) :: threads_str
 
         integer :: i
 
@@ -258,7 +360,6 @@ contains
         Constructor%cyc_delete = 0
         allocate(material_advect_t :: Constructor%adv_mats)
 
-
         Constructor%mesh => mesh
         Constructor%total_sie => total_sie
         Constructor%total_density => total_density
@@ -275,7 +376,42 @@ contains
 
         Constructor%adv_mats = material_advect_t(nxp, nyp, nzp, nmats, mat_ids, bcc, bc_params)
 
+        Constructor%file_unit_hexa = 999
+        open(Constructor%file_unit_hexa, file="track_validation_overall", status="unknown", action="write")
 
+        Constructor%file_unit_decimal = 888
+        open(Constructor%file_unit_decimal, file="track_validation_overall_decimal", status="unknown", action="write")
+
+        Constructor%file_unit_intermediate = 998
+        Constructor%file_unit_intermediate_top = 997
+        !open(Constructor%file_unit_intermediate, file="track_validation_intermediate_hexa", status="unknown", action="write")
+
+        Constructor%file_unit_mixing = 245
+
+        if (omp_get_num_devices() > 0) then
+            open(Constructor%file_unit_intermediate, file="debug_kernel_gpu", status="unknown", action="write")
+            open(Constructor%file_unit_intermediate_top, file="debug_kernel_gpu_top", status="unknown", action="write")
+            open(Constructor%file_unit_mixing, file="mixing_tracking_gpu", status="unknown", action="write")
+        else
+            !$omp parallel
+            max_threads = omp_get_max_threads()
+            !$omp end parallel
+
+            open(Constructor%file_unit_intermediate, file="debug_kernel_cpu", status="unknown", action="write")
+            open(Constructor%file_unit_intermediate_top, file="debug_kernel_cpu_top", status="unknown", action="write")
+            !append the max_threads to the file name
+            ! ! convert max_threads to string
+            write(threads_str, '(I0)') max_threads
+            open(Constructor%file_unit_mixing, file="mixing_tracking_" // trim(threads_str), status="unknown", action="write")
+
+        end if
+
+        Constructor%datafile = datafile_t("../Datafiles/datafile.json")
+
+        ! allocate(Constructor%debug_fxtm(Constructor%n_materials, 6, Constructor%nx, Constructor%ny, Constructor%nz))
+        ! allocate(Constructor%debug_fxtm(this%n_materials, 6, this%nx, this%ny, this%nz))
+
+        ! AVITAY
 
     end function
 
@@ -283,7 +419,6 @@ contains
         use vof_module, only : vof_t
 
         class (advect_t)    , intent(in out) :: this
-
 
         !        real(8), dimension(:, :, :), pointer :: area_top_out
         !        real(8), dimension(:, :, :), pointer :: area_top_in
@@ -297,7 +432,6 @@ contains
         real(8), dimension(:,:,:,:), pointer :: area_top_in,area_top_out
         integer :: i, j, i1, j1, nx, ny, tmp_mat
 
-
         this%cyc_delete=this%cyc_delete+1
         call this%total_vof       %Point_to_data(vof)
         call this%adv_cell_mass%Point_to_data(cell_mass_adv)
@@ -308,7 +442,6 @@ contains
         call this%adv_mats%area_top_out%Point_to_data(area_top_out)
         nx = this%nx
         ny = this%ny
-
 
         sie_adv = 0d0
         cell_mass_adv = 0d0
@@ -339,8 +472,6 @@ contains
         !            mat_vof_adv  = 0d0
         !        end do
 
-
-
         do j = 1, ny
             do i = 1, nx
                 if ((vof(i, j    , 1) >= this%emf) .or. (vof(i + 1, j    , 1) >= this%emf) .or. (vof(i - 1, j, 1) >= this%emf) .or.&
@@ -348,11 +479,9 @@ contains
                     call this%Calculate_areas_for_advect(i, j)
                     call this%Calculate_cell_quantities_in_advect(i, j, 1)
                     call this%Fix_overflow_error(i, j, 1)
-
                 end if
             end do
         end do
-
 
         call this%total_density%Exchange_virtual_space_blocking()
         call this%vertex_mass%Calculate_vertex_mass_2d(this%mesh%coordinates, this%total_density, this%total_cell_mass , &
@@ -369,12 +498,7 @@ contains
         end do
         call this%total_cell_mass%Point_to_data(mat_vof_delete)
 
-
-
-
         call this%Advect_velocities()
-
-
 
         return
     end subroutine Calculate_advect_2d
@@ -447,7 +571,6 @@ contains
         vol_top    = vol(i  , j+1, 1)
         vol_center = vol(i  , j  , 1)
 
-
         if (i == 1) then
             vol_left  = vol_center
         else if (i == this%nx) then
@@ -458,7 +581,6 @@ contains
         else if (j == this%ny) then
             vol_top     = vol_center
         end if
-
 
         if (this%shorter_advect .and. i /= 1) then
             this%total_left_out = 0d0
@@ -480,7 +602,6 @@ contains
             this%total_left_out = total_area_out_tmp
             this%total_left_in  = total_area_in_tmp
         end if
-
 
         if (this%shorter_advect .and. j /= 1) then
             this%total_bottom_out = 0d0
@@ -722,10 +843,6 @@ contains
         end if
 
 
-
-
-
-
         df_dx = (f2 - f4) * (y(i, j + 1, 1) - y(i + 1, j, 1)) - (f1 - f3) * (y(i    , j    , 1) - y(i + 1, j + 1, 1))
 
         df_dy = (f4 - f2) * (x(i, j + 1, 1) - x(i + 1, j, 1)) - (f1 - f3) * (x(i + 1, j + 1, 1) - x(i    , j    , 1))
@@ -738,7 +855,6 @@ contains
             a = 1d0
             b = 0d0
         end if
-
 
 
         c_temp(1) = - a * x(i    , j    , 1) - b * y(i    , j    , 1)
@@ -760,7 +876,6 @@ contains
         ind(2) = 2
         ind(3) = 3
         ind(4) = 4
-
 
 
         do ii = 1, 3
@@ -989,8 +1104,6 @@ contains
             if (c_new > c_high) c_new = 2d0 * c_high - c_new
             if (c_new < c_low)  c_new = 2d0 * c_low  - c_new
         end do
-
-
 
         max_num_iter = MAX(max_num_iter, iter_count)
         c = c_new
@@ -1221,8 +1334,6 @@ contains
 
                     num_mat_cell_tmp = num_mat_cell_tmp + 1
 
-
-
                     call this%Calculate_vof_line_new (x_coor, y_coor, this%mesh%cyl, tmp_mat, &
                         id, jd, 1, this%nx, this%ny, this%nz,   &
                         a, b, c, xx1, yy1, xx2, yy2, max_num_iter)
@@ -1280,10 +1391,14 @@ contains
         return
     end subroutine Volume_material_old
 
-
     subroutine Volume_material_3d(this, i, j, k, itd, jtd, k_donner, ita, jta, k_accept, fxt, axt, &
         xl1, yl1, zl1, xl2, yl2, zl2, xl3, yl3, zl3, xl4, yl4, zl4, x1, y1, &
-        z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, vol1, vol2, vol3, vol4, iprint)
+        z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, vol1, vol2, vol3, vol4, iprint, &
+        tot_vof, mat_id, num_mat_cell, density, cell_mass, mat_vof, density_vof, &
+        cell_mass_vof, a_mat, b_mat, c_mat, side_mat, a_adv, b_adv, c_adv, side_adv, &
+        fxtm_thread, sxt1_thread, sxt2_thread, vol_frac_counter, &
+        cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter) 
+        !! AVITAY: ADDED 'local_adv_mats_fxtm'
         use geometry_module, only : Volume_fraction_3d
         implicit none
 
@@ -1292,52 +1407,93 @@ contains
         real(8), intent(in)              :: fxt, axt, xl1, yl1, zl1, xl2, yl2, zl2, xl3, yl3, &
             zl3, xl4, yl4, zl4, x1, y1, z1, x2, y2, z2, x3, y3, &
             z3, x4, y4, z4, vol1, vol2, vol3, vol4
-        real(8)                          :: fxtmt, xc1, yc1, zc1, xc2, yc2, zc2, xlc1, ylc1, zlc1, xlc2, &
-            ylc2, zlc2, ftph, vofmax, ftot, sg, a, b, c, side
 
-        real(8), dimension(:, :, :), pointer :: tot_vof, num_mat_cell
+        real(8), intent(in), dimension(:, :, :), pointer :: tot_vof, num_mat_cell
 
         real(8), dimension(:, :, :), pointer :: vof
-        real(8), dimension(:, :, :), pointer :: density
-        real(8), dimension(:, :, :), pointer :: cell_mass
+        real(8), intent(in), dimension(:, :, :), pointer :: density
+        real(8), intent(in), dimension(:, :, :), pointer :: cell_mass
 
-        real(8), dimension(:, :, :), pointer :: mat_id
-        real(8), dimension(:, :, :, :), pointer :: mat_vof
-        real(8), dimension(:, :, :, :), pointer :: density_vof
-        real(8), dimension(:, :, :, :), pointer :: a_adv
-        real(8), dimension(:, :, :, :), pointer :: b_adv
-        real(8), dimension(:, :, :, :), pointer :: c_adv
-        real(8), dimension(:, :, :, :), pointer :: side_adv
-        real(8), dimension(:, :, :, :), pointer :: a_mat, b_mat, c_mat, side_mat
-        real(8), dimension(:, :, :, :), pointer :: cell_mass_vof
+        real(8), intent(in), dimension(:, :, :), pointer :: mat_id
+        real(8), intent(in), dimension(:, :, :, :), pointer :: mat_vof
+        real(8), intent(in), dimension(:, :, :, :), pointer :: density_vof
+        real(8), intent(in), dimension(:, :, :, :), pointer :: a_adv
+        real(8), intent(in), dimension(:, :, :, :), pointer :: b_adv
+        real(8), intent(in), dimension(:, :, :, :), pointer :: c_adv
+        real(8), intent(in), dimension(:, :, :, :), pointer :: side_adv
+        real(8), intent(in), dimension(:, :, :, :), pointer :: a_mat, b_mat, c_mat, side_mat
+        real(8), intent(in), dimension(:, :, :, :), pointer :: cell_mass_vof
+        
+        !AVITAY: ADDED THIS.
+        real(8), intent(inout) :: fxtm_thread(this%n_materials)  ! ← This replaces this%adv_mats%fxtm
+        real(8), intent(inout) :: sxt1_thread(this%n_materials)  ! ← This replaces this%adv_mats%sxt1
+        real(8), intent(inout) :: sxt2_thread(this%n_materials)  ! ← This replaces this%adv_mats%sxt2
+        integer, intent(inout) :: vol_frac_counter
+        ! AVITAY: Added comprehensive counters for all geometric function calls in kernel
+        integer(kind=8), intent(inout) :: cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter
+
+        ! integer, intent(inout) :: sgn_thread(this%n_materials)  ! ← This replaces this%adv_mats%sgn
+
+        real(8)                          :: fxtmt, xc1, yc1, zc1, xc2, yc2, zc2, xlc1, ylc1, zlc1, xlc2, &
+            ylc2, zlc2, ftph, vofmax, ftot, sg, a, b, c, side
 
         integer :: mat_max
         integer                              :: ii, numb,  id, jd, kd
 
+        ! AVITAY
 
+        !integer :: vol_frac_counter
 
-        call this%total_vof      %Point_to_data(tot_vof)
-        call this%mat_cells      %Point_to_data(mat_id)
-        call this%num_mat_cells  %Point_to_data(num_mat_cell)
-        call this%total_density  %Point_to_data(density)
-        call this%total_cell_mass%Point_to_data(cell_mass)
-        call this%materials%vof%Point_to_data(mat_vof)
-        call this%materials%density%Point_to_data(density_vof)
-        call this%materials%cell_mass%Point_to_data(cell_mass_vof)
-        call this%adv_mats%a%Point_to_data(a_mat)
-        call this%adv_mats%b%Point_to_data(b_mat)
-        call this%adv_mats%c%Point_to_data(c_mat)
-        call this%adv_mats%side%Point_to_data(side_mat)
-        call this%a%Point_to_data(a_adv)
-        call this%b%Point_to_data(b_adv)
-        call this%c%Point_to_data(c_adv)
-        call this%side%Point_to_data(side_adv)
+        ! AVITAY
+
+        real(8) :: active_mask
+        real(8) :: mat_active(this%n_materials)
+        real(8) :: mat_order(this%n_materials)
+        integer :: active_count
+        real(8) :: use_standard, use_remainder
+        real(8) :: vf_calc
+        real(8) :: vof_current, is_new_max
+        real(8) :: ftot_array(this%n_materials)
+        real(8) :: use_donor
+        real(8) :: mass_limit
+        real(8) :: ftot_constraint
+        real(8) :: is_remainder
+        real(8) :: adjustment
+
+        !$OMP DECLARE TARGET
+
+        !! AVITAY: ADDED THIS.
+ 
+        ! real(8), dimension(:), intent(inout) :: local_adv_mats_fxtm 
+        ! real(8), dimension(*), intent(inout) :: local_adv_mats_fxtm 
+
+        ! call this%total_vof      %Point_to_data(tot_vof)
+        ! call this%mat_cells      %Point_to_data(mat_id)
+        ! call this%num_mat_cells  %Point_to_data(num_mat_cell)
+        ! call this%total_density  %Point_to_data(density)
+        ! call this%total_cell_mass%Point_to_data(cell_mass)
+        ! call this%materials%vof%Point_to_data(mat_vof)
+        ! call this%materials%density%Point_to_data(density_vof)
+        ! call this%materials%cell_mass%Point_to_data(cell_mass_vof)
+        ! call this%adv_mats%a%Point_to_data(a_mat)
+        ! call this%adv_mats%b%Point_to_data(b_mat)
+        ! call this%adv_mats%c%Point_to_data(c_mat)
+        ! call this%adv_mats%side%Point_to_data(side_mat)
+        ! call this%a%Point_to_data(a_adv)
+        ! call this%b%Point_to_data(b_adv)
+        ! call this%c%Point_to_data(c_adv)
+        ! call this%side%Point_to_data(side_adv)
 
         do ii = 1, this%n_materials
-            this%adv_mats%sxt1(ii) = 0d0
-            this%adv_mats%sxt2(ii) = 0d0
-            this%adv_mats%fxtm(ii) = 0d0
+            ! this%adv_mats%sxt1(ii) = 0d0
+            ! this%adv_mats%sxt2(ii) = 0d0
+            sxt1_thread(ii) = 0d0
+            sxt2_thread(ii) = 0d0
+            ! this%adv_mats%fxtm(ii) = 0d0 ! AVITAY
+            fxtm_thread(ii) = 0d0 ! AVITAY
+            ! local_adv_mats_fxtm(ii) = 0d0 ! AVITAY
         end do
+
         xc1 = (x1 + x3) / 2d0
         yc1 = (y1 + y3) / 2d0
         zc1 = (z1 + z3) / 2d0
@@ -1351,7 +1507,9 @@ contains
         xlc2 = (xl2 + xl4) / 2d0
         ylc2 = (yl2 + yl4) / 2d0
         zlc2 = (zl2 + zl4) / 2d0
+        
         if (tot_vof(itd, jtd, k_donner) < this%emf) return
+        ! active_mask = merge(1.0d0, 0.0d0, tot_vof(itd, jtd, k_donner) >= this%emf) ! THIS MASKING DEGRADED THE RESULTS
 
         if (tot_vof(itd, jtd, k_donner) < this%emf1) then
             a = a_adv(1, itd, jtd, k_donner)
@@ -1360,23 +1518,161 @@ contains
             side = side_adv(1, itd, jtd, k_donner)
 
             ftph = (Volume_fraction_3d (xl1 , yl1 , zl1 , xl2 , yl2 , zl2 , xl3 , yl3 , zl3 , xlc1, ylc1, zlc1,                      &
-                x1  , y1  , z1  , x2  , y2  , z2  , x3  , y3  , z3  , xc1 , yc1 , zc1 , a, b, c, side, vol1) &
+                x1  , y1  , z1  , x2  , y2  , z2  , x3  , y3  , z3  , xc1 , yc1 , zc1 , a, b, c, side, vol1, &
+                cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter) &
                 + Volume_fraction_3d (xl1 , yl1 , zl1 , xlc1, ylc1, zlc1, xl3 , yl3 , zl3 , xl4 , yl4 , zl4 ,                      &
-                x1  , y1  , z1  , xc1 , yc1 , zc1 , x3  , y3  , z3  , x4  , y4  , z4  , a, b, c, side, vol2) &
+                x1  , y1  , z1  , xc1 , yc1 , zc1 , x3  , y3  , z3  , x4  , y4  , z4  , a, b, c, side, vol2, &
+                cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter) &
                 + Volume_fraction_3d (xl1 , yl1 , zl1 , xl2 , yl2 , zl2 , xlc2, ylc2, zlc2, xl4 , yl4 , zl4 ,                      &
-                x1  , y1  , z1  , x2  , y2  , z2  , xc2 , yc2 , zc2 , x4  , y4  , z4  , a, b, c, side, vol3) &
+                x1  , y1  , z1  , x2  , y2  , z2  , xc2 , yc2 , zc2 , x4  , y4  , z4  , a, b, c, side, vol3, &
+                cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter) &
                 + Volume_fraction_3d (xlc2, ylc2, zlc2, xl2 , yl2 , zl2 , xl3 , yl3 , zl3 , xl4 , yl4 , zl4 ,                      &
-                xc2 , yc2 , zc2 , x2  , y2  , z2  , x3  , y3  , z3  , x4  , y4  , z4  , a, b, c, side, vol4))&
+                xc2 , yc2 , zc2 , x2  , y2  , z2  , x3  , y3  , z3  , x4  , y4  , z4  , a, b, c, side, vol4, &
+                cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter))&
                 * 0.25d0
+
+            vol_frac_counter = vol_frac_counter + 4
+
         else
             ftph = fxt
         end if
+
+        ! active_mask = merge(1.0d0, 0.0d0, tot_vof(itd, jtd, k_donner) < this%emf1)
+        
+        ! a = a_adv(1, itd, jtd, k_donner)
+        ! b = b_adv(1, itd, jtd, k_donner)
+        ! c = c_adv(1, itd, jtd, k_donner)
+        ! side = side_adv(1, itd, jtd, k_donner)
+
+        ! ftph = (Volume_fraction_3d (xl1 , yl1 , zl1 , xl2 , yl2 , zl2 , xl3 , yl3 , zl3 , xlc1, ylc1, zlc1,                      &
+        !         x1  , y1  , z1  , x2  , y2  , z2  , x3  , y3  , z3  , xc1 , yc1 , zc1 , a, b, c, side, vol1) &
+        !         + Volume_fraction_3d (xl1 , yl1 , zl1 , xlc1, ylc1, zlc1, xl3 , yl3 , zl3 , xl4 , yl4 , zl4 ,                      &
+        !         x1  , y1  , z1  , xc1 , yc1 , zc1 , x3  , y3  , z3  , x4  , y4  , z4  , a, b, c, side, vol2) &
+        !         + Volume_fraction_3d (xl1 , yl1 , zl1 , xl2 , yl2 , zl2 , xlc2, ylc2, zlc2, xl4 , yl4 , zl4 ,                      &
+        !         x1  , y1  , z1  , x2  , y2  , z2  , xc2 , yc2 , zc2 , x4  , y4  , z4  , a, b, c, side, vol3) &
+        !         + Volume_fraction_3d (xlc2, ylc2, zlc2, xl2 , yl2 , zl2 , xl3 , yl3 , zl3 , xl4 , yl4 , zl4 ,                      &
+        !         xc2 , yc2 , zc2 , x2  , y2  , z2  , x3  , y3  , z3  , x4  , y4  , z4  , a, b, c, side, vol4))&
+        !         * 0.25d0
+
+        ! ftph = ftph * active_mask + fxt * (1.0d0 - active_mask)
 
         numb = 1
         ftot = 0d0
         vofmax = 0d0
         mat_max = this%n_materials
 
+        ! ! MODIFIED SECTION:
+
+        ! ! Pre-compute material activity masks for all materials
+
+        ! ! First pass: Determine active materials and their ordering
+        ! active_count = 0
+        ! do ii = 1, this%n_materials
+        !     mat_active(ii) = merge(1.0d0, 0.0d0, mat_vof(ii, itd, jtd, k_donner) >= this%emf)
+        !     active_count = active_count + int(mat_active(ii))
+        !     mat_order(ii) = active_count * mat_active(ii)
+        ! end do
+
+        ! ! Second pass: Compute all material fractions with masking
+        ! do ii = 1, this%n_materials
+        !     ! Determine if this material uses the standard calculation path
+            
+        !     use_standard = merge(1.0d0, 0.0d0, mat_order(ii) > 0 .and. mat_order(ii) < num_mat_cell(itd, jtd, k_donner))
+        !     use_remainder = merge(1.0d0, 0.0d0, mat_order(ii) == num_mat_cell(itd, jtd, k_donner))
+            
+        !     ! Compute volume fraction for all materials (masked by activity)
+        !     vf_calc = 0.25d0 * mat_active(ii) * ( &
+        !         Volume_fraction_3d(xl1, yl1, zl1, xl2, yl2, zl2, xl3, yl3, zl3, &
+        !                         xlc1, ylc1, zlc1, x1, y1, z1, x2, y2, z2, x3, y3, z3, xc1, yc1, zc1, &
+        !                         a, b, c, side, vol1) + &
+        !         Volume_fraction_3d(xl1, yl1, zl1, xlc1, ylc1, zlc1, xl3, yl3, zl3, &
+        !                         xl4, yl4, zl4, x1, y1, z1, xc1, yc1, zc1, x3, y3, z3, x4, y4, z4, &
+        !                         a, b, c, side, vol2) + &
+        !         Volume_fraction_3d(xl1, yl1, zl1, xl2, yl2, zl2, xlc2, ylc2, zlc2, &
+        !                         xl4, yl4, zl4, x1, y1, z1, x2, y2, z2, xc2, yc2, zc2, x4, y4, z4, &
+        !                         a, b, c, side, vol3) + &
+        !         Volume_fraction_3d(xlc2, ylc2, zlc2, xl2, yl2, zl2, xl3, yl3, zl3, &
+        !                         xl4, yl4, zl4, xc2, yc2, zc2, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+        !                         a, b, c, side, vol4))
+            
+        !     ! Store initial calculation
+        !     fxtm_thread(ii) = vf_calc * use_standard
+            
+        !     ! Track maximum VOF material without branching
+            
+        !     vof_current = mat_vof(ii, itd, jtd, k_donner) * mat_active(ii)
+        !     is_new_max = merge(1.0d0, 0.0d0, vof_current > vofmax .and. use_standard > 0.5d0)
+        !     vofmax = vof_current * is_new_max + vofmax * (1.0d0 - is_new_max)
+        !     mat_max = int(real(ii) * is_new_max + real(mat_max) * (1.0d0 - is_new_max))
+        ! end do
+
+        ! ! Third pass: Apply constraints and compute running totals
+
+        ! ftot_array(1) = 0.0d0
+
+        ! do ii = 1, this%n_materials
+        !     if (mat_active(ii) < 0.5d0) cycle
+            
+        !     ! Compute sign and determine donor/acceptor indices
+        !     sg = sign(1.0d0, fxtm_thread(ii))
+            
+        !     use_donor = merge(1.0d0, 0.0d0, sg == sign(1.0d0, fxt))
+            
+        !     ! Compute effective indices without branching
+        !     id = int(real(itd) * use_donor + real(ita) * (1.0d0 - use_donor))
+        !     jd = int(real(jtd) * use_donor + real(jta) * (1.0d0 - use_donor))
+        !     kd = int(real(k_donner) * use_donor + real(k_accept) * (1.0d0 - use_donor))
+            
+        !     ! Apply mass conservation constraint
+            
+        !     mass_limit = 0.5d0 * cell_mass_vof(ii, id, jd, kd) / (density_vof(ii, id, jd, kd) + 1d-20)
+            
+        !     ! Apply sequential constraint based on running total
+            
+        !     use_standard = merge(1.0d0, 0.0d0, mat_order(ii) < num_mat_cell(itd, jtd, k_donner))
+            
+        !     ! Compute constrained value
+
+        !     ftot_constraint = abs(ftph - ftot)
+        !     fxtm_thread(ii) = sg * min(abs(fxtm_thread(ii)), mass_limit) * use_standard
+        !     fxtm_thread(ii) = sg * min(ftot_constraint, abs(fxtm_thread(ii))) * use_standard
+            
+        !     ! Update running total
+        !     ftot = ftot + fxtm_thread(ii)
+        !     ftot_array(ii) = ftot
+        ! end do
+
+        ! ! Fourth pass: Handle remainder material
+        ! do ii = 1, this%n_materials
+            
+        !     is_remainder = merge(1.0d0, 0.0d0, mat_order(ii) == num_mat_cell(itd, jtd, k_donner))
+            
+        !     if (is_remainder > 0.5d0) then
+        !         ! Compute remainder
+        !         fxtm_thread(ii) = (ftph - ftot_array(ii-1)) * mat_active(ii)
+                
+        !         ! Apply constraints
+        !         sg = sign(1.0d0, fxtm_thread(ii))
+                
+        !         use_donor = merge(1.0d0, 0.0d0, sg == sign(1.0d0, fxt))
+                
+        !         id = int(real(itd) * use_donor + real(ita) * (1.0d0 - use_donor))
+        !         jd = int(real(jtd) * use_donor + real(jta) * (1.0d0 - use_donor))
+        !         kd = int(real(k_donner) * use_donor + real(k_accept) * (1.0d0 - use_donor))
+                
+        !         fxtmt = sg * min(abs(fxtm_thread(ii)), 0.5d0 * cell_mass_vof(ii, id, jd, kd) / &
+        !                         (density_vof(ii, id, jd, kd) + 1d-20))
+                
+        !         ! Apply adjustment to mat_max
+                
+        !         adjustment = fxtm_thread(ii) - fxtmt
+        !         fxtm_thread(mat_max) = fxtm_thread(mat_max) + adjustment * merge(1.0d0, 0.0d0, mat_max > 0)
+        !         fxtm_thread(ii) = fxtmt
+        !     end if
+        ! end do
+        ! ! END OF MODIFIED SECTION.
+
+        ! ORIGINAL SECTION:
         do ii = 1, this%n_materials
 
             if (mat_vof(ii, itd, jtd, k_donner) < this%emf) cycle
@@ -1388,24 +1684,30 @@ contains
                     mat_max = ii
                 end if
 
-                this%adv_mats%fxtm(ii) = 0.25d0*( &
+                ! local_adv_mats_fxtm(ii) = ! AVITAY
+                ! this%adv_mats%fxtm(ii) = 0.25d0*( & ! AVITAY
+                fxtm_thread(ii) = 0.25d0*( & ! AVITAY
                     Volume_fraction_3d (xl1, yl1, zl1, xl2, yl2, zl2, xl3, yl3, zl3, &
                     xlc1, ylc1, zlc1, x1, y1, z1, x2, y2, z2, x3, y3, z3, xc1, yc1, zc1, &
-                    a, b, c, side, vol1)&
+                    a, b, c, side, vol1, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter)&
                     + &
                     Volume_fraction_3d (xl1, yl1, zl1, xlc1, ylc1, zlc1, xl3, yl3, zl3, &
                     xl4, yl4, zl4, x1, y1, z1, xc1, yc1, zc1, x3, y3, z3, x4, y4, z4, &
-                    a, b, c, side, vol2)&
+                    a, b, c, side, vol2, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter)&
                     + &
                     Volume_fraction_3d (xl1, yl1, zl1, xl2, yl2, zl2, xlc2, ylc2, zlc2, &
                     xl4, yl4, zl4, x1, y1, z1, x2, y2, z2, xc2, yc2, zc2, x4, y4, z4, &
-                    a, b, c, side, vol3)&
+                    a, b, c, side, vol3, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter)&
                     + &
                     Volume_fraction_3d (xlc2, ylc2, zlc2, xl2, yl2, zl2, xl3, yl3, zl3, &
                     xl4, yl4, zl4, xc2, yc2, zc2, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
-                    a, b, c, side, vol4))
+                    a, b, c, side, vol4, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter))
 
-                sg = sign(1.d0, this%adv_mats%fxtm(ii))
+                vol_frac_counter = vol_frac_counter + 4
+
+                ! sg = sign(1.d0, this%adv_mats%fxtm(ii))
+                sg = sign(1.d0, fxtm_thread(ii))
+                ! sg = sign(1.d0, local_adv_mats_fxtm(ii))
                 if (sg  == sign(1.d0, fxt)) then
                     id = itd
                     jd = jtd
@@ -1416,18 +1718,30 @@ contains
                     kd = k_accept
                 end if
 
+                !! AVITAY: CHANGED EVERY OCCURENCE OF this%adv_mats%fxtm(ii) TO local_adv_mats_fxtm(ii)
 
+                ! local_adv_mats_fxtm(ii) = sg * min(abs(local_adv_mats_fxtm(ii)), &
+                !     0.5 * cell_mass_vof(ii, id,jd,kd) / (density_vof(ii, id,jd,kd) + 1d-20))
+                ! this%adv_mats%fxtm(ii) = sg * min(abs(this%adv_mats%fxtm(ii)), &
+                !    0.5 * cell_mass_vof(ii, id,jd,kd) / (density_vof(ii, id,jd,kd) + 1d-20))
+                fxtm_thread(ii) = sg * min(abs(fxtm_thread(ii)), &
+                   0.5 * cell_mass_vof(ii, id,jd,kd) / (density_vof(ii, id,jd,kd) + 1d-20))
 
-                this%adv_mats%fxtm(ii) = sg * min(abs(this%adv_mats%fxtm(ii)), &
-                    0.5 * cell_mass_vof(ii, id,jd,kd) / (density_vof(ii, id,jd,kd) + 1d-20))
-
-
-                this%adv_mats%fxtm(ii) = sg*min(abs(ftph - ftot), abs(this%adv_mats%fxtm(ii)))
-                ftot = ftot + this%adv_mats%fxtm(ii)
+                ! local_adv_mats_fxtm(ii) = sg*min(abs(ftph - ftot), abs(local_adv_mats_fxtm(ii)))
+                ! ftot = ftot + local_adv_mats_fxtm(ii)
+                ! this%adv_mats%fxtm(ii) = sg*min(abs(ftph - ftot), abs(this%adv_mats%fxtm(ii)))
+                fxtm_thread(ii) = sg*min(abs(ftph - ftot), abs(fxtm_thread(ii)))
+                ! ftot = ftot + this%adv_mats%fxtm(ii)
+                ftot = ftot + fxtm_thread(ii)
             else
 
-                this%adv_mats%fxtm(ii) = ftph - ftot
-                sg = sign(1.d0,this%adv_mats%fxtm(ii))
+                ! local_adv_mats_fxtm(ii) = ftph - ftot
+                ! this%adv_mats%fxtm(ii) = ftph - ftot
+                fxtm_thread(ii) = ftph - ftot
+
+                ! sg = sign(1.d0,local_adv_mats_fxtm(ii))
+                sg = sign(1.d0,fxtm_thread(ii))
+
                 if (sg == sign(1.d0, fxt)) then
                     id = itd
                     jd = jtd
@@ -1438,29 +1752,81 @@ contains
                     kd = k_accept
                 end if
 
-                fxtmt = sg * min(abs(this%adv_mats%fxtm(ii)), 0.5*cell_mass_vof(ii, id, jd, kd) / (density_vof(ii, id, jd, kd) + 1d-20))
+                ! fxtmt = sg * min(abs(local_adv_mats_fxtm(ii)), 0.5*cell_mass_vof(ii, id, jd, kd) / (density_vof(ii, id, jd, kd) + 1d-20))
+                ! fxtmt = sg * min(abs(this%adv_mats%fxtm(ii)), 0.5*cell_mass_vof(ii, id, jd, kd) / (density_vof(ii, id, jd, kd) + 1d-20))
+                fxtmt = sg * min(abs(fxtm_thread(ii)), 0.5*cell_mass_vof(ii, id, jd, kd) / (density_vof(ii, id, jd, kd) + 1d-20))
 
                 if (mat_max > 0) then
-                    this%adv_mats%fxtm(mat_max) = this%adv_mats%fxtm(mat_max) + this%adv_mats%fxtm(ii) - fxtmt
+                    ! local_adv_mats_fxtm(mat_max) = local_adv_mats_fxtm(mat_max) + local_adv_mats_fxtm(ii) - fxtmt
+                    ! this%adv_mats%fxtm(mat_max) = this%adv_mats%fxtm(mat_max) + this%adv_mats%fxtm(ii) - fxtmt
+                    fxtm_thread(mat_max) = fxtm_thread(mat_max) + fxtm_thread(ii) - fxtmt
 
                 end if
-                this%adv_mats%fxtm(ii) = fxtmt
+                ! local_adv_mats_fxtm(ii) = fxtmt
+                ! this%adv_mats%fxtm(ii) = fxtmt
+                fxtm_thread(ii) = fxtmt
 
             end if
         end do
 
+        ! ORIGINAL SECTION ^
+
         if ((tot_vof(ita, jta, k_accept) > this%emf1).and. (tot_vof(itd, jtd, k_donner) > this%emf1).and. &
             (mat_id(ita, jta, k_accept) == mat_id(itd, jtd, k_donner)).and. (num_mat_cell(itd, jtd, k_donner) == 1)) then
+            
             ii = mat_id(itd, jtd, k_donner)
-            this%adv_mats%sxt1(ii) = this%adv_mats%fxtm(ii) * (1.d0 - axt)
-            this%adv_mats%sxt2(ii) = this%adv_mats%fxtm(ii) * (1.d0 + axt)
+            
+            ! ! DEBUGGING: Track when we use the simple path
+            ! if (this%cyc_delete >= 160) then
+            !     print *, "CYCLE", this%cyc_delete, ": Using SIMPLE path", "material=", ii
+            ! end if
+            
+            ! this%adv_mats%sxt1(ii) = local_adv_mats_fxtm(ii) * (1.d0 - axt)
+            ! this%adv_mats%sxt2(ii) = local_adv_mats_fxtm(ii) * (1.d0 + axt)
+
+            ! this%adv_mats%sxt1(ii) = this%adv_mats%fxtm(ii) * (1.d0 - axt)
+            ! this%adv_mats%sxt2(ii) = this%adv_mats%fxtm(ii) * (1.d0 + axt)
+
+            ! this%adv_mats%sxt1(ii) = fxtm_thread(ii) * (1.d0 - axt)
+            ! this%adv_mats%sxt2(ii) = fxtm_thread(ii) * (1.d0 + axt)
+
+            sxt1_thread(ii) = fxtm_thread(ii) * (1.d0 - axt)
+            sxt2_thread(ii) = fxtm_thread(ii) * (1.d0 + axt)
         else
+            ! ! DEBUGGING: Track when we enter the problematic else condition
+            ! if (this%cyc_delete >= 160) then
+            !     print *, "CYCLE", this%cyc_delete, ": Entering ELSE condition at i,j,k=", i, j, k
+            ! end if
+            
             do ii = 1, this%n_materials
-                this%adv_mats%sgn = sign(1d0, this%adv_mats%fxtm(ii))
-                this%adv_mats%sxt1(ii) = this%adv_mats%fxtm(ii) * (1d0 - this%adv_mats%sgn(ii))
-                this%adv_mats%sxt2(ii) = this%adv_mats%fxtm(ii) * (1d0 + this%adv_mats%sgn(ii))
+                ! this%adv_mats%sgn = sign(1d0, local_adv_mats_fxtm(ii))
+                ! this%adv_mats%sxt1(ii) = local_adv_mats_fxtm(ii) * (1d0 - this%adv_mats%sgn(ii))
+                ! this%adv_mats%sxt2(ii) = local_adv_mats_fxtm(ii) * (1d0 + this%adv_mats%sgn(ii))
+                
+                ! this%adv_mats%sgn = sign(1d0, this%adv_mats%fxtm(ii))
+                ! this%adv_mats%sxt1(ii) = this%adv_mats%fxtm(ii) * (1d0 - this%adv_mats%sgn(ii))
+                ! this%adv_mats%sxt2(ii) = this%adv_mats%fxtm(ii) * (1d0 + this%adv_mats%sgn(ii))
+
+                ! this%adv_mats%sgn = sign(1d0, fxtm_thread(ii))
+                ! this%adv_mats%sxt1(ii) = fxtm_thread(ii) * (1d0 - this%adv_mats%sgn(ii))
+                ! this%adv_mats%sxt2(ii) = fxtm_thread(ii) * (1d0 + this%adv_mats%sgn(ii))
+
+                ! this%adv_mats%sgn = sign(1d0, fxtm_thread(ii))
+                ! sxt1_thread(ii) = fxtm_thread(ii) * (1d0 - this%adv_mats%sgn(ii))
+                ! sxt2_thread(ii) = fxtm_thread(ii) * (1d0 + this%adv_mats%sgn(ii))
+
+                ! TRIAL: USE INLINE INSTEAD OF THIS%ADV_MATS%SGN(II)
+                ! this%adv_mats%sgn = sign(1d0, fxtm_thread(ii))
+                sxt1_thread(ii) = fxtm_thread(ii) * (1d0 - sign(1d0, fxtm_thread(ii)))
+                sxt2_thread(ii) = fxtm_thread(ii) * (1d0 + sign(1d0, fxtm_thread(ii)))
+
+                ! sgn_thread = sign(1d0, fxtm_thread(ii))
+                ! sxt1_thread(ii) = fxtm_thread(ii) * (1d0 - sgn_thread(ii))
+                ! sxt2_thread(ii) = fxtm_thread(ii) * (1d0 + sgn_thread(ii))
             end do
         end if
+
+        ! fxtm_thread(:) = fxtm_thread(:) * active_mask
 
     end subroutine Volume_material_3d
 
@@ -1547,8 +1913,6 @@ contains
         vof(i, j, 1)       = vof_adv(i, j, 1)
 
 
-
-
         if ((vof(i, j, 1) < this%emf) .or. (cell_mass(i, j, 1) < this%emfm)) then
             cell_mass(i, j, 1) = 0d0
             vof      (i, j, 1) = 0d0
@@ -1627,7 +1991,6 @@ contains
 
     subroutine Calculate_cell_quantities_in_advect(this, i, j, k)
         implicit none
-
 
         class(advect_t), intent(in out) :: this
 
@@ -1721,14 +2084,12 @@ contains
         call this%adv_mats%area_top_in%Point_to_data(area_t_in)
         call this%materials%Point_to_initial_layers(init_mat_layers)
 
-
         call this%materials%cell_mass%Point_to_data(cell_mass_vof)
         call this%materials%vof      %Point_to_data(mat_vof)
         call this%adv_mats %cell_mass%Point_to_data(mat_cell_mass_adv)
         call this%adv_mats %sie      %Point_to_data(sie_vof_adv)
         call this%adv_mats %vof      %Point_to_data(mat_vof_adv)
         call this%adv_mats%Point_to_initial_layers(init_mat_layers_adv)
-
 
         do tmp_mat = 1, this%n_materials
 
@@ -1770,12 +2131,10 @@ contains
             cell_mass_adv_out    = cell_mass_adv_out    + area_out           * density_vof(tmp_mat,i  , j  , 1)
         end do
 
-
         vof_adv(i, j, 1)       = (vof(i, j, 1) * mat_vol(i, j, 1) + total_area_adv) / vol(i, j, 1)
         cell_mass_adv(i, j, 1) = cell_mass(i, j, 1) + total_cell_mass_adv
 
         do tmp_mat = 1, this%n_materials
-
 
             mat_vof_adv(tmp_mat,i, j, 1)       = (mat_vof(tmp_mat,i, j, 1) * mat_vol(i, j, 1) + mat_vof_adv_tmp(tmp_mat)) / vol(i, j, 1)
             mat_cell_mass_adv(tmp_mat,i ,j, 1) = cell_mass_vof(tmp_mat,i, j, 1) + mat_cell_mass_adv_tmp(tmp_mat)
@@ -1789,8 +2148,6 @@ contains
                     init_mat_layers_adv(tmp_mat,i, j, 1) = (init_mat_layers(tmp_mat,i, j, 1) * cell_mass_vof(tmp_mat,i, j, 1) + init_mat_layers_tmp(tmp_mat)) / &
                         (mat_cell_mass_adv(tmp_mat,i ,j, 1) + 1d-30)
                 end if
-
-
 
             end if
         end do
@@ -1991,7 +2348,6 @@ contains
 
         real(8) :: fac
 
-
         if (.not. this%fix_overflow) then
             return
         end if
@@ -2011,12 +2367,9 @@ contains
         end do
         if (.not. need_fix) return
 
-
-
         if (vof_max == 0d0) then
             return
         end if
-
 
 
         call this%adv_mats%area_top_in%Point_to_data(area_t_in)
@@ -2066,7 +2419,6 @@ contains
         area_t_out_max(mat_fix,i, 1 ,1)     = area_t_out_max(mat_fix,i, 1 ,1) * fac
 
         call this%Calculate_cell_quantities_in_advect(i, j, k)
-
 
         return
     end subroutine Fix_overflow_error
@@ -2121,8 +2473,6 @@ contains
         real(8) :: area_out_fix_corrected
         real(8) :: area_out_fix_diff
         real(8) :: area_out_max_diff
-
-
 
         call this%momentum%Point_to_data(momentum_x, momentum_y)
 
@@ -2195,16 +2545,9 @@ contains
                 (cell_mass_vof_adv_max(mat_max, ia, ja, 1) + 1d-30)
         end if
 
-
-
-
-
-
-
         sie_adv(ia, ja, 1) = (sie_adv(ia, ja, 1) * cell_mass_adv_temp + &
             area_out_fix_diff * density_vof_fix(mat_fix,ia, ja ,1) * sie_vof_fix(mat_fix,ia, ja, 1) + &
             area_out_max_diff * density_vof_max(mat_max, ia, ja ,1) * sie_vof_max(mat_max, ia, ja, 1)) / cell_mass_adv(ia, ja, 1)
-
 
 
         momentum_x_adv(ia, ja, 1) = momentum_x_adv(ia, ja, 1) + &
@@ -2216,9 +2559,35 @@ contains
         return
     end subroutine Fix_overflow_for_passed_cell
 
+    ! AVITAY
+    
+    ! subroutine initialize_cell_colors(this)
+    !     implicit none
+    !     class(advect_t), intent(in out) :: this
+        
+    !     integer, dimension(:,:,:), allocatable :: cell_colors
+    !     integer                                :: num_colors
+    !     integer                                :: i, j, k  ! Add this line
+        
+    !     allocate(cell_colors(this%nx, this%ny, this%nz))
+        
+    !     ! Simple 8-color scheme for 3D grid
+    !     do k = 1, this%nz
+    !         do j = 1, this%ny
+    !             do i = 1, this%nx
+    !                 cell_colors(i,j,k) = mod(i,2) + 2*mod(j,2) + 4*mod(k,2) + 1
+    !             end do
+    !         end do
+    !     end do
+        
+    !     num_colors = 8 ! AVITAY: CHECK WHERE THIS COMES INTO PLAY!
+    ! end subroutine
+
+    ! AVITAY
 
     subroutine Calculate_advect_3d(this)
         use geometry_module, only : Tetrahederon_volume, Hexahedron_volume, Vertex_interp_3d
+        ! use datafile_module                 , only : datafile_t
         implicit none
         class(advect_t), intent(in out) :: this
 
@@ -2260,8 +2629,8 @@ contains
 
         real(8), dimension(:, :, :, :), pointer :: init_mat_layers_adv
 
-        real(8), dimension(:, :, :), pointer :: vel_adv_w
-
+        real(8), dimension(:, :, :), pointer :: vel_adv_weight
+        integer :: nxp, nyp, nzp 
         integer :: i, j, k, tmp_mat
         integer :: i_start, i_end
         integer :: j_start, j_end
@@ -2318,6 +2687,12 @@ contains
         real(8) :: dvof
         real(8) :: delete1,delete2,delete3
         logical :: associated_mat_vof
+        
+        ! PROFILING: Variables for redundant CPU computations
+        real(8) :: dummy_sum, dummy_prod, dummy_temp
+        real(8) :: dummy_sum2, dummy_prod2, dummy_temp2
+        integer :: prof_i, prof_j, prof_k
+        integer :: prof_i2, prof_j2, prof_k2
         real(8), dimension(4) :: tet_vol
 
         integer, dimension(6) :: face_i = [-1,  0,  0, 1, 0, 0]
@@ -2355,8 +2730,85 @@ contains
 
         logical :: wall_x_top, wall_x_bot, wall_y_top, wall_y_bot, wall_z_top, wall_z_bot
         integer :: virt_i_1, virt_i_nxp,virt_j_1, virt_j_nyp,virt_k_1, virt_k_nzp
-        integer :: virt_nxp, virt_nyp, virt_nzp
+        integer :: virt_nxp, virt_nyp, virt_nzp, mix_counter=0
 
+        ! AVITAY
+        
+        real(8), dimension(:, :, :), pointer :: tot_vof, num_mat_cell
+        real(8), dimension(:, :, :, :), pointer :: a_mat, b_mat, c_mat, side_mat
+        real(8), dimension(:, :, :, :), pointer :: a_adv, b_adv, c_adv, side_adv
+
+        real(8) :: loop_start, loop_end, loop_time
+        real(8) :: total_loop_time = 0.0d0
+        real(8) :: kernel_start, kernel_time
+        real(8) :: total_kernel_time = 0.0d0
+
+        real(8) :: data_movement_start, data_movement_time
+        real(8) :: total_data_movement_time = 0.0d0
+
+        real(8) :: data_movement_start2, data_movement_time2
+        real(8) :: total_data_movement_time2 = 0.0d0
+
+        real(8) :: call_start, call_time, avg_time, pct_time
+
+        real(8) :: advect_start, advect_end, advect_time
+        real(8) :: advect_total_time = 0.0d0
+
+        integer :: timestep_count = 0
+        integer :: shorter_advect
+        real(8) :: emf
+        real(8), allocatable :: thread_call_times(:)
+        integer, allocatable :: thread_call_counts(:)
+        integer :: max_threads, thread_id, total_calls
+        real(8) :: total_call_time, overall_avg_time
+
+        ! real(8), pointer, dimension(:) :: fxtm_ptr
+        ! real(8), pointer, dimension(:) :: sxt1_ptr
+        ! real(8), pointer, dimension(:) :: sxt2_ptr
+        ! integer, pointer, dimension(:) :: sgn_ptr
+
+        integer :: fxtm_size, sxt1_size, sxt2_size, sgn_size
+        
+        real(8), pointer, dimension(:) :: fxtm_copy
+        real(8), pointer, dimension(:) :: sxt1_copy
+        real(8), pointer, dimension(:) :: sxt2_copy
+        integer, pointer, dimension(:) :: sgn_copy
+        integer, allocatable, dimension(:) :: active_i, active_j, active_k
+        integer :: n_active
+        integer :: capture_index
+
+        ! Thread-local variables for inside the parallel region
+        real(8) :: fxtm_thread(this%n_materials)       ! Will be private to each thread
+        real(8) :: sxt1_thread(this%n_materials)       ! Will be private to each thread
+        real(8) :: sxt2_thread(this%n_materials)       ! Will be private to each thread
+        integer :: sgn_thread(this%n_materials)       ! Will be private to each thread
+        ! AVITAY: Added comprehensive counters for all geometric function calls in kernel and Line_calc_3d
+        integer :: vol_frac_counter
+        integer(kind=8) :: cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter
+
+        integer :: nx, ny, nz
+        integer :: a0, b0
+        integer :: n_materials
+        integer :: nm, idx
+        real(8) :: emfm, mass_threshold, velocity_limit
+        ! AVITAY
+
+        advect_start = omp_get_wtime() ! AVITAY
+
+        emf = this%emf
+        shorter_advect = this%shorter_advect
+        nx = this%nx
+        ny = this%ny
+        nz = this%nz
+        emfm = this%emfm
+        nxp = this%nxp
+        nyp = this%nyp
+        nzp = this%nzp
+        a0 = this%a0
+        b0 = this%b0
+        n_materials = this%n_materials
+        mass_threshold = this%rezone%mass_threshold
+        velocity_limit = this%rezone%velocity_limit
         virt_nxp = this%parallel_params%virt_nxp
         virt_nyp = this%parallel_params%virt_nyp
         virt_nzp = this%parallel_params%virt_nzp
@@ -2371,6 +2823,8 @@ contains
         call this%rezone  %Point_to_coordinates_3d(material_x, material_y, material_z)
         call this%mesh    %Point_to_data          (         x,          y,          z)
         call this%velocity%Point_to_data          (velocity_x, velocity_y, velocity_z)
+
+        call this%vel_adv_weight%Point_to_data(vel_adv_weight)
 
         call this%total_vof%Point_to_data(vof)
         call this%volume   %Point_to_data(vol)
@@ -2393,8 +2847,42 @@ contains
         call this%materials%cell_mass%Point_to_data(cell_mass_vof)
         call this%materials%Point_to_initial_layers(init_mat_layers)
 
-        allocate(vof_correction(this%nx, this%ny, this%nz))
+        ! FOR LINE_CALC_3D
+        call this%adv_mats%a%Point_to_data(a_mat)
+        call this%adv_mats%b%Point_to_data(b_mat)
+        call this%adv_mats%c%Point_to_data(c_mat)
+        call this%adv_mats%side%Point_to_data(side_mat)
 
+        call this%a%Point_to_data(a_adv)
+        call this%b%Point_to_data(b_adv)
+        call this%c%Point_to_data(c_adv)
+        call this%side%Point_to_data(side_adv)
+
+
+        ! write(this%file_unit_overall, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete
+
+        ! write(this%file_unit_overall, '(A)') "  I    J    K      SIE           DENSITY        CELL_MASS      VERTEX_MASS    NUM_MAT_CELLS"
+
+        ! do i = 1, this%nxp
+        !     do j = 1, this%nyp
+        !         do k = 1, this%nzp
+        !             write(this%file_unit_overall, '(3I5,5E15.6)') i, j, k, &
+        !                 this%total_sie%data(1)%values(i, j, k), &
+        !                 this%total_density%data(1)%values(i, j, k), &
+        !                 this%total_cell_mass%data(1)%values(i, j, k), &
+        !                 this%vertex_mass%data(1)%values(i, j, k), &
+        !                 this%num_mat_cells%data(1)%values(i, j, k)
+        !         end do
+        !     end do
+        ! end do
+
+        allocate(vof_correction(this%nx, this%ny, this%nz))
+        
+        ! AVITAY ADDED THIS
+        ! allocate(fxtm_thread(this%n_materials), source=0d0)
+        ! allocate(sxt1_thread(this%n_materials), source=0d0)
+        ! allocate(sxt2_thread(this%n_materials), source=0d0)
+        
         i_start = 0
         j_start = 0
         k_start = 0
@@ -2420,20 +2908,126 @@ contains
             if (virt_k_nzp /= virt_nzp .or. wall_z_top .eqv. .false.) k_end = k_end - 1
         end if
 
+        this%first_convergence_top = 0
+        this%first_convergence_bottom = 0
+        this%second_convergence_top = 0
+        this%second_convergence_bottom = 0
 
+        ! timer start here
 
+        data_movement_start2 = omp_get_wtime() 
 
+        !$OMP TARGET UPDATE TO(vof, mat_vof, a_adv, b_adv, c_adv, side_adv, a_mat, b_mat, c_mat, side_mat, material_x, material_y, material_z, n_materials_in_cell) 
+        !!$OMP TARGET ENTER DATA MAP(TO: vof, mat_vof, a_adv, b_adv, c_adv, side_adv, a_mat, b_mat, c_mat, side_mat, material_x, material_y, material_z, n_materials_in_cell) 
 
+        data_movement_time2 = omp_get_wtime() - data_movement_start2
 
+        this%line_calc_top_time = 0.0d0
+        this%line_calc_bottom_time = 0.0d0
 
+        ! AVITAY: Initialize counters for Line_calc_3d
+        vol_frac_counter = 0
+        cut_plane_counter = 0
+        square_pyramid_counter = 0
+        physical_tetraeder_counter = 0
+        tetrahederon_counter = 0
 
+        call this%Line_calc_3d(0, i_start, i_end, j_start, j_end, k_start, k_end, vof, mat_vof, a_adv, b_adv, c_adv, side_adv, material_x, material_y, material_z, n_materials_in_cell)
+        
+        ! ! PROFILING: Redundant CPU computation BEFORE Line_calc_3d calls
+        ! dummy_sum = 0.0d0
+        ! dummy_prod = 1.0d0
+        ! do prof_i = 1, 5000
+        !     do prof_j = 1, 1000
+        !         dummy_temp = sin(real(prof_i, 8) * 0.001d0) * cos(real(prof_j, 8) * 0.001d0)
+        !         dummy_sum = dummy_sum + dummy_temp * dummy_temp
+        !         dummy_prod = dummy_prod * (1.0d0 + dummy_temp * 1.0d-10)
+        !     end do
+        ! end do
+        ! if (dummy_sum < -999999.0d0) write(*,*) 'Profiling marker:', dummy_prod
 
-        call this%line_calc_3d(0, i_start, i_end, j_start, j_end, k_start, k_end)
-        call this%line_calc_3d(1, i_start, i_end, j_start, j_end, k_start, k_end)
+        call this%Line_calc_3d(1, i_start, i_end, j_start, j_end, k_start, k_end, vof, mat_vof, a_mat, b_mat, c_mat, side_mat, material_x, material_y, material_z, n_materials_in_cell)
 
+        ! ! AVITAY: Accumulate Line_calc_3d counters to totals
+        ! this%total_line_calc_vol_frac_counter = this%total_line_calc_vol_frac_counter + vol_frac_counter
+        ! this%total_line_calc_cut_plane_counter = this%total_line_calc_cut_plane_counter + cut_plane_counter  
+        ! this%total_line_calc_square_pyramid_counter = this%total_line_calc_square_pyramid_counter + square_pyramid_counter
+        ! this%total_line_calc_physical_tetraeder_counter = this%total_line_calc_physical_tetraeder_counter + physical_tetraeder_counter
+        ! this%total_line_calc_tetrahederon_counter = this%total_line_calc_tetrahederon_counter + tetrahederon_counter
 
+        ! ! PROFILING: Redundant CPU computation AFTER Line_calc_3d calls
+        ! dummy_sum2 = 0.0d0
+        ! dummy_prod2 = 1.0d0
+        ! do prof_i2 = 1, 5000
+        !     do prof_j2 = 1, 1000
+        !         dummy_temp2 = exp(real(prof_i2, 8) * 0.0001d0) * log(1.0d0 + real(prof_j2, 8) * 0.001d0)
+        !         dummy_sum2 = dummy_sum2 + dummy_temp2 * dummy_temp2
+        !         dummy_prod2 = dummy_prod2 * (1.0d0 + dummy_temp2 * 1.0d-10)
+        !     end do
+        ! end do
+        ! if (dummy_sum2 < -999999.0d0) write(*,*) 'Profiling marker2:', dummy_prod2
 
+        this%total_line_calc_top_time = this%total_line_calc_top_time + this%line_calc_top_time
+        this%total_line_calc_bottom_time = this%total_line_calc_bottom_time + this%line_calc_bottom_time
 
+        data_movement_start2 = omp_get_wtime() 
+
+        !!$OMP TARGET UPDATE FROM(vof, mat_vof, a_adv, b_adv, c_adv, side_adv, a_mat, b_mat, c_mat, side_mat, material_x, material_y, material_z, n_materials_in_cell) 
+        !!$OMP TARGET EXIT DATA MAP(FROM: vof, mat_vof, a_adv, b_adv, c_adv, side_adv, a_mat, b_mat, c_mat, side_mat, material_x, material_y, material_z, n_materials_in_cell) 
+
+        data_movement_time2 = data_movement_time2 + (omp_get_wtime() - data_movement_start2) ! AVITAY
+        total_data_movement_time2 = total_data_movement_time2 + data_movement_time2 ! AVITAY
+        
+        if (this%cyc_delete == this%datafile%max_ncyc-2) then
+
+            ! BOTTOM Line_calc_3d results (nm=0)
+            write(this%file_unit_intermediate, '(A)') "============================================================================================================="
+            write(this%file_unit_intermediate, '(A,I0)') "BOTTOM LINE_CALC_3D (nm=0) - TIMESTEP NUMBER: ", this%cyc_delete
+            write(this%file_unit_intermediate, '(A)') "============================================================================================================="
+            write(this%file_unit_intermediate, '(A)') "  I    J    K   MAT  NM |        vof/mat_vof         |      a1       |     b1      |     c2    |    side1"
+            write(this%file_unit_intermediate, '(A)') "-------------------------------------------------------------------------------------------------------------"
+
+            do i = 1, this%nx
+                do j = 1, this%ny
+                    do k = 1, this%nz
+                        write(this%file_unit_intermediate, '(5I5,5(" | ",Z18))') i, j, k, 1, 0, &
+                            transfer(vof(i, j, k), 0_8), &
+                            transfer(a_adv(1, i, j, k), 0_8), &
+                            transfer(b_adv(1, i, j, k), 0_8), &
+                            transfer(c_adv(1, i, j, k), 0_8), &
+                            transfer(side_adv(1, i, j, k), 0_8)
+                    end do
+                end do
+            end do
+
+            ! BOTTOM Line_calc_3d results (nm=1)
+            write(this%file_unit_intermediate, '(A)') "============================================================================================================="
+            write(this%file_unit_intermediate, '(A,I0)') "BOTTOM LINE_CALC_3D (nm=1) - TIMESTEP NUMBER: ", this%cyc_delete
+            write(this%file_unit_intermediate, '(A)') "============================================================================================================="
+            write(this%file_unit_intermediate, '(A)') "  I    J    K   MAT  NM |        vof/mat_vof         |      a1       |     b1      |     c2    |    side1"
+            write(this%file_unit_intermediate, '(A)') "-------------------------------------------------------------------------------------------------------------"
+
+            do i = 1, this%nx
+                do j = 1, this%ny
+                    do k = 1, this%nz
+                        do tmp_mat = 1, this%n_materials
+                            write(this%file_unit_intermediate, '(5I5,5(" | ",Z18))') i, j, k, tmp_mat, 1, &
+                                transfer(mat_vof(tmp_mat, i, j, k), 0_8), &
+                                transfer(a_mat(tmp_mat, i, j, k), 0_8), &
+                                transfer(b_mat(tmp_mat, i, j, k), 0_8), &
+                                transfer(c_mat(tmp_mat, i, j, k), 0_8), &
+                                transfer(side_mat(tmp_mat, i, j, k), 0_8)
+                       end do
+                    end do
+                end do
+            end do
+        end if
+
+        ! loop_time = loop_end - loop_start
+        ! total_loop_time = total_loop_time + loop_time
+        ! timestep_count = timestep_count + 1
+        
+        ! AVITAY
 
         !        do tmp_mat=1, this%n_materials
         call this%adv_mats%a%Exchange_virtual_space_blocking()
@@ -2444,17 +3038,15 @@ contains
 
         call this%num_mat_cells%Exchange_virtual_space_blocking()
 
-
-
         vof_adv = 0d0
         mat_vof_adv = 0d0
 
-
+        !! AVITAY :  IT'S BETTER *NOT* TO PARALLELIZE THIS LOOP, CORRECTNESS REMAINS, BUT SLOWER RUNTIME.
+        ! !$omp parallel do
         do k = 0, this%nzp
             do j = 0, this%nyp
                 do i = 0, this%nxp
                     do tmp_mat = 1, this%n_materials
-
                         init_mat_layers_adv(tmp_mat, i, j, k) = init_mat_layers(tmp_mat, i, j, k) * cell_mass_vof(tmp_mat, i, j, k)
                         mat_cell_mass_adv  (tmp_mat, i, j, k) = cell_mass_vof(tmp_mat, i, j, k)
                         sie_vof_adv        (tmp_mat, i, j, k) = sie_vof(tmp_mat, i, j, k) * cell_mass_vof(tmp_mat, i, j, k)
@@ -2462,27 +3054,189 @@ contains
                 end do
             end do
         end do
+        ! !$omp end parallel do
 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
+        ! loop_start = omp_get_wtime() ! AVITAY
+        
+        ! AVITAY : CHANGING THE EXECUTION ORDER FROM "1, this%nz/ny/nx" to "this%nz/ny/nx, 1, -1" DOESN'T MESS UP CORRECTION (ONLY AT LAST 15-16 DIGITS)
 
-                    if ((vof(i  , j, k  ) < this%emf) .and. (vof(i  , j-1, k) < this%emf) .and.  &
-                        (vof(i  , j, k-1) < this%emf) .and. (vof(i  , j+1, k) < this%emf) .and.  &
-                        (vof(i  , j, k+1) < this%emf) .and. (vof(i-1, j  , k) < this%emf) .and.  &
-                        (vof(i+1, j, k  ) < this%emf)) then
+        max_threads = omp_get_max_threads()
+        ! allocate(thread_call_times(max_threads))
+        ! allocate(thread_call_counts(max_threads))
+        ! thread_call_times = 0.0d0
+        ! thread_call_counts = 0
+
+        loop_start = omp_get_wtime()
+        
+        ! GPU MOVEMENTS
+        
+        ! 'face_i', 'face_j', 'face_k', 'face_vert_i', 'face_vert_j', 'face_vert_k' are static arrays, so they are automatically mapped to-from the GPU
+
+        ! allocate(fxtm_ptr(this%n_materials))
+        ! allocate(sxt1_ptr(this%n_materials))
+        ! allocate(sxt2_ptr(this%n_materials))
+        ! allocate(sgn_ptr(this%n_materials))
+        ! fxtm_ptr = this%adv_mats%fxtm  ! Point to the actual array
+        ! fxtm_size = size(fxtm_ptr)      ! Get the size for allocation later
+        ! sxt1_ptr = this%adv_mats%sxt1
+        ! sxt1_size = size(sxt1_ptr)
+        ! sxt2_ptr = this%adv_mats%sxt2
+        ! sxt2_size = size(sxt2_ptr)
+        ! sgn_ptr = this%adv_mats%sgn
+        ! sgn_size = size(sgn_ptr)
+
+        ! ! CRITICAL: Verify the pointers are associated and contiguous
+        ! if (.not. associated(fxtm_ptr) .or. &
+        !     .not. associated(sxt1_ptr) .or. &
+        !     .not. associated(sxt2_ptr) .or. &
+        !     .not. associated(sgn_ptr)) then
+        !     if (.not. associated(fxtm_ptr)) print *, "ERROR: fxtm is not associated!"
+        !     if (.not. associated(sxt1_ptr)) print *, "ERROR: sxt1 is not associated!"
+        !     if (.not. associated(sxt2_ptr)) print *, "ERROR: sxt2 is not associated!"
+        !     if (.not. associated(sgn_ptr)) print *, "ERROR: sgn is not associated!"
+        !     stop
+        ! end if
+
+        ! ! Create a regular array copy of the pointed-to data
+        ! allocate(fxtm_copy(fxtm_size))
+        ! fxtm_copy(:) = fxtm_ptr(:)  ! Copy the actual values
+
+        ! allocate(sxt1_copy(sxt1_size))
+        ! sxt1_copy(:) = sxt1_ptr(:)  ! Copy the actual values
+
+        ! allocate(sxt2_copy(sxt2_size))
+        ! sxt2_copy(:) = sxt2_ptr(:)  ! Copy the actual values
+
+        ! allocate(sgn_copy(sgn_size))
+        ! sgn_copy(:) = sgn_ptr(:)  ! Copy the actual values
+
+        ! write(*,*) "fxtm_copy", fxtm_copy
+        ! write(*,*) "sxt1_copy", sxt1_copy
+        ! write(*,*) "sxt2_copy", sxt2_copy   
+        ! write(*,*) "sgn_copy", sgn_copy   
+        ! write(*,*) "cycle number", this%cyc_delete
+        
+
+        data_movement_start = omp_get_wtime()
+        
+        ! ** STATIC ARRAYS ARE AUTOMATICALLY MAPPED TO-FROM THE GPU. **
+
+        !$OMP TARGET UPDATE TO(x, y, z, vof_adv, &
+        !$OMP& mat_vof_adv, sie_vof, vol, mat_id, init_mat_layers, mat_cell_mass_adv, &
+        !$OMP& cell_mass_adv, sie_vof_adv, init_mat_layers_adv, density, cell_mass, &
+        !$OMP& density_vof, cell_mass_vof)
+
+        !!$OMP TARGET ENTER DATA MAP(TO: vof, material_x, material_y, material_z, x, y, z, vof_adv, &
+        !!$OMP& mat_vof_adv, sie_vof, vol, mat_id, n_materials_in_cell, init_mat_layers, mat_cell_mass_adv, &
+        !!$OMP& cell_mass_adv, sie_vof_adv, init_mat_layers_adv, density, cell_mass, mat_vof, &
+        !!$OMP& density_vof, cell_mass_vof, a_mat, b_mat, c_mat, side_mat, a_adv, b_adv, c_adv, side_adv)
+
+        data_movement_time = omp_get_wtime() - data_movement_start
+        total_data_movement_time = total_data_movement_time + data_movement_time
+        
+        !     write(this%file_unit_intermediate, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete ! OR "this%cyc_delete-1" to start from 0
+            
+        !     write(this%file_unit_intermediate, '(A)') "  I    J    K   |        SIE         |      DENSITY       |     CELL_MASS      |     VERTEX_MASS    |    NUM_MAT_CELLS"
+        !     write(this%file_unit_intermediate, '(A)') "-------------------------------------------------------------------------------------------------------------"
+            
+        !     do i = 1, this%nx
+        !         do j = 1, this%ny
+        !             do k = 1, this%nz
+        !                ! do tmp_mat = 1, this%n_materials
+        !                     !do face = 1, 6
+        !             ! write(this%file_unit_intermediate, '(3I5,5(" | ",Z18))') i, j, k, &
+        !             !     transfer(this%total_sie%data(1)%values(i, j, k), 0_8), &
+        !             !     transfer(this%total_density%data(1)%values(i, j, k), 0_8), &
+        !             !     transfer(this%total_cell_mass%data(1)%values(i, j, k), 0_8), &
+        !             !     transfer(this%vertex_mass%data(1)%values(i, j, k), 0_8), &
+        !             !     transfer(this%num_mat_cells%data(1)%values(i, j, k), 0_8)
+
+
+        !             write(this%file_unit_intermediate, '(3I5,8(" | ",Z18))') i, j, k, &
+        !                 transfer(material_x(i, j, k), 0_8), &
+        !                 transfer(material_y(i, j, k), 0_8), &
+        !                 transfer(material_z(i, j, k), 0_8), &
+        !                 transfer(x(i, j, k), 0_8), &
+        !                 transfer(y(i, j, k), 0_8), &
+        !                 transfer(z(i, j, k), 0_8), &
+        !                 transfer(vof(i, j, k), 0_8)
+        !                     !end do
+        !                !end do 
+        !             end do
+        !         end do
+        !     end do
+        ! end if
+
+        kernel_start = omp_get_wtime()
+
+        !!! CPU !!! (IF GPU SECTION ABOVE IS COMMENTED OUT THEN UNCOMMENT THIS SECTION BELOW, AND VICE VERSA)
+
+        ! !$OMP PARALLEL PRIVATE(face, i_face, j_face, k_face, i1, j1, k1, i2, j2, k2, &
+        ! !$OMP& i3, j3, k3, i4, j4, k4, x_lag1, y_lag1, z_lag1, x_lag2, y_lag2, z_lag2, x_lag3, y_lag3, z_lag3, &
+        ! !$OMP& x_lag4, y_lag4, z_lag4, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, is_iregular, &
+        ! !$OMP& tet_vol, tet_counter, sign_tet_vol1, sign_tet_vol2, dx_avg, dy_avg, dz_avg, &
+        ! !$OMP& x_mid1, y_mid1, z_mid1, x_mid2, y_mid2, z_mid2, x_mid_lag1, y_mid_lag1, z_mid_lag1, &
+        ! !$OMP& x_mid_lag2, y_mid_lag2, z_mid_lag2, hexa_vol1, hexa_vol2, hexa_vol3, hexa_vol4, &
+        ! !$OMP& hexa_vol_quart, weight, id, jd, kd, ia, ja, ka, adv_vol, tmp_mat, dvof, &
+        ! !$OMP& donnor_mass, donnor_sie, associated_mat_vof, donnor_init_mat_layer, &
+        ! !$OMP& call_start, call_time, fxtm_thread, sxt1_thread, sxt2_thread)
+
+        ! AVITAY: 'local_adv_mats_fxtm' is now a local variable in Volume_material_3d
+        ! allocate(local_adv_mats_fxtm(size(this%adv_mats%fxtm)))
+
+        ! Get thread ID for timing data
+        ! thread_id = omp_get_thread_num() + 1
+        ! DON'T FORGET TO PRIVATIZE 'thread_id' IF WE USE IT!
+
+        vol_frac_counter = 0
+        cut_plane_counter = 0
+        square_pyramid_counter = 0
+        physical_tetraeder_counter = 0
+        tetrahederon_counter = 0
+        !$OMP TARGET ENTER DATA MAP(TO: vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter)
+
+        ! KERNEL STARTS HERE!!
+
+        ! !$OMP DO COLLAPSE(3) SCHEDULE(dynamic, 8)
+        ! !$OMP DISTRIBUTE
+#ifdef GPU_BUILD
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) &
+#else
+        !$OMP PARALLEL DO COLLAPSE(3) &
+#endif
+        !$OMP& PRIVATE(face, i_face, j_face, k_face, i1, j1, k1, i2, j2, k2, &
+        !$OMP& i3, j3, k3, i4, j4, k4, x_lag1, y_lag1, z_lag1, x_lag2, y_lag2, z_lag2, x_lag3, y_lag3, z_lag3, &
+        !$OMP& x_lag4, y_lag4, z_lag4, x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, is_iregular, &
+        !$OMP& tet_vol, tet_counter, sign_tet_vol1, sign_tet_vol2, dx_avg, dy_avg, dz_avg, &
+        !$OMP& x_mid1, y_mid1, z_mid1, x_mid2, y_mid2, z_mid2, x_mid_lag1, y_mid_lag1, z_mid_lag1, &
+        !$OMP& x_mid_lag2, y_mid_lag2, z_mid_lag2, hexa_vol1, hexa_vol2, hexa_vol3, hexa_vol4, &
+        !$OMP& hexa_vol_quart, weight, id, jd, kd, ia, ja, ka, adv_vol, tmp_mat, dvof, &
+        !$OMP& donnor_mass, donnor_sie, associated_mat_vof, donnor_init_mat_layer, &
+        !$OMP& fxtm_thread, sxt1_thread, sxt2_thread) REDUCTION(+:vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter)
+        do k = 1, nz
+            do j = 1, ny
+                do i = 1, nx
+        ! write(*,*) "Thread ID", omp_get_thread_num()
+
+                    ! write(*,*) "VOF(,j,k)", vof(i, j, k)
+                    if ((vof(i  , j, k  ) < emf) .and. (vof(i  , j-1, k) < emf) .and.  &
+                        (vof(i  , j, k-1) < emf) .and. (vof(i  , j+1, k) < emf) .and.  &
+                        (vof(i  , j, k+1) < emf) .and. (vof(i-1, j  , k) < emf) .and.  &
+                        (vof(i+1, j, k  ) < emf)) then
 
                         cycle
                     end if
                     associated_mat_vof = .false.
-
+                    
+                    ! AVITAY : FOR EACH i,j,k - CHANGING THE EXECUTION ORDER FROM "1, 6" to "6, 1, -1" MESSES UP THE CORRECTNESS)
                     do face = 1, 6
 
-                        if (this%shorter_advect) then
+                        if (shorter_advect) then
                             if ((i > 1 .and. face == 1) .or. (j > 1 .and. face == 2) .or. (k > 1 .and. face == 3)) then
                                 cycle
                             end if
                         end if
+                        
                         i_face = i + face_i(face)
                         j_face = j + face_j(face)
                         k_face = k + face_k(face)
@@ -2534,8 +3288,7 @@ contains
                         x4 = x(i4, j4, k4)
                         y4 = y(i4, j4, k4)
                         z4 = z(i4, j4, k4)
-
-
+                        
                         is_iregular = 0
                         tet_vol(1) = Tetrahederon_volume(x1, y1, z1, x2, y2, z2, x3, y3, z3, x_lag2, y_lag2, z_lag2)
                         tet_vol(2) = Tetrahederon_volume(x2, y2, z2, x3, y3, z3, x1, y1, z1, x_lag3, y_lag3, z_lag3)
@@ -2553,7 +3306,7 @@ contains
                             end if
                             tet_counter = tet_counter + 1
                         end do
-
+                        
                         if (is_iregular == 0) then
                             tet_vol(1) = Tetrahederon_volume(x1, y1, z1, x4, y4, z4, x3, y3, z3, x_lag4, y_lag4, z_lag4)
                             tet_vol(2) = Tetrahederon_volume(x4, y4, z4, x3, y3, z3, x1, y1, z1, x_lag3, y_lag3, z_lag3)
@@ -2603,7 +3356,6 @@ contains
                             end do
                         end if
 
-
                         if(is_iregular == 1) then
                             dx_avg = ((x_lag1 - x1) + (x_lag2 - x2) + (x_lag3 - x3) + (x_lag4 - x4)) / 4d0
                             dy_avg = ((y_lag1 - y1) + (y_lag2 - y2) + (y_lag3 - y3) + (y_lag4 - y4)) / 4d0
@@ -2625,8 +3377,6 @@ contains
                             y4 = y_lag4 - dy_avg
                             z4 = z_lag4 - dz_avg
                         end if
-
-
 
                         x_mid1  = (x1 + x3) / 2d0
                         y_mid1  = (y1 + y3) / 2d0
@@ -2663,9 +3413,10 @@ contains
                             x3        , y3        , z3        , x4        , y4        , z4          )
 
                         hexa_vol_quart = 0.25d0 * (hexa_vol1 + hexa_vol2 + hexa_vol3 + hexa_vol4)
-                        weight = this%a0 * sign(1d0, hexa_vol_quart) + this%b0 * 2d0 * hexa_vol_quart / vol(i, j, k)
+                        weight = a0 * sign(1d0, hexa_vol_quart) + b0 * 2d0 * hexa_vol_quart / vol(i, j, k)
 
                         if (abs(hexa_vol_quart) > 1d-15) then
+                        !  write 
                             if (hexa_vol_quart < 0d0) then
                                 id = i
                                 jd = j
@@ -2683,197 +3434,695 @@ contains
                             end if
                             adv_vol = hexa_vol_quart * 2d0
 
+                            ! !$OMP CRITICAL
+                            ! call_start = omp_get_wtime()
 
+                            fxtm_thread = 0d0 !1d-7 !fxtm_copy(:)
+                            sxt1_thread = 0d0 !sxt1_copy(:)
+                            sxt2_thread = 0d0 !sxt2_copy(:)
+                            !sgn_thread(:) = sgn_copy(:)
 
-                            call this%Volume_material_3d(i, j, k, id, jd, kd, ia, ja, ka               , &
+                            call Volume_material_3d(this, i, j, k, id, jd, kd, ia, ja, ka               , &
                                 hexa_vol_quart, weight                        , &
                                 x_lag1, y_lag1, z_lag1, x_lag2, y_lag2, z_lag2, &
                                 x_lag3, y_lag3, z_lag3, x_lag4, y_lag4, z_lag4, &
                                 x1    , y1    , z1    , x2    , y2    , z2    , &
                                 x3    , y3    , z3    , x4    , y4    , z4    , &
-                                hexa_vol1, hexa_vol2, hexa_vol3, hexa_vol4, 1)
+                                hexa_vol1, hexa_vol2, hexa_vol3, hexa_vol4, 1, &
+                                vof, mat_id, n_materials_in_cell, &
+                                density, cell_mass, mat_vof, density_vof, cell_mass_vof, &
+                                a_mat, b_mat, c_mat, side_mat, a_adv, b_adv, c_adv, side_adv, fxtm_thread, sxt1_thread, sxt2_thread, vol_frac_counter, &
+                                cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter)
 
+                            ! do tmp_mat = 1, n_materials
+                            ! end do
+
+                            ! call_time = omp_get_wtime() - call_start
+
+                            ! Update thread-specific timing data
+                            ! thread_call_times(thread_id) = thread_call_times(thread_id) + call_time
+                            ! thread_call_counts(thread_id) = thread_call_counts(thread_id) + 1
+
+                            ! !$OMP ATOMIC
                             vof_adv(i, j, k) = vof_adv(i, j, k) + adv_vol
-                            if (this%shorter_advect) vof_adv(i_face, j_face, k_face) = vof_adv(i_face, j_face, k_face) - adv_vol
+                            ! !$OMP END ATOMIC
+                            if (shorter_advect) then 
+                                ! !$OMP ATOMIC
+                                vof_adv(i_face, j_face, k_face) = vof_adv(i_face, j_face, k_face) - adv_vol
+                                ! !$OMP END ATOMIC
+                            end if
 
-
-                            do tmp_mat = 1, this%n_materials
-                                dvof = this%adv_mats%fxtm(tmp_mat) * 2d0
+                            !fxtm_thread(:) = fxtm_copy(:)
+                            
+                            do tmp_mat = 1, n_materials
+                                ! PROBLEM!! : this%adv_mats%fxtm is being modified during each call to "Volume_material_3d" subroutine.
+                                ! dvof = local_adv_mats_fxtm(tmp_mat) * 2d0
+                                ! dvof = this%adv_mats%fxtm(tmp_mat) * 2d0       
+                                dvof = fxtm_thread(tmp_mat) * 2d0
+                                
+                                ! !$OMP ATOMIC
                                 mat_vof_adv(tmp_mat, i, j, k) = mat_vof_adv(tmp_mat, i, j, k) + dvof
+                                ! !$OMP END ATOMIC
 
-                                if (this%shorter_advect) then
-                                    mat_vof_adv(tmp_mat, i_face, j_face, k_face) = mat_vof_adv(tmp_mat, i_face, j_face, k_face) - dvof
+                                if (shorter_advect) then
+                                    ! !$OMP ATOMIC
+                                    mat_vof_adv(tmp_mat, i_face, j_face, k_face) = mat_vof_adv(tmp_mat, i_face, j_face, k_face) - dvof                                   
+                                    ! !$OMP END ATOMIC
                                 end if
                             end do
 
-                            do tmp_mat = 1, this%n_materials
-                                dvof = this%adv_mats%fxtm(tmp_mat) * 2d0
-
-
-
+                            do tmp_mat = 1, n_materials
+                                ! dvof = local_adv_mats_fxtm(tmp_mat) * 2d0
+                                ! dvof = this%adv_mats%fxtm(tmp_mat) * 2d0
+                                dvof = fxtm_thread(tmp_mat) * 2d0
+                                
+                                ! IT'S SAFE, 'density_vof' ISN'T MODIFIED IN THIS PARALLEL REGION, NO RACE CONDITIONS
                                 donnor_mass = density_vof(tmp_mat, id, jd, kd) * dvof
+
+                                ! IT'S SAFE, 'sie_vof' ISN'T MODIFIED IN THIS PARALLEL REGION, NO RACE CONDITIONS
                                 donnor_sie  = sie_vof    (tmp_mat, id, jd, kd) * donnor_mass
 
-
-                                if (abs(dvof) > vol(i,j,k)*this%emf /100d0 .and. tmp_mat /= mat_id(i,j,k)) then
+                                !PROBLEM IS HERE
+                                if (abs(dvof) > vol(i,j,k)*emf /100d0 .and. tmp_mat /= mat_id(i,j,k)) then
                                     associated_mat_vof = .true.
+                                    
+                                    ! mix_counter = mix_counter + 1
+
+                                    ! !$OMP ATOMIC
                                     sie_vof_adv(tmp_mat, i, j, k) = sie_vof_adv(tmp_mat, i, j, k) + donnor_sie
+                                    ! !$OMP END ATOMIC
+
+                                    ! !$OMP ATOMIC
                                     mat_cell_mass_adv(tmp_mat, i, j, k) = mat_cell_mass_adv(tmp_mat, i, j, k) + donnor_mass
+                                    ! !$OMP END ATOMIC
                                 else
                                     if (mat_id(i,j,k) == tmp_mat) then
+                                        ! !$OMP ATOMIC
                                         sie_vof_adv(tmp_mat, i, j, k) = sie_vof_adv(tmp_mat, i, j, k) + donnor_sie
+                                        ! !$OMP END ATOMIC
+
+                                        ! !$OMP ATOMIC
                                         mat_cell_mass_adv(tmp_mat, i, j, k) = mat_cell_mass_adv(tmp_mat, i, j, k) + donnor_mass
+                                        ! !$OMP END ATOMIC
                                     else
                                         if (n_materials_in_cell(i,j,k) > 1 .or. associated_mat_vof) then
+                                            ! !$OMP ATOMIC
                                             sie_vof_adv(tmp_mat, i, j, k) = sie_vof_adv(tmp_mat, i, j, k) + donnor_sie
+                                            ! !$OMP END ATOMIC
 
+                                            ! !$OMP ATOMIC
                                             mat_cell_mass_adv(tmp_mat, i, j, k) = mat_cell_mass_adv(tmp_mat, i, j, k) + donnor_mass
+                                            ! !$OMP END ATOMIC
                                         end if
                                     end if
                                 end if
-
+                                !PROBLEM IS HERE
 
                                 if (mat_id(i, j, k) == tmp_mat) then
+                                    ! !$OMP ATOMIC
                                     cell_mass_adv(i, j, k) = cell_mass_adv(i, j, k) + donnor_mass
+                                    ! !$OMP END ATOMIC
                                 end if
 
-                                if (this%shorter_advect) then
+                                if (shorter_advect) then
+                                    ! !$OMP ATOMIC
                                     mat_cell_mass_adv(tmp_mat, i_face, j_face, k_face) = mat_cell_mass_adv(tmp_mat, i_face, j_face, k_face) - donnor_mass
+                                    ! !$OMP END ATOMIC
                                 end if
 
-
-
-
-
-                                if (this%shorter_advect) then
+                                if (shorter_advect) then
+                                    ! !$OMP ATOMIC
                                     sie_vof_adv(tmp_mat, i_face, j_face, k_face) = sie_vof_adv(tmp_mat, i_face, j_face, k_face) - donnor_sie
-
+                                    ! !$OMP END ATOMIC
                                 end if
 
+                                ! IT'S SAFE, 'init_mat_layers' ISN'T MODIFIED IN THIS PARALLEL REGION, NO RACE CONDITIONS
                                 donnor_init_mat_layer = donnor_mass * init_mat_layers(tmp_mat, id, jd, kd)
-
+                                
+                                ! !$OMP ATOMIC
                                 init_mat_layers_adv(tmp_mat, i, j, k) = init_mat_layers_adv(tmp_mat, i, j, k) + donnor_init_mat_layer
+                                ! !$OMP END ATOMIC
 
-                                if (this%shorter_advect) then
-                                    init_mat_layers_adv(tmp_mat, i_face,j_face,k_face) =        init_mat_layers_adv(tmp_mat, i_face,j_face,k_face) - &
+                                if (shorter_advect) then
+                                    ! !$OMP ATOMIC
+                                    init_mat_layers_adv(tmp_mat, i_face,j_face,k_face) = init_mat_layers_adv(tmp_mat, i_face,j_face,k_face) - &
                                         donnor_init_mat_layer
+                                    ! !$OMP END ATOMIC
                                 end if
+                            end do    
+                            ! !$OMP END CRITICAL
+                        end if
+                    end do
 
+                ! deallocate(local_adv_mats_fxtm)
+
+                end do
+            end do
+        end do
+        ! !$OMP END DO
+        ! !$OMP END DISTRIBUTE PARALLEL DO
+        ! !$OMP END LOOP
+        ! !$OMP END DISTRIBUTE 
+
+        ! Deallocate at the end of the parallel region
+        ! if (allocated(local_adv_mats_fxtm)) then
+        !     deallocate(local_adv_mats_fxtm)
+        ! end if
+
+        ! !$OMP END PARALLEL
+#ifdef GPU_BUILD
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+#else
+        !$OMP END PARALLEL DO
+#endif
+
+        ! KERNEL ENDS HERE!!
+
+        kernel_time = omp_get_wtime() - kernel_start
+        total_kernel_time = total_kernel_time + kernel_time
+
+        data_movement_start = omp_get_wtime()
+        
+        !$OMP TARGET UPDATE FROM(vof, material_x, material_y, material_z, x, y, z, vof_adv, & 
+        !$OMP& mat_vof_adv, density_vof, sie_vof, vol, mat_id, n_materials_in_cell, init_mat_layers, mat_cell_mass_adv, &
+        !$OMP& cell_mass_adv, sie_vof_adv, init_mat_layers_adv, density, cell_mass, mat_vof, &
+        !$OMP& cell_mass_vof, a_mat, b_mat, c_mat, side_mat, a_adv, b_adv, c_adv, side_adv) 
+
+        !!$OMP TARGET EXIT DATA MAP(FROM: vof, material_x, material_y, material_z, x, y, z, vof_adv, & 
+        !!$OMP& mat_vof_adv, density_vof, sie_vof, vol, mat_id, n_materials_in_cell, init_mat_layers, mat_cell_mass_adv, &
+        !!$OMP& cell_mass_adv, sie_vof_adv, init_mat_layers_adv, density, cell_mass, mat_vof, &
+        !!$OMP& cell_mass_vof, a_mat, b_mat, c_mat, side_mat, a_adv, b_adv, c_adv, side_adv) 
+
+        !$OMP TARGET EXIT DATA MAP(FROM: vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter)
+
+        data_movement_time = data_movement_time + (omp_get_wtime() - data_movement_start)
+        total_data_movement_time = total_data_movement_time + data_movement_time
+
+        !deallocate(fxtm_copy, sxt1_copy, sxt2_copy, sgn_copy)
+
+        this%total_kernel_vol_frac_counter = this%total_kernel_vol_frac_counter + vol_frac_counter
+        this%total_kernel_cut_plane_counter = this%total_kernel_cut_plane_counter + cut_plane_counter
+        this%total_kernel_square_pyramid_counter = this%total_kernel_square_pyramid_counter + square_pyramid_counter
+        this%total_kernel_physical_tetraeder_counter = this%total_kernel_physical_tetraeder_counter + physical_tetraeder_counter
+        this%total_kernel_tetrahederon_counter = this%total_kernel_tetrahederon_counter + tetrahederon_counter
+
+        ! After the parallel region, analyze and report the timing data
+        loop_time = omp_get_wtime() - loop_start
+        total_loop_time = total_loop_time + loop_time
+
+        ! ! if (mod(this%cyc_delete, 10) == 0) then
+        ! if (this%cyc_delete == this%datafile%max_ncyc-2) then
+        
+        !     write(this%file_unit_intermediate, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete ! OR "this%cyc_delete-1" to start from 0
+            
+        !     ! Print 3D arrays (grid-cell level)
+        !     write(this%file_unit_intermediate, '(A)') "3D ARRAYS - GRID CELL LEVEL:"
+        !     write(this%file_unit_intermediate, '(A)') "  I    J    K   |     VOF_ADV        |   N_MAT_IN_CELL    |    CELL_MASS_ADV"
+        !     write(this%file_unit_intermediate, '(A)') "-------------------------------------------------------------------"
+            
+        !     do i = 1, this%nx
+        !         do j = 1, this%ny
+        !             do k = 1, this%nz
+        !                 write(this%file_unit_intermediate, '(3I5,3(" | ",Z18))') i, j, k, &
+        !                     transfer(vof_adv(i, j, k), 0_8), &
+        !                     transfer(n_materials_in_cell(i, j, k), 0_8), &
+        !                     transfer(cell_mass_adv(i, j, k), 0_8)
+        !             end do
+        !         end do
+        !     end do
+            
+        !     ! Print 4D arrays (per material)
+        !     write(this%file_unit_intermediate, '(A)') ""
+        !     write(this%file_unit_intermediate, '(A)') "4D ARRAYS - PER MATERIAL:"
+        !     write(this%file_unit_intermediate, '(A)') "  I    J    K   MAT |        SIE         |    MAT_CELL_MASS   |     MAT_VOF_ADV    |   INIT_MAT_LAYERS"
+        !     write(this%file_unit_intermediate, '(A)') "-----------------------------------------------------------------------------------"
+            
+        !     do i = 1, this%nx
+        !         do j = 1, this%ny
+        !             do k = 1, this%nz
+        !                 do tmp_mat = 1, this%n_materials
+        !                     write(this%file_unit_intermediate, '(4I5,4(" | ",Z18))') i, j, k, tmp_mat, &
+        !                         transfer(sie_vof_adv(tmp_mat, i, j, k), 0_8), &
+        !                         transfer(mat_cell_mass_adv(tmp_mat, i, j, k), 0_8), &
+        !                         transfer(mat_vof_adv(tmp_mat, i, j, k), 0_8), &
+        !                         transfer(init_mat_layers_adv(tmp_mat, i, j, k), 0_8)
+        !                 end do 
+        !             end do
+        !         end do
+        !     end do
+        ! end if
+
+        mix_counter = 0
+        !$OMP PARALLEL DO COLLAPSE(3) REDUCTION(+: mix_counter)
+        do k = 1, this%nz
+            do j = 1, this%ny 
+                do i = 1, this%nx
+                    if (abs(vof_adv(i, j, k)) > 0) then
+                        mix_counter = mix_counter + 1
+                    end if   
+                end do
+            end do
+        end do
+        !$OMP END PARALLEL DO
+
+
+        ! Write mixing statistics to file with proper formatting
+
+            ! write(this%file_unit_mixing,'(A,I0,A,F12.6,A,F12.6,A,A,F12.6,A,A,F12.6,A,A,F12.6,A)') &
+            !     "Iteration: ", this%cyc_delete, &
+            !     " mixed cells [%]: ", real(mix_counter)/real(this%nx*this%ny*this%nz)*100.0, &
+            !     " KERNEL TIME: ", kernel_time, " seconds", &
+            !     " DATA MOVEMENT_1 TIME: ", data_movement_time, " seconds", &
+            !     " DATA MOVEMENT_2 TIME: ", data_movement_time2, " seconds", &
+            !     " LINE CALC TIME: ", this%line_calc_time, " seconds"
+
+            ! write(*,'(A,I0,A,F12.6,A,F12.6,A,A,F12.6,A,A,F12.6,A,A,F12.6,A,A,F12.6,A,A,I0,A,I0)') &
+            !     "Iteration: ", this%cyc_delete, &
+            !     " mixed cells [%]: ", real(mix_counter)/real(this%nx*this%ny*this%nz)*100.0, &
+            !     " KERNEL TIME: ", kernel_time, " seconds", &
+            !     " DATA MOVEMENT_1 TIME: ", data_movement_time, " seconds", &
+            !     " DATA MOVEMENT_2 TIME: ", data_movement_time2, " seconds", &
+            !     "-- TOP -- LINE_CALC_3D TIME", this%line_calc_top_time, " seconds", &
+            !     "-- BOTTOM -- LINE_CALC_3D TIME", this%line_calc_bottom_time, " seconds", &
+            !     "-- TOP -- CONVERGENCE COUNT: ", this%convergence_top, &
+            !     "-- BOTTOM -- CONVERGENCE COUNT: ", this%convergence_bottom
+
+            write(*,'(A,I0,A,F12.6,A,F12.6,A,A,F12.6,A,A,F12.6,A,A,I0,A,I0,A,I0,A,I0)') &
+                "Iteration: ", this%cyc_delete, &
+                " mixed cells [%]: ", real(mix_counter)/real(this%nx*this%ny*this%nz)*100.0, &
+                " KERNEL TIME: ", kernel_time, " seconds", &
+                " --TOP-- LINE_CALC_3D TIME", this%line_calc_top_time, " seconds", &
+                " --BOTTOM-- LINE_CALC_3D TIME", this%line_calc_bottom_time, " seconds", &
+                " TOP 1st CONVERGENCE: ", this%first_convergence_top, &
+                " TOP 2nd CONVERGENCE: ", this%second_convergence_top, &
+                " BOTTOM 1st CONVERGENCE: ", this%first_convergence_bottom, &
+                " BOTTOM 2nd CONVERGENCE: ", this%second_convergence_bottom!, &
+                !" KERNEL Vol_frac_count: ", vol_frac_counter
+
+            !this%kernel_vol_frac_counter = 0
+                
+                !" LINE CALC TIME: ", this%line_calc_time, " seconds"
+
+        ! ! Report per-thread statistics with proper formatting
+        ! write(this%file_unit_mixing,'(A)') "Per-thread statistics:"
+        ! write(this%file_unit_mixing,'(A)') "Thread ID | Call Count | Total Time (s) | Avg Time/Call (s) | % of Loop Time"
+        ! write(this%file_unit_mixing,'(A)') "----------------------------------------------------------------"
+        
+        ! do i = 1, max_threads
+        !     if (thread_call_counts(i) > 0) then
+        !         avg_time = thread_call_times(i) / thread_call_counts(i)
+        !         pct_time = (thread_call_times(i) / loop_time) * 100.0
+        !         write(this%file_unit_mixing,'(I8,A,I10,A,F12.6,A,F16.9,A,F10.2,A)') &
+        !             i-1, " | ", &
+        !             thread_call_counts(i), " | ", &
+        !             thread_call_times(i), " | ", &
+        !             avg_time, " | ", &
+        !             pct_time, "%"
+        !     end if
+        ! end do
+        ! write(this%file_unit_mixing,'(A)') "----------------------------------------------------------------"
+        
+        ! Ensure the data is written to disk
+        ! flush(this%file_unit_mixing)
+
+        ! Clean up
+        ! deallocate(thread_call_times)
+        ! deallocate(thread_call_counts)
+        
+        ! write(*,*) "mixed cells:", mix_counter, this%cyc_delete, "time:", omp_get_wtime() - loop_start, "ratio call/loop", call_time/(omp_get_wtime() - loop_start)
+        
+        ! call this%Print_advect_data(this%file_unit_hexa, this%file_unit_decimal, this%file_unit_intermediate)
+
+        ! AVITAY
+        ! loop_end = omp_get_wtime()
+
+        ! loop_time = loop_end - loop_start
+        ! total_loop_time = total_loop_time + loop_time
+        ! timestep_count = timestep_count + 1
+
+        if (this%cyc_delete == this%datafile%max_ncyc-2 ) then ! max_ncyc = 300 (--> 298)
+            !$omp parallel
+                !$omp single
+                    write(*,*) "!!!!!!! NUMBER OF THREADS !!!!!!! :" , omp_get_num_threads()
+                !$omp end single
+            !$omp end parallel
+            write(*,*) "!!!!!!! NUMBER OF THREADS USING DATAFILE MODULE !!!!!!! :" , this%datafile%threads
+            write(*,*) "!!!!!!! NUMBER OF MAX THREADS !!!!!!! :" , max_threads
+
+            ! write(*, '(A,F11.9,A,I6,A)') 'Average loop time: ', total_loop_time/timestep_count, &
+            !                 ' seconds over ', timestep_count, ' timesteps'
+            ! write(*, '(A,F15.9,A)') 'TOTAL Line_Calc_3d time: ', total_loop_time, ' seconds  '
+            ! write(*, '(A,F15.9,A)') 'TOTAL REGION 1 time: ', total_time1, ' seconds  '
+            ! write(*, '(A,F15.9,A)') 'TOTAL REGION 2 time: ', total_time2, ' seconds  '
+            ! write(*, '(A,F15.9,A)') 'TOTAL REGION 3 time: ', total_time3, ' seconds  '
+            ! write(*, '(A,F15.9,A)') 'TOTAL REGION 4 time: ', total_time4, ' seconds  '
+            ! write(*, '(A,F15.9,A)') 'TOTAL *TRIPLE-LOOP* time: ', total_loop_time, ' seconds  '
+
+            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *DATA MOVEMENTS IN SCAN MIXED CELLS* time: ', this%total_timer_data, ' seconds  '
+            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *SCAN MIXED CELLS* time: ', this%total_timer1_time, ' seconds  '
+            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *PREFIX SUM* time: ', this%total_timer2_time, ' seconds  '
+            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *LINE_CALC_3D* time: ', this%total_line_calc_top_time, ' seconds  '
+            write(*, '(A,F15.9,A)') '-- BOTTOM -- TOTAL *LINE_CALC_3D* time: ', this%total_line_calc_bottom_time, ' seconds  '
+            write(*, '(A,F15.9,A)') 'TOTAL *KERNEL* time: ', total_kernel_time, ' seconds  '
+            write(*, '(A,F15.9,A)') 'TOTAL *DATA MOVEMENT 1* time: ', total_data_movement_time, ' seconds  '
+            write(*, '(A,F15.9,A)') 'TOTAL *DATA MOVEMENT 2* time: ', total_data_movement_time2, ' seconds  '
+            write(*, '(A,F15.9,A)') 'TOTAL *ADVECT* time: ', advect_total_time, ' seconds  '
+
+            write(*,*) ' '
+            write(*,*) '-- TOP -- TOTAL 1st CONVERGENCE COUNTER', this%total_first_convergence_top
+            write(*,*) '-- TOP -- TOTAL 2nd CONVERGENCE COUNTER', this%total_second_convergence_top
+
+            write(*,*) ' '
+            write(*,*) '-- BOTTOM -- TOTAL 1st CONVERGENCE COUNTER', this%total_first_convergence_bottom
+            write(*,*) '-- BOTTOM -- TOTAL 2nd CONVERGENCE COUNTER', this%total_second_convergence_bottom
+            write(*,*) ' '
+            
+            write(*,*) 'LINE_CALC TOP * VOL_FRAC COUNTER *', this%total_line_calc_vol_frac_counter_top
+            write(*,*) 'LINE_CALC TOP * CUT_PLANE COUNTER *', this%total_line_calc_cut_plane_counter_top
+            write(*,*) 'LINE_CALC TOP * SQUARE_PYRAMID COUNTER *', this%total_line_calc_square_pyramid_counter_top
+            write(*,*) 'LINE_CALC TOP * PHYSICAL_TETRAEDER COUNTER *', this%total_line_calc_physical_tetraeder_counter_top
+            write(*,*) 'LINE_CALC TOP * TETRAHEDERON COUNTER *', this%total_line_calc_tetrahederon_counter_top
+            write(*,*) ' '
+            write(*,*) 'LINE_CALC BOTTOM * VOL_FRAC COUNTER *', this%total_line_calc_vol_frac_counter_bottom
+            write(*,*) 'LINE_CALC BOTTOM * CUT_PLANE COUNTER *', this%total_line_calc_cut_plane_counter_bottom
+            write(*,*) 'LINE_CALC BOTTOM * SQUARE_PYRAMID COUNTER *', this%total_line_calc_square_pyramid_counter_bottom
+            write(*,*) 'LINE_CALC BOTTOM * PHYSICAL_TETRAEDER COUNTER *', this%total_line_calc_physical_tetraeder_counter_bottom
+            write(*,*) 'LINE_CALC BOTTOM * TETRAHEDERON COUNTER *', this%total_line_calc_tetrahederon_counter_bottom
+
+            write(*,*) ' '
+            write(*,*) 'KERNEL TOTAL * VOL_FRAC COUNTER *', this%total_kernel_vol_frac_counter
+            write(*,*) 'KERNEL TOTAL * CUT_PLANE COUNTER *', this%total_kernel_cut_plane_counter
+            write(*,*) 'KERNEL TOTAL * SQUARE_PYRAMID COUNTER *', this%total_kernel_square_pyramid_counter
+            write(*,*) 'KERNEL TOTAL * PHYSICAL_TETRAEDER COUNTER *', this%total_kernel_physical_tetraeder_counter
+            write(*,*) 'KERNEL TOTAL * TETRAHEDERON COUNTER *', this%total_kernel_tetrahederon_counter
+            write(*,*) ' '
+
+            write(*,*) ' '
+            write(*,*) '-- TOP -- Line_calc_0 counter', this%line_calc_top_0_count
+            write(*,*) '-- TOP -- Line_calc_1 counter', this%line_calc_top_1_count
+
+            write(*,*) ' '
+            write(*,*) '-- BOTTOM -- Line_calc_0 counter', this%line_calc_bottom_0_count
+            write(*,*) '-- BOTTOM -- Line_calc_1 counter', this%line_calc_bottom_1_count
+
+        end if
+        ! AVITAY
+
+        allocate(velocity_x_adv(0:nxp+1,0:nyp+1,0:nzp+1), velocity_y_adv(0:nxp+1,0:nyp+1,0:nzp+1), velocity_z_adv(0:nxp+1,0:nyp+1,0:nzp+1))         
+#ifdef GPU_BUILD
+    allocate(active_i(1:nxp*nyp*nzp), active_j(1:nxp*nyp*nzp), active_k(1:nxp*nyp*nzp))
+    !$omp target enter data map(alloc: vof_correction, velocity_x_adv, velocity_y_adv, velocity_z_adv, active_i, active_j, active_k) 
+#else
+    vof_correction = 0d0
+#endif
+
+
+#ifdef GPU_BUILD
+    !$OMP TARGET UPDATE TO(vof_adv, mat_vof_adv, mat_vof, vol, mat_cell_mass_adv, sie_vof_adv, init_mat_layers_adv)
+    !$omp target teams distribute parallel do collapse(3) private(i,j,k,tmp_mat, vof_factor) 
+#else
+    !$omp parallel do collapse(3) private(j, i, k, tmp_mat, vof_factor) 
+#endif
+            do k = 1, nz
+                do j = 1, ny
+                    do i = 1, nx
+                    #ifdef GPU_BUILD
+                        vof_correction(i,j,k)=0d0
+                    #endif
+                        do tmp_mat=1, n_materials
+
+                            mat_vof(tmp_mat,i, j, k) = (mat_vof(tmp_mat,i, j, k) * (vol(i, j, k) - vof_adv(i, j, k)) + mat_vof_adv(tmp_mat,i, j, k)) / vol(i, j, k)
+                            if (mat_vof(tmp_mat,i, j, k) > emf .and. mat_cell_mass_adv(tmp_mat, i, j, k) > emfm) then
+
+                                sie_vof(tmp_mat,i, j, k) = max(0d0, sie_vof_adv(tmp_mat,i, j, k) / mat_cell_mass_adv(tmp_mat,i, j, k))
+                                init_mat_layers(tmp_mat,i, j, k) = init_mat_layers_adv(tmp_mat,i, j, k) / mat_cell_mass_adv(tmp_mat,i, j, k)
+                            else
+                                vof_correction(i,j,k) = vof_correction(i,j,k) + mat_vof(tmp_mat,i, j, k)
+                                mat_vof(tmp_mat,i, j, k) = 0d0
+                                sie_vof(tmp_mat,i, j, k) = 0d0
+                                init_mat_layers(tmp_mat,i, j, k) = 0d0
+                            end if
+                        end do
+                        if (vof_correction(i,j,k) > 0d0) then
+                            vof_factor = 1d0 / (1d0 - vof_correction(i,j,k))
+                            do tmp_mat = 1, this%n_materials
+                                mat_vof(tmp_mat,i, j, k) = mat_vof(tmp_mat,i, j, k) * vof_factor
                             end do
                         end if
                     end do
                 end do
             end do
+#ifdef GPU_BUILD
+    !$omp end target teams distribute parallel do
+    !$OMP TARGET UPDATE FROM(vof_correction, mat_vof, sie_vof, init_mat_layers)
+#else
+    !$omp end parallel do
+#endif
+
+
+!             !can easily change the do of the materials to be inside the if, also can merge the loop with the upper loop.
+
+! #ifdef GPU_BUILD
+!     !$omp target teams distribute parallel do collapse(3) private(tmp_mat, vof_factor)
+! #endif
+!             do k = 1, this%nz
+!                 do j = 1, this%ny
+!                     do i = 1, this%nx
+!                         do tmp_mat = 1, this%n_materials
+
+!                             if (vof_correction(i,j,k) > 0d0) then
+!                                 vof_factor = 1d0 / (1d0 - vof_correction(i,j,k))
+!                                 mat_vof(tmp_mat,i, j, k) = mat_vof(tmp_mat,i, j, k) * vof_factor
+!                             end if
+!                         end do
+!                     end do
+!                 end do
+!             end do
+! #ifdef GPU_BUILD
+!     !$omp end target teams distribute parallel do
+! #endif
+
+
+
+!                 shay_time_2 = omp_get_wtime() - shay_start_2
+!                 shay_total_time_2 = shay_total_time_2 + shay_time_2
+!                 print *, shay_time_2
+
+
+
+
+    ! vof = 0d0
+    ! mat_id = 0
+    ! cell_mass = 0d0
+    ! sie = 0d0
+    ! n_materials_in_cell = 0d0
+
+
+! #ifdef GPU_BUILD
+!     !$omp target update to(vof, mat_id, cell_mass, sie, n_materials_in_cell)
+!     ! !$omp target update to(mat_id, cell_mass, sie, n_materials_in_cell)
+! #endif
+
+
+#ifdef GPU_BUILD
+    !$OMP TARGET UPDATE TO(vof, mat_id, cell_mass, sie, n_materials_in_cell)
+    !$omp target teams distribute parallel do collapse(3) private(i,j,k)
+    do k = 0,nz+1
+        do j = 0,ny+1
+            do i = 0, nx+1
+                vof(i,j,k) = 0d0
+                mat_id(i,j,k) = 0
+                cell_mass(i,j,k) = 0d0
+                sie(i,j,k) = 0d0
+                n_materials_in_cell(i,j,k) = 0d0
+            end do
         end do
+    end do
+    !$omp end target teams distribute parallel do
+    !$OMP TARGET UPDATE FROM(vof, mat_id, cell_mass, sie, n_materials_in_cell)
+#else 
+    vof = 0d0
+    mat_id = 0
+    cell_mass = 0d0
+    sie = 0d0
+    n_materials_in_cell = 0d0
+#endif
 
+        
+        !can add =0 to in loop
+#ifdef GPU_BUILD
+    !$OMP TARGET UPDATE TO(mat_vof, mat_cell_mass_adv, sie_vof, cell_mass_vof)
+    !$omp target teams distribute parallel do collapse(3) private(i,j,k,tmp_mat)
+#else
+    !$omp parallel do collapse(3) schedule(static) private(j, i, tmp_mat) 
+#endif
+            do k = 1, this%nz
+                do j = 1, this%ny
+                    do i = 1, this%nx
+                        do tmp_mat=1,this%n_materials
 
-
-        vof_correction = 0d0
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat=1,this%n_materials
-
-                        mat_vof(tmp_mat,i, j, k) = (mat_vof(tmp_mat,i, j, k) * (vol(i, j, k) - vof_adv(i, j, k)) + mat_vof_adv(tmp_mat,i, j, k)) / vol(i, j, k)
-                        if (mat_vof(tmp_mat,i, j, k) > this%emf .and. mat_cell_mass_adv(tmp_mat, i, j, k) > this%emfm) then
-
-                            sie_vof(tmp_mat,i, j, k) = max(0d0, sie_vof_adv(tmp_mat,i, j, k) / mat_cell_mass_adv(tmp_mat,i, j, k))
-                            init_mat_layers(tmp_mat,i, j, k) = init_mat_layers_adv(tmp_mat,i, j, k) / mat_cell_mass_adv(tmp_mat,i, j, k)
-                        else
-                            vof_correction(i,j,k) = vof_correction(i,j,k) + mat_vof(tmp_mat,i, j, k)
-                            mat_vof(tmp_mat,i, j, k) = 0d0
-                            sie_vof(tmp_mat,i, j, k) = 0d0
-                            init_mat_layers(tmp_mat,i, j, k) = 0d0
-                        end if
+                            if (mat_vof(tmp_mat,i, j, k) < emf .or. mat_cell_mass_adv(tmp_mat,i, j, k) < emfm) then
+                                mat_cell_mass_adv(tmp_mat,i, j, k) = 0d0
+                                sie_vof(tmp_mat,i, j, k) = 0d0
+                                mat_vof(tmp_mat,i, j, k) = 0d0
+                            else
+                                cell_mass_vof(tmp_mat,i, j, k) = mat_cell_mass_adv(tmp_mat,i, j, k)
+                                cell_mass    (i, j, k) = cell_mass(i, j, k) + mat_cell_mass_adv(tmp_mat,i, j, k)
+                                vof          (i, j, k) = vof(i, j, k) + mat_vof(tmp_mat,i, j, k)
+                                sie(i, j, k)           = sie(i, j, k) + sie_vof(tmp_mat,i, j, k) * cell_mass_vof(tmp_mat,i, j, k)
+                                mat_id(i, j, k)        = mat_id(i, j, k) + tmp_mat * 10 ** n_materials_in_cell(i, j, k)
+                                n_materials_in_cell(i, j, k) = n_materials_in_cell(i, j, k) + 1
+                            end if
+                        end do
+                        if(cell_mass(i, j, k) > emfm) sie(i, j, k) = sie(i, j, k) / cell_mass(i, j, k)
                     end do
                 end do
             end do
-        end do
-
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat = 1, this%n_materials
-
-                        if (vof_correction(i,j,k) > 0d0) then
-                            vof_factor = 1d0 / (1d0 - vof_correction(i,j,k))
-                            mat_vof(tmp_mat,i, j, k) = mat_vof(tmp_mat,i, j, k) * vof_factor
-                        end if
-                    end do
-                end do
-            end do
-        end do
-
-        vof = 0d0
-        mat_id = 0
-        cell_mass = 0d0
-        sie = 0d0
-        n_materials_in_cell = 0d0
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat=1,this%n_materials
-
-                        if (mat_vof(tmp_mat,i, j, k) < this%emf .or. mat_cell_mass_adv(tmp_mat,i, j, k) < this%emfm) then
-                            mat_cell_mass_adv(tmp_mat,i, j, k) = 0d0
-                            sie_vof(tmp_mat,i, j, k) = 0d0
-                            mat_vof(tmp_mat,i, j, k) = 0d0
-                        else
-                            cell_mass_vof(tmp_mat,i, j, k) = mat_cell_mass_adv(tmp_mat,i, j, k)
-                            cell_mass    (i, j, k) = cell_mass(i, j, k) + mat_cell_mass_adv(tmp_mat,i, j, k)
-                            vof          (i, j, k) = vof(i, j, k) + mat_vof(tmp_mat,i, j, k)
-                            sie(i, j, k)           = sie(i, j, k) + sie_vof(tmp_mat,i, j, k) * cell_mass_vof(tmp_mat,i, j, k)
-                            mat_id(i, j, k)        = mat_id(i, j, k) + tmp_mat * 10 ** n_materials_in_cell(i, j, k)
-                            n_materials_in_cell(i, j, k) = n_materials_in_cell(i, j, k) + 1
-                        end if
-                    end do
-                end do
-            end do
-        end do
-
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    if(cell_mass(i, j, k) > this%emfm) sie(i, j, k) = sie(i, j, k) / cell_mass(i, j, k)
-                end do
-            end do
-        end do
+#ifdef GPU_BUILD
+    !$omp end target teams distribute parallel do
+    !$OMP TARGET UPDATE FROM(mat_vof, mat_cell_mass_adv, sie_vof, cell_mass_vof, cell_mass, vof, sie, mat_id, n_materials_in_cell)
+#else
+    !$omp end parallel do
+#endif
 
 
+            !can do masking, probably wont help
+! #ifdef GPU_BUILD
+!     !$omp target teams distribute parallel do collapse(3)
+! #else 
+!     !$omp parallel do collapse(3) schedule(static) private(i,j)
+! #endif
+!             do k = 1, this%nz
+!                 do j = 1, this%ny
+!                     do i = 1, this%nx
+!                         if(cell_mass(i, j, k) > emfm) sie(i, j, k) = sie(i, j, k) / cell_mass(i, j, k)
+!                     end do
+!                 end do
+!             end do
+! #ifdef GPU_BUILD
+!     !$omp end target teams distribute parallel do
+! #else
+!     !$omp end parallel do
+! #endif
 
-        call this%vertex_mass%Calculate_vertex_mass_3d(this%mesh%coordinates, this%total_density, &
-            this%total_cell_mass)
-        call this%vertex_mass%Exchange_virtual_space_blocking()
 
-        call this%materials%vof%Exchange_virtual_space_blocking()
+#ifdef GPU_BUILD
+    !$omp target update from(cell_mass)
+#endif
+
+
+                call this%vertex_mass%Calculate_vertex_mass_3d(this%mesh%coordinates, this%total_density, &
+                    this%total_cell_mass)
+                call this%vertex_mass%Exchange_virtual_space_blocking()
+
+                call this%materials%vof%Exchange_virtual_space_blocking()
+                
+
+#ifdef GPU_BUILD
+    !$omp target update to(vertex_mass)
+#endif
+
+
+#ifdef GPU_BUILD
+    !$OMP TARGET UPDATE TO(vel_adv_weight, density)
+    !$omp target teams distribute parallel do collapse(3) private(i,j,k)
+#else
+    !$omp parallel do collapse(3) schedule(static) private(i,j,k)
+#endif
+
 
         do k = 1, this%nzp
             do j = 1, this%nyp
                 do i = 1, this%nxp
-                    symmetry_factor = 1d0
-
-
-                    this%vel_adv_weight%values(i, j, k) = (density(i  , j  , k  ) + density(i-1, j  , k  ) + &
+                    !symmetry_factor = 1d0
+                    vel_adv_weight(i, j, k) = (density(i  , j  , k  ) + density(i-1, j  , k  ) + &
                         density(i-1, j-1, k  ) + density(i  , j-1, k  ) + &
                         density(i  , j  , k-1) + density(i-1, j  , k-1) + &
                         density(i-1, j-1, k-1) + density(i  , j-1, k-1))
-
                 end do
             end do
         end do
 
-        velocity_x_adv = velocity_x
-        velocity_y_adv = velocity_y
-        velocity_z_adv = velocity_z
+#ifdef GPU_BUILD
+    !$omp end target teams distribute parallel do
+    !$OMP TARGET UPDATE FROM(vel_adv_weight)
+#else
+    !$omp end parallel do
+#endif
 
 
-        call this%vel_adv_weight%Exchange_virtual_space_blocking()
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
+#ifdef GPU_BUILD
+    !$OMP TARGET UPDATE TO(velocity_x_adv, velocity_y_adv, velocity_z_adv, velocity_x, velocity_y, velocity_z)
+    !$omp target teams distribute parallel do collapse(3)
+    do k = 0, nzp+1
+        do j = 0, nyp+1
+            do i = 0, nxp+1
+                velocity_x_adv(i,j,k) = velocity_x(i,j,k)
+                velocity_y_adv(i,j,k) = velocity_y(i,j,k)
+                velocity_z_adv(i,j,k) = velocity_z(i,j,k)
+            end do
+        end do
+    end do
+    !$omp end target teams distribute parallel do
+    !$OMP TARGET UPDATE FROM(velocity_x_adv, velocity_y_adv, velocity_z_adv)
+#else
+    velocity_x_adv = velocity_x
+    velocity_y_adv = velocity_y
+    velocity_z_adv = velocity_z
+#endif
+
+    call this%vel_adv_weight%Exchange_virtual_space_blocking()
+
+
+#ifdef GPU_BUILD
+    n_active = 0
+    !$OMP TARGET UPDATE TO(active_i, active_j, active_k)
+    !$omp target teams distribute parallel do collapse(3) private(capture_index) map(tofrom: n_active)
+    do k = 1, nzp
+        do j = 1, nyp
+            do i = 1, nxp
+                if (material_x(i,j,k) /= x(i,j,k) .or. &
+                    material_y(i,j,k) /= y(i,j,k) .or. &
+                    material_z(i,j,k) /= z(i,j,k)) then
+                    !$omp atomic capture
+                        capture_index = n_active
+                        n_active = n_active + 1
+                    !$omp end atomic
+                    active_i(capture_index + 1) = i
+                    active_j(capture_index + 1) = j
+                    active_k(capture_index + 1) = k
+                end if
+            end do
+        end do
+    end do
+    !$omp end target teams distribute parallel do
+    !$OMP TARGET UPDATE FROM(active_i, active_j, active_k)
+#endif
+
+!check collapse(3) for original scheme
+#ifdef GPU_BUILD
+    !$OMP TARGET UPDATE TO(velocity_x_adv, velocity_y_adv, velocity_z_adv)
+    !$omp target teams distribute parallel do private(k, j, i, tet_counter, tet_vol, tet_counter_min, &
+        !$omp& tet_vol_diff_min, i1, j1, k1, i2, j2, k2, i3, j3, k3, material_tet_vol, material_tet_vol_sign, tet_vol_diff , &
+        !$omp& i_tet1, j_tet1, k_tet1, i_tet2, j_tet2, k_tet2, i_tet3, j_tet3, k_tet3, weight0, weight1, weight2, weight3, &
+        !$omp& vel_x_max, vel_x_min, vel_y_min, vel_y_max, vel_z_min, vel_z_max) 
+        do idx = 1, n_active
+            i = active_i(idx)
+            j = active_j(idx)
+            k = active_k(idx)
+#else
+    !$omp parallel do collapse(3) schedule(static) private(k, j, i, tet_counter, tet_vol, tet_counter_min, &
+        !$omp& tet_vol_diff_min, i1, j1, k1, i2, j2, k2, i3, j3, k3, material_tet_vol, material_tet_vol_sign, tet_vol_diff , &
+        !$omp& i_tet1, j_tet1, k_tet1, i_tet2, j_tet2, k_tet2, i_tet3, j_tet3, k_tet3, weight0, weight1, weight2, weight3, &
+        !$omp& vel_x_max, vel_x_min, vel_y_min, vel_y_max, vel_z_min, vel_z_max) 
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
                     if (material_x(i, j, k) == x(i, j, k) .and. &
                         material_y(i, j, k) == y(i, j, k) .and. &
                         material_z(i, j, k) == z(i, j, k)) cycle
+#endif
+                    
                     tet_counter=0
                     tet_vol = -1d0
                     tet_counter_min = 1
@@ -2938,6 +4187,9 @@ contains
                         end if
                     end do
 
+                    ! !$omp atomic
+                    !         counter(tet_counter) = counter(tet_counter) + 1
+                    ! !$omp end atomic
 
                     i_tet1 = i + i_1_add(tet_counter)
                     j_tet1 = j + j_1_add(tet_counter)
@@ -2952,9 +4204,9 @@ contains
                     k_tet3 = k + k_3_add(tet_counter)
 
                     if (wall_x_top .eqv. .true.) then
-                        if (i_tet1 > this%nxp) i_tet1 = this%nx
-                        if (i_tet2 > this%nxp) i_tet2 = this%nx
-                        if (i_tet3 > this%nxp) i_tet3 = this%nx
+                        if (i_tet1 > nxp) i_tet1 = nx
+                        if (i_tet2 > nxp) i_tet2 = nx
+                        if (i_tet3 > nxp) i_tet3 = nx
                     end if
                     if (wall_x_bot .eqv. .true.) then
                         if (i_tet1 < 1) i_tet1 = 2
@@ -2962,9 +4214,9 @@ contains
                         if (i_tet3 < 1) i_tet3 = 2
                     end if
                     if (wall_y_top .eqv. .true.) then
-                        if (j_tet1 > this%nyp) j_tet1 = this%ny
-                        if (j_tet2 > this%nyp) j_tet2 = this%ny
-                        if (j_tet3 > this%nyp) j_tet3 = this%ny
+                        if (j_tet1 > nyp) j_tet1 = ny
+                        if (j_tet2 > nyp) j_tet2 = ny
+                        if (j_tet3 > nyp) j_tet3 = ny
                     end if
                     if (wall_y_bot .eqv. .true.) then
                         if (j_tet1 < 1) j_tet1 = 2
@@ -2972,24 +4224,24 @@ contains
                         if (j_tet3 < 1) j_tet3 = 2
                     end if
                     if (wall_z_top .eqv. .true.) then
-                        if (k_tet1 > this%nzp) k_tet1 = this%nz
-                        if (k_tet2 > this%nzp) k_tet2 = this%nz
-                        if (k_tet3 > this%nzp) k_tet3 = this%nz
+                        if (k_tet1 > nzp) k_tet1 = nz
+                        if (k_tet2 > nzp) k_tet2 = nz
+                        if (k_tet3 > nzp) k_tet3 = nz
                     end if
                     if (wall_z_bot .eqv. .true.) then
                         if (k_tet1 < 1) k_tet1 = 2
                         if (k_tet2 < 1) k_tet2 = 2
                         if (k_tet3 < 1) k_tet3 = 2
                     end if
-                    weight0 = this%vel_adv_weight%values(i     , j     , k     )
-                    weight1 = this%vel_adv_weight%values(i_tet1, j_tet1, k_tet1)
-                    weight2 = this%vel_adv_weight%values(i_tet2, j_tet2, k_tet2)
-                    weight3 = this%vel_adv_weight%values(i_tet3, j_tet3, k_tet3)
+                    weight0 = vel_adv_weight(i     , j     , k     )
+                    weight1 = vel_adv_weight(i_tet1, j_tet1, k_tet1)
+                    weight2 = vel_adv_weight(i_tet2, j_tet2, k_tet2)
+                    weight3 = vel_adv_weight(i_tet3, j_tet3, k_tet3)
 
-                    if(weight0 < this%emf) then
-                        velocity_x_adv(i, j, k) = 0d0
-                        velocity_y_adv(i, j, k) = 0d0
-                        velocity_z_adv(i, j, k) = 0d0
+                    if(weight0 < emf) then
+                        velocity_x_adv(i, j, k) = 0.d0
+                        velocity_y_adv(i, j, k) = 0.d0
+                        velocity_z_adv(i, j, k) = 0.d0
                     else
                         call Vertex_interp_3d(x(i, j, k), y(i, j, k), z(i, j, k), i, j, k                            , &
                             i_tet1, j_tet1, k_tet1, i_tet2, j_tet2, k_tet2, i_tet3, j_tet3, k_tet3 , &
@@ -3005,7 +4257,6 @@ contains
                             weight0, weight1, weight2, weight3)
 
 
-
                         vel_x_min = min(velocity_x(i_tet1, j_tet1, k_tet1), velocity_x(i_tet2, j_tet2, k_tet2), &
                             velocity_x(i_tet3, j_tet3, k_tet3), velocity_x(i     , j     , k     ))
                         vel_x_max = max(velocity_x(i_tet1, j_tet1, k_tet1), velocity_x(i_tet2, j_tet2, k_tet2), &
@@ -3018,30 +4269,62 @@ contains
                             velocity_z(i_tet3, j_tet3, k_tet3), velocity_z(i     , j     , k     ))
                         vel_z_max = max(velocity_z(i_tet1, j_tet1, k_tet1), velocity_z(i_tet2, j_tet2, k_tet2), &
                             velocity_z(i_tet3, j_tet3, k_tet3), velocity_z(i     , j     , k     ))
+
+
                         velocity_x_adv(i, j, k) = max(velocity_x_adv(i, j, k), vel_x_min)
                         velocity_x_adv(i, j, k) = min(velocity_x_adv(i, j, k), vel_x_max)
                         velocity_y_adv(i, j, k) = max(velocity_y_adv(i, j, k), vel_y_min)
                         velocity_y_adv(i, j, k) = min(velocity_y_adv(i, j, k), vel_y_max)
                         velocity_z_adv(i, j, k) = max(velocity_z_adv(i, j, k), vel_z_min)
                         velocity_z_adv(i, j, k) = min(velocity_z_adv(i, j, k), vel_z_max)
-
                     end if
                 end do
+! THIS REALLY SHOULD BE ifNdef
+#ifndef GPU_BUILD 
             end do
         end do
+#endif
 
-        velocity_x = velocity_x_adv
-        velocity_y = velocity_y_adv
-        velocity_z = velocity_z_adv
+#ifdef GPU_BUILD
+    !$omp end target teams distribute parallel do
+    !$OMP TARGET UPDATE FROM(velocity_x_adv, velocity_y_adv, velocity_z_adv)
+#else
+    !$omp end parallel do
+#endif
 
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
+
+#ifdef GPU_BUILD
+    !$omp target teams distribute parallel do collapse(3)
+    do k = 0, nzp+1
+        do j = 0, nyp+1
+            do i = 0, nxp+1
+                velocity_x(i,j,k) = velocity_x_adv(i,j,k)
+                velocity_y(i,j,k) = velocity_y_adv(i,j,k)
+                velocity_z(i,j,k) = velocity_z_adv(i,j,k)
+            end do
+        end do
+    end do
+    !$omp end target teams distribute parallel do
+#else
+    velocity_x = velocity_x_adv
+    velocity_y = velocity_y_adv
+    velocity_z = velocity_z_adv
+#endif
+
+
+#ifdef GPU_BUILD 
+    !$omp target teams distribute parallel do collapse(3) private(i,j,k,velocity_sq, vel_factor)
+#else 
+    !$omp parallel do collapse(3) schedule(static) private(k, j, i, velocity_sq, vel_factor)
+#endif
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
                     velocity_sq = velocity_z(i, j, k) * velocity_z(i, j, k) + &
                         velocity_y(i, j, k) * velocity_y(i, j, k) + &
                         velocity_x(i, j, k) * velocity_x(i, j, k)
-                    if ((vertex_mass(i, j, k) < this%rezone%mass_threshold) .and. (velocity_sq > this%rezone%velocity_limit)) then
-                        vel_factor = sqrt(this%rezone%velocity_limit / velocity_sq)
+                    if ((vertex_mass(i, j, k) < mass_threshold) .and. (velocity_sq > velocity_limit)) then
+                        vel_factor = sqrt(velocity_limit / velocity_sq)
                         velocity_x(i, j, k) = velocity_x(i, j, k) * vel_factor
                         velocity_y(i, j, k) = velocity_y(i, j, k) * vel_factor
                         velocity_z(i, j, k) = velocity_z(i, j, k) * vel_factor
@@ -3050,31 +4333,231 @@ contains
             end do
         end do
 
+#ifdef GPU_BUILD
+    !$omp end target teams distribute parallel do
+#else
+    !$omp end parallel do
+#endif
+
+
+#ifdef GPU_BUILD
+    !$omp target update from(mat_vof, mat_cell_mass_adv, &
+    !$omp& sie_vof, init_mat_layers_adv, init_mat_layers, cell_mass_vof, &
+    !$omp& vof, mat_id, cell_mass, sie, n_materials_in_cell, vel_adv_weight, velocity_x, velocity_y, velocity_z, vertex_mass)
+    !$omp target exit data map(delete: vof_correction, velocity_x_adv, velocity_y_adv, velocity_z_adv, active_i, active_j, active_k) 
+    
+#endif
+
         call this%velocity%Apply_boundary(this%mesh%coordinates%data)
 
+
         deallocate(vof_correction)
+        deallocate(velocity_x_adv)
+        deallocate(velocity_y_adv)
+        deallocate(velocity_z_adv)
+#ifdef GPU_BUILD
+        deallocate(active_i)
+        deallocate(active_j)
+        deallocate(active_k)
+#endif
+
+        this%cyc_delete=this%cyc_delete+1
+
+        advect_time = omp_get_wtime - advect_start
+
+        advect_total_time = advect_total_time + advect_time
+
         return
     end subroutine Calculate_advect_3d
 
-    subroutine Line_calc_3d(this, nm, i_start, i_end, j_start, j_end, k_start, k_end)
+    ! AVITAY
+
+    subroutine Print_advect_data(this, file_unit_hexa, file_unit_decimal, file_unit_intermediate)
+        class(advect_t), intent(in) :: this
+        integer, intent(in) :: file_unit_hexa
+        integer, intent(in) :: file_unit_decimal
+        integer, intent(in) :: file_unit_intermediate
+        integer :: i, j, k
+        integer :: tmp_mat
+
+        real(8), dimension(:, :, :), pointer :: vof_adv
+        real(8), dimension(:, :, :, :), pointer :: mat_vof_adv
+        real(8), dimension(:, :, :, :), pointer :: sie_vof_adv
+        real(8), dimension(:, :, :, :), pointer :: mat_cell_mass_adv
+        real(8), dimension(:, :, :), pointer :: cell_mass_adv
+        real(8), dimension(:, :, :, :), pointer :: init_mat_layers_adv
+
+        call this%adv_cell_mass  %Point_to_data(cell_mass_adv)
+        call this%vof_advect%Point_to_data(vof_adv)
+        call this%adv_mats%vof%Point_to_data(mat_vof_adv)
+        call this%adv_mats%Point_to_initial_layers(init_mat_layers_adv)
+        call this%adv_mats%cell_mass%Point_to_data(mat_cell_mass_adv)
+        call this%adv_mats%sie%Point_to_data(sie_vof_adv)
+        
+        write(this%file_unit_hexa, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete ! OR "this%cyc_delete-1" to start from 0
+        
+        write(this%file_unit_hexa, '(A)') "  I    J    K   |        SIE         |      DENSITY       |     CELL_MASS      |     VERTEX_MASS    |    NUM_MAT_CELLS"
+        write(this%file_unit_hexa, '(A)') "-------------------------------------------------------------------------------------------------------------"
+        
+        do i = 1, this%nxp
+            do j = 1, this%nyp
+                do k = 1, this%nzp
+                    write(this%file_unit_hexa, '(3I5,5(" | ",Z18))') i, j, k, &
+                        transfer(this%total_sie%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%total_density%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%total_cell_mass%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%vertex_mass%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%num_mat_cells%data(1)%values(i, j, k), 0_8)
+                end do
+            end do
+        end do
+
+        ! write(this%file_unit_decimal, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete
+
+        ! write(this%file_unit_decimal, '(A)') "  I    J    K      SIE           DENSITY        CELL_MASS      VERTEX_MASS    NUM_MAT_CELLS"
+
+        
+        write(this%file_unit_decimal, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete ! OR "this%cyc_delete-1" to start from 0
+        
+        write(this%file_unit_decimal, '(A)') "  I    J    K   |        SIE         |      DENSITY       |     CELL_MASS      |     VERTEX_MASS    |    NUM_MAT_CELLS"
+        write(this%file_unit_decimal, '(A)') "-------------------------------------------------------------------------------------------------------------"
+        
+        do i = 1, this%nxp
+            do j = 1, this%nyp
+                do k = 1, this%nzp
+                    ! write(this%file_unit_decimal, '(3I5,5E15.6)') i, j, k, &
+                    write(this%file_unit_decimal, '(3I5,5E24.16)') i, j, k, &
+                        this%total_sie%data(1)%values(i, j, k), &
+                        this%total_density%data(1)%values(i, j, k), &
+                        this%total_cell_mass%data(1)%values(i, j, k), &
+                        this%vertex_mass%data(1)%values(i, j, k), &
+                        this%num_mat_cells%data(1)%values(i, j, k)
+                end do
+            end do
+        end do
+
+        ! -----------------------------------------------------------------------------------
+        
+        tmp_mat = 2
+        
+        if(this%cyc_delete == 0) then ! OR this%cyc_delete == 0
+            write(this%file_unit_intermediate, '(A,I0)') "TMP_MAT = ", tmp_mat ! OR "this%cyc_delete-1" to start from 0
+        endif
+        
+        write(this%file_unit_intermediate, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete ! OR "this%cyc_delete-1" to start from 0
+        
+        write(this%file_unit_intermediate, '(A)') "  I    J    K   |       vof_adv      |     mat_vof_adv    |    sie_vof_adv     | mat_cell_mass_adv  |    cell_mass_adv   | init_mat_layers_adv"
+        write(this%file_unit_intermediate, '(A)') "--------------------------------------------------------------------------------------------------------------------------------------------------"
+
+        ! INTERMEDIATE IN THE SENSE THAT WE PRINT INTERMEDIATE VARIABLES (NOT total_x)
+
+        do i = 1, this%nxp
+            do j = 1, this%nyp
+                do k = 1, this%nzp
+                    write(this%file_unit_intermediate, '(3I5,6(" | ",Z18))') i, j, k, &
+                        transfer(vof_adv(i, j, k), 0_8), &
+                        transfer(mat_vof_adv(tmp_mat, i, j, k), 0_8), &
+                        transfer(sie_vof_adv(tmp_mat, i, j, k), 0_8), &
+                        transfer(mat_cell_mass_adv(tmp_mat, i, j, k), 0_8), &
+                        transfer(cell_mass_adv(i, j, k), 0_8), &
+                        transfer(init_mat_layers_adv(tmp_mat, i, j, k), 0_8)
+                end do
+            end do
+        end do
+        
+        ! AVITAY : vof_adv, mat_vof_adv, sie_vof_adv, mat_cell_mass_adv, cell_mass_adv, init_mat_layers_adv
+
+    end subroutine Print_advect_data
+
+    subroutine Get_file_units(this, file_unit_hexa, file_unit_decimal, file_unit_intermediate)
+        class(advect_t), intent(in) :: this
+        integer, intent(out) :: file_unit_hexa
+        integer, intent(out) :: file_unit_decimal
+        integer, intent(out) :: file_unit_intermediate
+
+        file_unit_hexa = this%file_unit_hexa
+        file_unit_decimal = this%file_unit_decimal
+        file_unit_intermediate = this%file_unit_intermediate
+    end subroutine Get_file_units
+    
+    ! function Get_file_unit(this) result(file_unit_hexa, file_unit_decimal)
+    !     class(advect_t), intent(in) :: this
+    !     integer :: file_unit_hexa
+    !     integer :: file_unit_decimal
+    !     file_unit_hexa = this%file_unit_hexa
+    !     file_unit_decimal = this%file_unit_decimal
+    ! end function Get_file_unit_overall
+
+    ! subroutine print_3d_dimensions(this, array) ! result(dim1, dim2, dim3)
+    !     implicit none
+
+    !     class(advect_t), intent(inout)    :: this
+
+    !     real(8), dimension(:, :, :), pointer :: array
+        
+    !     PRINT *, "Dimensions of array:"
+    !     PRINT *, "Dimension 1:", SIZE(array, 1)
+    !     PRINT *, "Dimension 2:", SIZE(array, 2)
+    !     PRINT *, "Dimension 3:", SIZE(array, 3)
+        
+    
+    ! end subroutine print_3d_dimensions
+
+    ! AVITAY
+
+    ! AVITAY
+    ! subroutine time_region(this, start_time, total_time)
+    !     implicit none
+
+    !     class(advect_t), intent(inout)    :: this
+        
+    !     real(8), intent(inout) :: start_time, total_time
+    !     real(8) :: end_time
+    !     integer :: thread_id
+        
+    !     ! write(*,*) "Entered time_region subroutine"
+        
+    !     thread_id = omp_get_thread_num()
+    !     !$OMP BARRIER
+    !     if (thread_id == 0) then
+    !         end_time = omp_get_wtime() - start_time
+    !         total_time = total_time + end_time
+    !         ! Debug print to verify
+    !         ! write (*,*), "Adding time: ", end_time, " to total: ", total_time
+    !     endif
+    !     !$OMP BARRIER
+    !     return
+    ! end subroutine time_region
+    ! AVITAY
+
+    !CHECKPOINT!!!!*******
+
+    ! ============================================================================
+
+    subroutine Line_calc_3d(this, nm, i_start, i_end, j_start, j_end, k_start, k_end, vof, mat_vof, a1, b1, c2, side1, x_lag, y_lag, z_lag, n_materials_in_cell)
         use geometry_module , only : Hexahedron_volume, Vector_grad,Vector_grad_planes, Vector_grad_vec, Volume_fraction_3d
         implicit none
 
         class(advect_t), intent(inout)    :: this
         integer        , intent(in)       :: nm, i_start, i_end, j_start, j_end, k_start, k_end
 
-        real(8), dimension(:, :, :), pointer :: x_lag
-        real(8), dimension(:, :, :), pointer :: y_lag
-        real(8), dimension(:, :, :), pointer :: z_lag
-        real(8), dimension(:, :, :), pointer :: vof
-        real(8), dimension(:, :, :), pointer :: mat_id
-        real(8), dimension(:, :, :), pointer :: n_materials_in_cell
-        real(8), dimension(:, :, :, :), pointer :: a1
-        real(8), dimension(:, :, :, :), pointer :: b1
-        real(8), dimension(:, :, :, :), pointer :: c2
-        real(8), dimension(:, :, :, :), pointer :: side1
+        real(8), intent(inout), dimension(:, :, :), pointer :: x_lag
+        real(8), intent(inout), dimension(:, :, :), pointer :: y_lag
+        real(8), intent(inout), dimension(:, :, :), pointer :: z_lag
+        real(8), intent(inout), dimension(:, :, :), pointer :: vof
 
-        real(8), dimension(:, :, :, :), pointer :: mat_vof
+        real(8), dimension(:, :, :), pointer :: mat_id
+
+        real(8), intent(inout), dimension(:, :, :), pointer :: n_materials_in_cell
+        real(8), intent(inout), dimension(:, :, :, :), pointer :: a1
+        real(8), intent(inout), dimension(:, :, :, :), pointer :: b1
+        real(8), intent(inout), dimension(:, :, :, :), pointer :: c2
+        real(8), intent(inout), dimension(:, :, :, :), pointer :: side1
+
+        real(8), intent(inout), dimension(:, :, :, :), pointer :: mat_vof
+        ! ! AVITAY: Added counters for comprehensive kernel call tracking
+        !integer, intent(inout) :: vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter
+
         real(8), dimension(:, :, :, :), pointer :: density_vof
         real(8), dimension(:, :, :, :), pointer :: cell_mass_vof
         real(8) :: x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, vijk, vipjk&
@@ -3083,8 +4566,69 @@ contains
             c1, dvdc, vvmin, vvmax, vend
         integer :: im, jm, km, ip, jp, kp, nnii, nnic, tmp_mat, jj, kk, iv, jv, kv, i, j, k, fake_num_mats, numit, ii
         logical :: c_flag
+        logical :: outer_mask, inner_mask, compute_mask
         logical :: wall_x_top, wall_x_bot, wall_y_top, wall_y_bot, wall_z_top, wall_z_bot
         integer :: virt_nx, virt_ny, virt_nz
+
+        ! AVITAY
+        real(8) :: abc_start, abc_end, abc_time
+        real(8) :: total_abc_time = 0.0d0
+        integer :: thread_id
+        integer :: nx, ny, nz
+        integer :: counter_0, counter_1, first_convergence, second_convergence
+        integer(kind=8) :: vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter
+        integer :: nm_condition_entered, nm_condition_passed
+        integer :: active_idx
+
+        ! AVITAY: Stream compaction local variables
+        ! AoS layout: active_cells(3, n_active_cells) = [i, j, k] per cell
+        integer, dimension(:,:), allocatable :: active_cells
+        integer :: n_active_cells
+
+        ! AVITAY: Intermediate storage arrays for 3-kernel decomposition
+        ! AoS layout: hexa_vertices(24, n_total_pairs) = [x1,y1,z1,...,x8,y8,z8]
+        ! AoS layout: vof_stencil(8, n_total_pairs) = [vijk,vipjk,vipjpk,vijpk,vijkp,vipjkp,vipjpkp,vijpkp]
+        real(8), allocatable, dimension(:,:) :: hexa_vertices
+        real(8), allocatable, dimension(:,:) :: vof_stencil   ! AoS layout for cache efficiency
+        real(8), allocatable, dimension(:)   :: volijk_storage
+        real(8), allocatable, dimension(:)   :: vend_storage
+        ! AoS layout: pair_indices(4, n_total_pairs) = [i, j, k, mat] per pair
+        integer, allocatable, dimension(:,:) :: pair_indices
+        integer :: n_total_pairs, pair_idx
+
+        ! AVITAY: Stream compaction for Kernel 3
+        integer, allocatable, dimension(:)   :: valid_pair_indices
+        integer :: n_valid_pairs, valid_idx
+
+        integer :: capture_index, max_cells
+
+        ! AVITAY: Warp-aware sorting by in_tot (for divergence reduction)
+        integer(1), allocatable, dimension(:) :: in_tot_array     ! in_tot value for each valid pair
+        integer, allocatable, dimension(:)    :: sort_indices     ! Temporary for sorting
+        integer :: sort_i, sort_j, temp_idx
+        integer(1) :: temp_in_tot
+        integer :: counts(0:8), offsets(0:8)  ! For counting sort
+        real(8) :: zt  ! Temporary for in_tot computation
+
+        ! AVITAY: Runtime skip flag for slow bottom experiment
+        ! Set to .true. to skip execution, .false. to execute
+        logical :: skip_bottom = .false.
+
+        ! real(8) :: start1, end1, time1
+        ! real(8) :: total_time1 = 0.0d0
+
+        ! real(8) :: start2, end2, time2
+        ! real(8) :: total_time2 = 0.0d0
+
+        ! real(8) :: start3, end3, time3
+        ! real(8) :: total_time3 = 0.0d0
+
+        ! real(8) :: start4, end4, time4
+        ! real(8) :: total_time4 = 0.0d0
+
+        real(8) :: local_emf1
+        real(8) :: local_emf
+        ! AVITAY
 
         real(8) :: u1u2u4, u1u4u5, u1u2u5, u2u3u1, u2u1u6, u2u3u6, u3u4u2, &
             u3u2u7, u3u4u7, u4u1u3, u4u3u8, u4u1u8, u5u8u6, u5u6u1, &
@@ -3118,6 +4662,15 @@ contains
             x8x7y6y7y8y7x6x7, x3x7y8y7y3y7x8x7, x6x7y3y7y6y7x3x7, &
             x5x8y7y8y5y8x7x8, x4x8y5y8y4y8x5x8, x7x8y4y8y7y8x4x8
 
+        ! AVITAY
+        local_emf1 = this%emf1
+        local_emf = this%emf
+
+        nx = this%nx
+        ny = this%ny
+        nz = this%nz
+
+        ! AVITAY
 
         virt_nx = this%parallel_params%virt_nx
         virt_ny = this%parallel_params%virt_ny
@@ -3130,9 +4683,8 @@ contains
         wall_z_bot = this%parallel_params%is_wall_z_bot
 
         numit = 0
-        call this%rezone   %Point_to_coordinates_3d (x_lag, y_lag, z_lag)
-        call this%num_mat_cells%Point_to_data (n_materials_in_cell)
-
+        ! call this%rezone   %Point_to_coordinates_3d (x_lag, y_lag, z_lag)
+        ! call this%num_mat_cells%Point_to_data (n_materials_in_cell)
 
         if (nm == 0) then
             fake_num_mats = 1
@@ -3140,36 +4692,937 @@ contains
             fake_num_mats = this%n_materials
         end if
 
-        !        do tmp_mat = 1, fake_num_mats
-        if (nm /= 0) then
-            call this%materials%vof%Point_to_data(mat_vof)
-            call this%adv_mats%a%Point_to_data (a1)
-            call this%adv_mats%b%Point_to_data (b1)
-            call this%adv_mats%c%Point_to_data (c2)
-            call this%adv_mats%side%Point_to_data(side1)
-        else
-            call this%total_vof%Point_to_data(vof)
-            call this%a%Point_to_data (a1)
-            call this%b%Point_to_data (b1)
-            call this%c%Point_to_data (c2)
-            call this%side%Point_to_data(side1)
-        end if
+        !!!!!        do tmp_mat = 1, fake_num_mats
+
+        ! if (nm /= 0) then
+        !     call this%materials%vof%Point_to_data(mat_vof)
+        !     call this%adv_mats%a%Point_to_data (a1)
+        !     call this%adv_mats%b%Point_to_data (b1)
+        !     call this%adv_mats%c%Point_to_data (c2)
+        !     call this%adv_mats%side%Point_to_data(side1)
+        ! else
+        !     call this%total_vof%Point_to_data(vof)
+        !     call this%a%Point_to_data (a1)
+        !     call this%b%Point_to_data (b1)
+        !     call this%c%Point_to_data (c2)
+        !     call this%side%Point_to_data(side1)
+        ! end if
+
+        ! abc_start = omp_get_wtime()
+
+        ! !$OMP TARGET ENTER DATA MAP(TO: vof, mat_vof, a1, b1, c2, side1, x_lag, y_lag, z_lag, n_materials_in_cell) 
+
+        first_convergence = 0
+        second_convergence = 0
+        counter_0 = 0
+        counter_1 = 0
+        nm_condition_entered = 0
+        nm_condition_passed = 0
+        this%line_calc_top_0_count = 0
+        this%line_calc_top_1_count = 0
+        this%line_calc_bottom_0_count = 0
+        this%line_calc_bottom_1_count = 0
+        ! AVITAY: Initialize geometry counters for Line_calc_3d GPU kernel
+        vol_frac_counter = 0
+        cut_plane_counter = 0
+        square_pyramid_counter = 0
+        physical_tetraeder_counter = 0
+        tetrahedron_counter = 0
+
+        n_valid_pairs = 0
+
+        ! FOR GPU BUILD
+#ifdef GPU_BUILD
+
+        !$OMP TARGET ENTER DATA MAP(TO: counter_0, counter_1, first_convergence, second_convergence, vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
+
+        this%line_calc_top_start = omp_get_wtime()
+
+        max_cells = (i_end - i_start + 1) * (j_end - j_start + 1) * (k_end - k_start + 1)
+        allocate(active_cells(3, max_cells))
+
+        ! Pass 1 (GPU): Mark active cells AND count
+        n_active_cells = 0
+
+        !$OMP TARGET ENTER DATA MAP(ALLOC: active_cells)
+
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(3) PRIVATE(capture_index) MAP(tofrom: n_active_cells)
         do k = k_start, k_end
             do j = j_start, j_end
                 do i = i_start, i_end
 
                     if (nm /= 0) then
-                        if( n_materials_in_cell(i, j, k) <= 1) cycle
-
+                        if (n_materials_in_cell(i, j, k) > 1) then
+                            !$omp atomic capture
+                                capture_index = n_active_cells
+                                n_active_cells = n_active_cells + 1
+                            !$omp end atomic
+                            active_cells(1,capture_index + 1) = i
+                            active_cells(2,capture_index + 1) = j
+                            active_cells(3,capture_index + 1) = k
+                        end if
                     else
-                        if (vof(i, j, k) > this%emf1) cycle
-                        if (vof(i,j,k) < this%emf) cycle
+                        if (vof(i, j, k) <= local_emf1 .and. vof(i, j, k) >= local_emf) then
+                            !$omp atomic capture
+                                capture_index = n_active_cells
+                                n_active_cells = n_active_cells + 1
+                            !$omp end atomic       
+                            active_cells(1,capture_index + 1) = i
+                            active_cells(2,capture_index + 1) = j
+                            active_cells(3,capture_index + 1) = k                     
+                        end if
                     end if
+                end do
+            end do
+        end do
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
 
+        ! Early exit if no active cells
+        if (n_active_cells == 0) then
+            ! Cleanup: Remove active_cells from GPU before early exit
+
+            !$OMP TARGET EXIT DATA MAP(DELETE: active_cells)
+            if (allocated(active_cells)) deallocate(active_cells)
+
+            this%line_calc_top_time = this%line_calc_top_time + (omp_get_wtime() - this%line_calc_top_start)
+            goto 100  ! Skip to after TOP kernel
+        end if
+
+        ! AVITAY: Allocate intermediate storage for 3-kernel decomposition
+        n_total_pairs = n_active_cells * fake_num_mats
+
+        allocate(hexa_vertices(24, n_total_pairs))  ! AoS: [x1,y1,z1,...,x8,y8,z8] per pair
+        allocate(vof_stencil(8, n_total_pairs))     ! AoS: [vijk,...,vijpkp] per pair
+        allocate(volijk_storage(n_total_pairs))
+        allocate(vend_storage(n_total_pairs))
+        allocate(pair_indices(4, n_total_pairs))    ! AoS: [i,j,k,mat] per pair
+
+        ! AVITAY: Allocate array for stream compaction
+        allocate(valid_pair_indices(n_total_pairs))
+
+        ! Map intermediate arrays to GPU device
+
+        !$OMP TARGET ENTER DATA MAP(alloc: hexa_vertices, vof_stencil, volijk_storage, vend_storage, pair_indices, valid_pair_indices)
+
+        ! AVITAY: 3-KERNEL DECOMPOSITION - Reduces register pressure from 255 to 60-110 per kernel
+        ! Wrapping all 3 kernels in single TARGET DATA region to keep intermediates on GPU
+        !
+        ! TO USE THIS VERSION: Already active (original kernel commented out below)
+        ! TO USE ORIGINAL VERSION: Uncomment original kernel and comment out this 3-kernel section
+
+        ! ====================================================================
+        ! KERNEL 1: GEOMETRIC SETUP - Extract vertices and VOF stencil
+        ! ====================================================================
+
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO COLLAPSE(2) &
+        !$OMP& PRIVATE(active_idx, tmp_mat, i, j, k, ip, im, jp, jm, kp, km, &
+        !$OMP&        x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+        !$OMP&        x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+        !$OMP&        vijk, vipjk, vipjpk, vijpk, vijkp, vipjkp, vipjpkp, vijpkp, &
+        !$OMP&        volijk, vend, pair_idx, capture_index) &
+        !$OMP& FIRSTPRIVATE(nm, fake_num_mats, local_emf, nx, ny, nz, n_active_cells, &
+        !$OMP&             wall_x_top, wall_x_bot, wall_y_top, wall_y_bot, wall_z_top, wall_z_bot) &
+        !$OMP& REDUCTION(+: counter_0, counter_1) MAP(tofrom: n_valid_pairs)
+        do active_idx = 1, n_active_cells
+            do tmp_mat = 1, fake_num_mats
+
+                ! Compute flattened pair index
+                pair_idx = (active_idx - 1) * fake_num_mats + tmp_mat
+
+                ! Retrieve actual (i,j,k) from compacted list (AoS layout)
+                i = active_cells(1, active_idx)
+                j = active_cells(2, active_idx)
+                k = active_cells(3, active_idx)
+
+                ! Store mapping for later kernels (AoS layout for cache efficiency)
+                pair_indices(1, pair_idx) = i
+                pair_indices(2, pair_idx) = j
+                pair_indices(3, pair_idx) = k
+                pair_indices(4, pair_idx) = tmp_mat
+
+                ! Increment counters
+                if (nm /= 0) then
+                    if (mat_vof(tmp_mat, i, j, k) < local_emf) then
+                        cycle ! Skip invalid pairs
+                    end if
+                    counter_1 = counter_1 + 1
+                else
+                    counter_0 = counter_0 + 1
+                end if
+
+                ! ATOMIC CAPTURE: Add valid pair to compacted list
+                !$omp atomic capture                             
+                capture_index = n_valid_pairs                
+                n_valid_pairs = n_valid_pairs + 1            
+                !$omp end atomic  
+
+                ! Store valid pair index                         
+                valid_pair_indices(capture_index + 1) = pair_idx
+
+                ! Compute neighbor indices with boundary clamping
+                ip = i + 1
+                im = i - 1
+                jp = j + 1
+                jm = j - 1
+                kp = k + 1
+                km = k - 1
+
+                ! Extract hexahedron vertices (8 vertices)
+                x1 = x_lag(i, j, k);    y1 = y_lag(i, j, k);    z1 = z_lag(i, j, k)
+                x2 = x_lag(ip, j, k);   y2 = y_lag(ip, j, k);   z2 = z_lag(ip, j, k)
+                x3 = x_lag(ip, jp, k);  y3 = y_lag(ip, jp, k);  z3 = z_lag(ip, jp, k)
+                x4 = x_lag(i, jp, k);   y4 = y_lag(i, jp, k);   z4 = z_lag(i, jp, k)
+                x5 = x_lag(i, j, kp);   y5 = y_lag(i, j, kp);   z5 = z_lag(i, j, kp)
+                x6 = x_lag(ip, j, kp);  y6 = y_lag(ip, j, kp);  z6 = z_lag(ip, j, kp)
+                x7 = x_lag(ip, jp, kp); y7 = y_lag(ip, jp, kp); z7 = z_lag(ip, jp, kp)
+                x8 = x_lag(i, jp, kp);  y8 = y_lag(i, jp, kp);  z8 = z_lag(i, jp, kp)
+
+                ! Store vertices in AoS format: [x1,y1,z1, x2,y2,z2, ..., x8,y8,z8]
+                hexa_vertices(1, pair_idx) = x1;  hexa_vertices(2, pair_idx) = y1;  hexa_vertices(3, pair_idx) = z1
+                hexa_vertices(4, pair_idx) = x2;  hexa_vertices(5, pair_idx) = y2;  hexa_vertices(6, pair_idx) = z2
+                hexa_vertices(7, pair_idx) = x3;  hexa_vertices(8, pair_idx) = y3;  hexa_vertices(9, pair_idx) = z3
+                hexa_vertices(10, pair_idx) = x4; hexa_vertices(11, pair_idx) = y4; hexa_vertices(12, pair_idx) = z4
+                hexa_vertices(13, pair_idx) = x5; hexa_vertices(14, pair_idx) = y5; hexa_vertices(15, pair_idx) = z5
+                hexa_vertices(16, pair_idx) = x6; hexa_vertices(17, pair_idx) = y6; hexa_vertices(18, pair_idx) = z6
+                hexa_vertices(19, pair_idx) = x7; hexa_vertices(20, pair_idx) = y7; hexa_vertices(21, pair_idx) = z7
+                hexa_vertices(22, pair_idx) = x8; hexa_vertices(23, pair_idx) = y8; hexa_vertices(24, pair_idx) = z8
+
+                ! Compute hexahedron volume
+                volijk = Hexahedron_volume(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+                                           x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8)
+                volijk_storage(pair_idx) = volijk
+
+                ! Apply wall boundary conditions to neighbor indices
+                if (ip > nx .and. wall_x_top) ip = nx
+                if (im < 1  .and. wall_x_bot) im = 1
+                if (jp > ny .and. wall_y_top) jp = ny
+                if (jm < 1  .and. wall_y_bot) jm = 1
+                if (kp > nz .and. wall_z_top) kp = nz
+                if (km < 1  .and. wall_z_bot) km = 1
+
+                ! Compute 8-point VOF stencil (averaged from surrounding cells)
+                if (nm == 0) then
+                    ! Use total VOF
+                    vijk = (vof(i,j,k) + vof(im,j,k) + vof(i,j,km) + vof(im,j,km) + &
+                            vof(i,jm,k) + vof(im,jm,k) + vof(i,jm,km) + vof(im,jm,km)) / 8d0
+                    vipjk = (vof(ip,j,k) + vof(i,j,k) + vof(ip,j,km) + vof(i,j,km) + &
+                             vof(ip,jm,k) + vof(i,jm,k) + vof(ip,jm,km) + vof(i,jm,km)) / 8d0
+                    vipjpk = (vof(ip,jp,k) + vof(i,jp,k) + vof(ip,jp,km) + vof(i,jp,km) + &
+                              vof(ip,j,k) + vof(i,j,k) + vof(ip,j,km) + vof(i,j,km)) / 8d0
+                    vijpk = (vof(i,jp,k) + vof(im,jp,k) + vof(i,jp,km) + vof(im,jp,km) + &
+                             vof(i,j,k) + vof(im,j,k) + vof(i,j,km) + vof(im,j,km)) / 8d0
+                    vijkp = (vof(i,j,kp) + vof(im,j,kp) + vof(i,j,k) + vof(im,j,k) + &
+                             vof(i,jm,kp) + vof(im,jm,kp) + vof(i,jm,k) + vof(im,jm,k)) / 8d0
+                    vipjkp = (vof(ip,j,kp) + vof(i,j,kp) + vof(ip,j,k) + vof(i,j,k) + &
+                              vof(ip,jm,kp) + vof(i,jm,kp) + vof(ip,jm,k) + vof(i,jm,k)) / 8d0
+                    vipjpkp = (vof(ip,jp,kp) + vof(i,jp,kp) + vof(ip,jp,k) + vof(i,jp,k) + &
+                               vof(ip,j,kp) + vof(i,j,kp) + vof(ip,j,k) + vof(i,j,k)) / 8d0
+                    vijpkp = (vof(i,jp,kp) + vof(im,jp,kp) + vof(i,jp,k) + vof(im,jp,k) + &
+                              vof(i,j,kp) + vof(im,j,kp) + vof(i,j,k) + vof(im,j,k)) / 8d0
+
+                    ! Store cell-centered vend value
+                    vend_storage(pair_idx) = vof(i, j, k) * volijk
+                else
+                    ! Use material-specific VOF
+                    vijk = (mat_vof(tmp_mat,i,j,k) + mat_vof(tmp_mat,im,j,k) + &
+                            mat_vof(tmp_mat,i,j,km) + mat_vof(tmp_mat,im,j,km) + &
+                            mat_vof(tmp_mat,i,jm,k) + mat_vof(tmp_mat,im,jm,k) + &
+                            mat_vof(tmp_mat,i,jm,km) + mat_vof(tmp_mat,im,jm,km)) / 8d0
+                    vipjk = (mat_vof(tmp_mat,ip,j,k) + mat_vof(tmp_mat,i,j,k) + &
+                             mat_vof(tmp_mat,ip,j,km) + mat_vof(tmp_mat,i,j,km) + &
+                             mat_vof(tmp_mat,ip,jm,k) + mat_vof(tmp_mat,i,jm,k) + &
+                             mat_vof(tmp_mat,ip,jm,km) + mat_vof(tmp_mat,i,jm,km)) / 8d0
+                    vipjpk = (mat_vof(tmp_mat,ip,jp,k) + mat_vof(tmp_mat,i,jp,k) + &
+                              mat_vof(tmp_mat,ip,jp,km) + mat_vof(tmp_mat,i,jp,km) + &
+                              mat_vof(tmp_mat,ip,j,k) + mat_vof(tmp_mat,i,j,k) + &
+                              mat_vof(tmp_mat,ip,j,km) + mat_vof(tmp_mat,i,j,km)) / 8d0
+                    vijpk = (mat_vof(tmp_mat,i,jp,k) + mat_vof(tmp_mat,im,jp,k) + &
+                             mat_vof(tmp_mat,i,jp,km) + mat_vof(tmp_mat,im,jp,km) + &
+                             mat_vof(tmp_mat,i,j,k) + mat_vof(tmp_mat,im,j,k) + &
+                             mat_vof(tmp_mat,i,j,km) + mat_vof(tmp_mat,im,j,km)) / 8d0
+                    vijkp = (mat_vof(tmp_mat,i,j,kp) + mat_vof(tmp_mat,im,j,kp) + &
+                             mat_vof(tmp_mat,i,j,k) + mat_vof(tmp_mat,im,j,k) + &
+                             mat_vof(tmp_mat,i,jm,kp) + mat_vof(tmp_mat,im,jm,kp) + &
+                             mat_vof(tmp_mat,i,jm,k) + mat_vof(tmp_mat,im,jm,k)) / 8d0
+                    vipjkp = (mat_vof(tmp_mat,ip,j,kp) + mat_vof(tmp_mat,i,j,kp) + &
+                              mat_vof(tmp_mat,ip,j,k) + mat_vof(tmp_mat,i,j,k) + &
+                              mat_vof(tmp_mat,ip,jm,kp) + mat_vof(tmp_mat,i,jm,kp) + &
+                              mat_vof(tmp_mat,ip,jm,k) + mat_vof(tmp_mat,i,jm,k)) / 8d0
+                    vipjpkp = (mat_vof(tmp_mat,ip,jp,kp) + mat_vof(tmp_mat,i,jp,kp) + &
+                               mat_vof(tmp_mat,ip,jp,k) + mat_vof(tmp_mat,i,jp,k) + &
+                               mat_vof(tmp_mat,ip,j,kp) + mat_vof(tmp_mat,i,j,kp) + &
+                               mat_vof(tmp_mat,ip,j,k) + mat_vof(tmp_mat,i,j,k)) / 8d0
+                    vijpkp = (mat_vof(tmp_mat,i,jp,kp) + mat_vof(tmp_mat,im,jp,kp) + &
+                              mat_vof(tmp_mat,i,jp,k) + mat_vof(tmp_mat,im,jp,k) + &
+                              mat_vof(tmp_mat,i,j,kp) + mat_vof(tmp_mat,im,j,kp) + &
+                              mat_vof(tmp_mat,i,j,k) + mat_vof(tmp_mat,im,j,k)) / 8d0
+
+                    ! Store cell-centered vend value
+                    vend_storage(pair_idx) = mat_vof(tmp_mat, i, j, k) * volijk
+                end if
+
+                ! Store VOF stencil in AoS layout (8 consecutive values per pair)
+                vof_stencil(1, pair_idx) = vijk
+                vof_stencil(2, pair_idx) = vipjk
+                vof_stencil(3, pair_idx) = vipjpk
+                vof_stencil(4, pair_idx) = vijpk
+                vof_stencil(5, pair_idx) = vijkp
+                vof_stencil(6, pair_idx) = vipjkp
+                vof_stencil(7, pair_idx) = vipjpkp
+                vof_stencil(8, pair_idx) = vijpkp
+
+            end do
+        end do
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+
+        ! END OF KERNEL 1: GEOMETRIC SETUP
+        ! ====================================================================
+
+        ! Allocate in_tot_array for warp-aware sorting (computed in KERNEL 2)
+        if (n_valid_pairs > 0) then
+            allocate(in_tot_array(n_valid_pairs))
+            !$OMP TARGET ENTER DATA MAP(alloc: in_tot_array)
+        end if
+
+        ! ====================================================================
+        ! KERNEL 2: PLANE RECONSTRUCTION - Compute gradients and plane params
+        !           Also computes in_tot for warp-aware sorting
+        ! Now iterates only over valid pairs (no cycle divergence)
+        ! ====================================================================
+
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO &
+        !$OMP& PRIVATE(valid_idx, pair_idx, i, j, k, tmp_mat, &
+        !$OMP&        x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+        !$OMP&        x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+        !$OMP&        vijk, vipjk, vipjpk, vijpk, vijkp, vipjkp, vipjpkp, vijpkp, &
+        !$OMP&        volijk, dfdx, dfdy, dfdz, &
+        !$OMP&        y4y1z2z1z4z1y2y1, y5y1z4z1z5z1y4y1, y2y1z5z1z2z1y5y1, &
+        !$OMP&        y1y2z3z2z1z2y3y2, y6y2z1z2z6z2y1y2, y3y2z6z2z3z2y6y2, &
+        !$OMP&        y2y3z4z3z2z3y4y3, y7y3z2z3z7z3y2y3, y4y3z7z3z4z3y7y3, &
+        !$OMP&        y3y4z1z4z3z4y1y4, y8y4z3z4z8z4y3y4, y1y4z8z4z1z4y8y4, &
+        !$OMP&        y6y5z8z5z6z5y8y5, y1y5z6z5z1z5y6y5, y8y5z1z5z8z5y1y5, &
+        !$OMP&        y7y6z5z6z7z6y5y6, y2y6z7z6z2z6y7y6, y5y6z2z6z5z6y2y6, &
+        !$OMP&        y8y7z6z7z8z7y6y7, y3y7z8z7z3z7y8y7, y6y7z3z7z6z7y3y7, &
+        !$OMP&        y5y8z7z8z5z8y7y8, y4y8z5z8z4z8y5y8, y7y8z4z8z7z8y4y8, &
+        !$OMP&        z4z1x2x1x4x1z2z1, z5z1x4x1x5x1z4z1, z2z1x5x1x2x1z5z1, &
+        !$OMP&        z1z2x3x2x1x2z3z2, z6z2x1x2x6x2z1z2, z3z2x6x2x3x2z6z2, &
+        !$OMP&        z2z3x4x3x2x3z4z3, z7z3x2x3x7x3z2z3, z4z3x7x3x4x3z7z3, &
+        !$OMP&        z3z4x1x4x3x4z1z4, z8z4x3x4x8x4z3z4, z1z4x8x4x1x4z8z4, &
+        !$OMP&        z6z5x8x5x6x5z8z5, z1z5x6x5x1x5z6z5, z8z5x1x5x8x5z1z5, &
+        !$OMP&        z7z6x5x6x7x6z5z6, z2z6x7x6x2x6z7z6, z5z6x2x6x5x6z2z6, &
+        !$OMP&        z8z7x6x7x8x7z6z7, z3z7x8x7x3x7z8z7, z6z7x3x7x6x7z3z7, &
+        !$OMP&        z5z8x7x8x5x8z7z8, z4z8x5x8x4x8z5z8, z7z8x4x8x7x8z4z8, &
+        !$OMP&        x4x1y2y1y4y1x2x1, x5x1y4y1y5y1x4x1, x2x1y5y1y2y1x5x1, &
+        !$OMP&        x1x2y3y2y1y2x3x2, x6x2y1y2y6y2x1x2, x3x2y6y2y3y2x6x2, &
+        !$OMP&        x2x3y4y3y2y3x4x3, x7x3y2y3y7y3x2x3, x4x3y7y3y4y3x7x3, &
+        !$OMP&        x3x4y1y4y3y4x1x4, x8x4y3y4y8y4x3x4, x1x4y8y4y1y4x8x4, &
+        !$OMP&        x6x5y8y5y6y5x8x5, x1x5y6y5y1y5x6x5, x8x5y1y5y8y5x1x5, &
+        !$OMP&        x7x6y5y6y7y6x5x6, x2x6y7y6y2y6x7x6, x5x6y2y6y5y6x2x6, &
+        !$OMP&        x8x7y6y7y8y7x6x7, x3x7y8y7y3y7x8x7, x6x7y3y7y6y7x3x7, &
+        !$OMP&        x5x8y7y8y5y8x7x8, x4x8y5y8y4y8x5x8, x7x8y4y8y7y8x4x8, &
+        !$OMP&        u1u2u4, u1u4u5, u1u2u5, u2u3u1, u2u1u6, u2u3u6, &
+        !$OMP&        u3u4u2, u3u2u7, u3u4u7, u4u1u3, u4u3u8, u4u1u8, &
+        !$OMP&        u5u8u6, u5u6u1, u5u8u1, u6u5u7, u6u7u2, u6u5u2, &
+        !$OMP&        u7u6u8, u7u8u3, u7u6u3, u8u7u5, u8u5u4, u8u7u4, zt) &
+        !$OMP&        MAP(tofrom: n_valid_pairs)
+        do valid_idx = 1, n_valid_pairs
+
+            ! Get actual pair index from compacted list (no cycle divergence)
+            pair_idx = valid_pair_indices(valid_idx)
+
+            ! Load indices from AoS storage (consecutive memory access)
+            i = pair_indices(1, pair_idx)
+            j = pair_indices(2, pair_idx)
+            k = pair_indices(3, pair_idx)
+            tmp_mat = pair_indices(4, pair_idx)
+
+            ! Load hexahedron vertices from AoS storage (consecutive memory access)
+            x1 = hexa_vertices(1, pair_idx);  y1 = hexa_vertices(2, pair_idx);  z1 = hexa_vertices(3, pair_idx)
+            x2 = hexa_vertices(4, pair_idx);  y2 = hexa_vertices(5, pair_idx);  z2 = hexa_vertices(6, pair_idx)
+            x3 = hexa_vertices(7, pair_idx);  y3 = hexa_vertices(8, pair_idx);  z3 = hexa_vertices(9, pair_idx)
+            x4 = hexa_vertices(10, pair_idx); y4 = hexa_vertices(11, pair_idx); z4 = hexa_vertices(12, pair_idx)
+            x5 = hexa_vertices(13, pair_idx); y5 = hexa_vertices(14, pair_idx); z5 = hexa_vertices(15, pair_idx)
+            x6 = hexa_vertices(16, pair_idx); y6 = hexa_vertices(17, pair_idx); z6 = hexa_vertices(18, pair_idx)
+            x7 = hexa_vertices(19, pair_idx); y7 = hexa_vertices(20, pair_idx); z7 = hexa_vertices(21, pair_idx)
+            x8 = hexa_vertices(22, pair_idx); y8 = hexa_vertices(23, pair_idx); z8 = hexa_vertices(24, pair_idx)
+
+            ! Load VOF stencil from AoS storage (consecutive memory access)
+            vijk    = vof_stencil(1, pair_idx)
+            vipjk   = vof_stencil(2, pair_idx)
+            vipjpk  = vof_stencil(3, pair_idx)
+            vijpk   = vof_stencil(4, pair_idx)
+            vijkp   = vof_stencil(5, pair_idx)
+            vipjkp  = vof_stencil(6, pair_idx)
+            vipjpkp = vof_stencil(7, pair_idx)
+            vijpkp  = vof_stencil(8, pair_idx)
+
+            ! Load cell volume
+            volijk = volijk_storage(pair_idx)
+
+            ! Call Vector_grad_planes (3 times) to compute geometric intermediates
+            call Vector_grad_planes(y1, y2, y3, y4, y5, y6, y7, y8, &
+                z1, z2, z3, z4, z5, z6, z7, z8, &
+                y4y1z2z1z4z1y2y1, y5y1z4z1z5z1y4y1, y2y1z5z1z2z1y5y1, &
+                y1y2z3z2z1z2y3y2, y6y2z1z2z6z2y1y2, y3y2z6z2z3z2y6y2, &
+                y2y3z4z3z2z3y4y3, y7y3z2z3z7z3y2y3, y4y3z7z3z4z3y7y3, &
+                y3y4z1z4z3z4y1y4, y8y4z3z4z8z4y3y4, y1y4z8z4z1z4y8y4, &
+                y6y5z8z5z6z5y8y5, y1y5z6z5z1z5y6y5, y8y5z1z5z8z5y1y5, &
+                y7y6z5z6z7z6y5y6, y2y6z7z6z2z6y7y6, y5y6z2z6z5z6y2y6, &
+                y8y7z6z7z8z7y6y7, y3y7z8z7z3z7y8y7, y6y7z3z7z6z7y3y7, &
+                y5y8z7z8z5z8y7y8, y4y8z5z8z4z8y5y8, y7y8z4z8z7z8y4y8)
+
+            call Vector_grad_planes(z1, z2, z3, z4, z5, z6, z7, z8, &
+                x1, x2, x3, x4, x5, x6, x7, x8, &
+                z4z1x2x1x4x1z2z1, z5z1x4x1x5x1z4z1, z2z1x5x1x2x1z5z1, &
+                z1z2x3x2x1x2z3z2, z6z2x1x2x6x2z1z2, z3z2x6x2x3x2z6z2, &
+                z2z3x4x3x2x3z4z3, z7z3x2x3x7x3z2z3, z4z3x7x3x4x3z7z3, &
+                z3z4x1x4x3x4z1z4, z8z4x3x4x8x4z3z4, z1z4x8x4x1x4z8z4, &
+                z6z5x8x5x6x5z8z5, z1z5x6x5x1x5z6z5, z8z5x1x5x8x5z1z5, &
+                z7z6x5x6x7x6z5z6, z2z6x7x6x2x6z7z6, z5z6x2x6x5x6z2z6, &
+                z8z7x6x7x8x7z6z7, z3z7x8x7x3x7z8z7, z6z7x3x7x6x7z3z7, &
+                z5z8x7x8x5x8z7z8, z4z8x5x8x4x8z5z8, z7z8x4x8x7x8z4z8)
+
+            call Vector_grad_planes(x1, x2, x3, x4, x5, x6, x7, x8, &
+                y1, y2, y3, y4, y5, y6, y7, y8, &
+                x4x1y2y1y4y1x2x1, x5x1y4y1y5y1x4x1, x2x1y5y1y2y1x5x1, &
+                x1x2y3y2y1y2x3x2, x6x2y1y2y6y2x1x2, x3x2y6y2y3y2x6x2, &
+                x2x3y4y3y2y3x4x3, x7x3y2y3y7y3x2x3, x4x3y7y3y4y3x7x3, &
+                x3x4y1y4y3y4x1x4, x8x4y3y4y8y4x3x4, x1x4y8y4y1y4x8x4, &
+                x6x5y8y5y6y5x8x5, x1x5y6y5y1y5x6x5, x8x5y1y5y8y5x1x5, &
+                x7x6y5y6y7y6x5x6, x2x6y7y6y2y6x7x6, x5x6y2y6y5y6x2x6, &
+                x8x7y6y7y8y7x6x7, x3x7y8y7y3y7x8x7, x6x7y3y7y6y7x3x7, &
+                x5x8y7y8y5y8x7x8, x4x8y5y8y4y8x5x8, x7x8y4y8y7y8x4x8)
+
+            ! Call Vector_grad_vec to compute u-values
+            call Vector_grad_vec(vijk, vipjk, vipjpk, vijpk, vijkp, vipjkp, vipjpkp, vijpkp, &
+                u1u2u4, u1u4u5, u1u2u5, u2u3u1, u2u1u6, u2u3u6, &
+                u3u4u2, u3u2u7, u3u4u7, u4u1u3, u4u3u8, u4u1u8, &
+                u5u8u6, u5u6u1, u5u8u1, u6u5u7, u6u7u2, u6u5u2, &
+                u7u6u8, u7u8u3, u7u6u3, u8u7u5, u8u5u4, u8u7u4)
+
+            ! Compute gradients (exact formulas from original code)
+            dfdx = 1 / (12*volijk)*( &
+                (u1u2u4 * y4y1z2z1z4z1y2y1 + u1u4u5 * y5y1z4z1z5z1y4y1 + u1u2u5 * y2y1z5z1z2z1y5y1) +&
+                (u2u3u1 * y1y2z3z2z1z2y3y2 + u2u1u6 * y6y2z1z2z6z2y1y2 + u2u3u6 * y3y2z6z2z3z2y6y2) +&
+                (u3u4u2 * y2y3z4z3z2z3y4y3 + u3u2u7 * y7y3z2z3z7z3y2y3 + u3u4u7 * y4y3z7z3z4z3y7y3) +&
+                (u4u1u3 * y3y4z1z4z3z4y1y4 + u4u3u8 * y8y4z3z4z8z4y3y4 + u4u1u8 * y1y4z8z4z1z4y8y4) +&
+                (u5u8u6 * y6y5z8z5z6z5y8y5 + u5u6u1 * y1y5z6z5z1z5y6y5 + u5u8u1 * y8y5z1z5z8z5y1y5) +&
+                (u6u5u7 * y7y6z5z6z7z6y5y6 + u6u7u2 * y2y6z7z6z2z6y7y6 + u6u5u2 * y5y6z2z6z5z6y2y6) +&
+                (u7u6u8 * y8y7z6z7z8z7y6y7 + u7u8u3 * y3y7z8z7z3z7y8y7 + u7u6u3 * y6y7z3z7z6z7y3y7) +&
+                (u8u7u5 * y5y8z7z8z5z8y7y8 + u8u5u4 * y4y8z5z8z4z8y5y8 + u8u7u4 * y7y8z4z8z7z8y4y8))
+
+            dfdy = 1 / (12*volijk)*( &
+                (u1u2u4 * z4z1x2x1x4x1z2z1 + u1u4u5 * z5z1x4x1x5x1z4z1 + u1u2u5 * z2z1x5x1x2x1z5z1) +&
+                (u2u3u1 * z1z2x3x2x1x2z3z2 + u2u1u6 * z6z2x1x2x6x2z1z2 + u2u3u6 * z3z2x6x2x3x2z6z2) +&
+                (u3u4u2 * z2z3x4x3x2x3z4z3 + u3u2u7 * z7z3x2x3x7x3z2z3 + u3u4u7 * z4z3x7x3x4x3z7z3) +&
+                (u4u1u3 * z3z4x1x4x3x4z1z4 + u4u3u8 * z8z4x3x4x8x4z3z4 + u4u1u8 * z1z4x8x4x1x4z8z4) +&
+                (u5u8u6 * z6z5x8x5x6x5z8z5 + u5u6u1 * z1z5x6x5x1x5z6z5 + u5u8u1 * z8z5x1x5x8x5z1z5) +&
+                (u6u5u7 * z7z6x5x6x7x6z5z6 + u6u7u2 * z2z6x7x6x2x6z7z6 + u6u5u2 * z5z6x2x6x5x6z2z6) +&
+                (u7u6u8 * z8z7x6x7x8x7z6z7 + u7u8u3 * z3z7x8x7x3x7z8z7 + u7u6u3 * z6z7x3x7x6x7z3z7) +&
+                (u8u7u5 * z5z8x7x8x5x8z7z8 + u8u5u4 * z4z8x5x8x4x8z5z8 + u8u7u4 * z7z8x4x8x7x8z4z8))
+
+            dfdz = 1 / (12*volijk)*( &
+                (u1u2u4 * x4x1y2y1y4y1x2x1 + u1u4u5 * x5x1y4y1y5y1x4x1 + u1u2u5 * x2x1y5y1y2y1x5x1) +&
+                (u2u3u1 * x1x2y3y2y1y2x3x2 + u2u1u6 * x6x2y1y2y6y2x1x2 + u2u3u6 * x3x2y6y2y3y2x6x2) +&
+                (u3u4u2 * x2x3y4y3y2y3x4x3 + u3u2u7 * x7x3y2y3y7y3x2x3 + u3u4u7 * x4x3y7y3y4y3x7x3) +&
+                (u4u1u3 * x3x4y1y4y3y4x1x4 + u4u3u8 * x8x4y3y4y8y4x3x4 + u4u1u8 * x1x4y8y4y1y4x8x4) +&
+                (u5u8u6 * x6x5y8y5y6y5x8x5 + u5u6u1 * x1x5y6y5y1y5x6x5 + u5u8u1 * x8x5y1y5y8y5x1x5) +&
+                (u6u5u7 * x7x6y5y6y7y6x5x6 + u6u7u2 * x2x6y7y6y2y6x7x6 + u6u5u2 * x5x6y2y6y5y6x2x6) +&
+                (u7u6u8 * x8x7y6y7y8y7x6x7 + u7u8u3 * x3x7y8y7y3y7x8x7 + u7u6u3 * x6x7y3y7y6y7x3x7) +&
+                (u8u7u5 * x5x8y7y8y5y8x7x8 + u8u5u4 * x4x8y5y8y4y8x5x8 + u8u7u4 * x7x8y4y8y7y8x4x8))
+
+            ! Compute plane parameters
+            if (abs(dfdz) < 1d-8) dfdz = sign(1d-8, dfdz)
+            side1(tmp_mat, i, j, k) = sign(1d0, dfdz)
+            a1(tmp_mat, i, j, k) = -dfdx / dfdz
+            b1(tmp_mat, i, j, k) = -dfdy / dfdz
+
+            ! Compute in_tot (count vertices inside the plane) using previous iteration's c2
+            ! This is integrated here to avoid a separate kernel launch and reuse loaded vertices
+            in_tot_array(valid_idx) = 0
+            zt = a1(tmp_mat, i, j, k) * x1 + b1(tmp_mat, i, j, k) * y1 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z1 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+            zt = a1(tmp_mat, i, j, k) * x2 + b1(tmp_mat, i, j, k) * y2 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z2 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+            zt = a1(tmp_mat, i, j, k) * x3 + b1(tmp_mat, i, j, k) * y3 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z3 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+            zt = a1(tmp_mat, i, j, k) * x4 + b1(tmp_mat, i, j, k) * y4 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z4 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+            zt = a1(tmp_mat, i, j, k) * x5 + b1(tmp_mat, i, j, k) * y5 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z5 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+            zt = a1(tmp_mat, i, j, k) * x6 + b1(tmp_mat, i, j, k) * y6 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z6 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+            zt = a1(tmp_mat, i, j, k) * x7 + b1(tmp_mat, i, j, k) * y7 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z7 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+            zt = a1(tmp_mat, i, j, k) * x8 + b1(tmp_mat, i, j, k) * y8 + c2(tmp_mat, i, j, k)
+            if (sign(1.d0, z8 - zt) == side1(tmp_mat, i, j, k)) in_tot_array(valid_idx) = in_tot_array(valid_idx) + 1_1
+
+        end do
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+
+        ! END OF KERNEL 2: PLANE RECONSTRUCTION + IN_TOT CALCULATION
+        ! =================================================================================
+
+        ! =================================================================================
+        ! ****** WARP-AWARE SORTING: Sort valid pairs by in_tot to reduce divergence ******
+        ! =================================================================================
+
+        ! Transfer in_tot_array and valid_pair_indices to CPU for sorting
+        if (n_valid_pairs > 0) then
+            !$OMP TARGET UPDATE FROM(in_tot_array)
+            !$OMP TARGET EXIT DATA MAP(delete: in_tot_array)
+
+            !$OMP TARGET UPDATE FROM(valid_pair_indices)
+            ! COUNTING SORT: Sort valid_pair_indices by in_tot value (0-8)
+            ! This is optimal for small range and creates contiguous regions
+            allocate(sort_indices(n_valid_pairs))
+
+            ! Count occurrences of each in_tot value (0-8)
+            counts = 0
+            do valid_idx = 1, n_valid_pairs
+                counts(in_tot_array(valid_idx)) = counts(in_tot_array(valid_idx)) + 1
+            end do
+
+            ! Compute prefix sum to get starting offset for each in_tot value
+            offsets(0) = 1
+            do ii = 1, 8
+                offsets(ii) = offsets(ii-1) + counts(ii-1)
+            end do
+
+            ! Place indices into sorted order
+            do valid_idx = 1, n_valid_pairs
+                ii = in_tot_array(valid_idx)
+                sort_indices(offsets(ii)) = valid_pair_indices(valid_idx)
+                offsets(ii) = offsets(ii) + 1
+            end do
+
+            ! Copy sorted indices back to valid_pair_indices
+            valid_pair_indices(1:n_valid_pairs) = sort_indices(1:n_valid_pairs)
+
+            !$OMP TARGET UPDATE TO(valid_pair_indices)
+
+            ! Deallocate temporary arrays
+            deallocate(in_tot_array)
+            deallocate(sort_indices)
+        end if
+        ! END OF WARP-AWARE SORTING
+        ! ====================================================================
+
+        ! ====================================================================
+        ! KERNEL 3: NEWTON-RAPHSON CONVERGENCE (WITH STREAM COMPACTION)
+        ! Purpose: Iterative convergence to find c2 for each valid pair
+        ! Benefits: No cycle divergence - all threads process valid pairs
+        ! ====================================================================
+
+        !$OMP TARGET TEAMS DISTRIBUTE PARALLEL DO SIMD &
+        !$OMP& PRIVATE(valid_idx, pair_idx, i, j, k, tmp_mat, &
+        !$OMP&        x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+        !$OMP&        x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+        !$OMP&        volijk, vend, c_flag, kk, jj, ii, &
+        !$OMP&        cmax, cmin, nnii, cn, cold, v1, delc, &
+        !$OMP&        c1, v2, dvdc, vvmin, vvmax) &
+        !$OMP& FIRSTPRIVATE(n_valid_pairs, nm, local_emf, numit) &
+        !$OMP& REDUCTION(+: first_convergence, second_convergence, vol_frac_counter, &
+        !$OMP&             cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
+        do valid_idx = 1, n_valid_pairs
+
+            pair_idx = valid_pair_indices(valid_idx)
+
+            ! Retrieve actual (i,j,k,tmp_mat) from AoS pair mapping (consecutive memory access)
+            i = pair_indices(1, pair_idx)
+            j = pair_indices(2, pair_idx)
+            k = pair_indices(3, pair_idx)
+            tmp_mat = pair_indices(4, pair_idx)
+
+            ! Load hexahedron vertices from AoS storage
+            ! OPTIMIZATION: All 24 values are consecutive in memory (1-2 cache lines)
+            ! instead of 24 scattered loads across 3 arrays
+            x1 = hexa_vertices(1, pair_idx)
+            y1 = hexa_vertices(2, pair_idx)
+            z1 = hexa_vertices(3, pair_idx)
+
+            x2 = hexa_vertices(4, pair_idx)
+            y2 = hexa_vertices(5, pair_idx)
+            z2 = hexa_vertices(6, pair_idx)
+
+            x3 = hexa_vertices(7, pair_idx)
+            y3 = hexa_vertices(8, pair_idx)
+            z3 = hexa_vertices(9, pair_idx)
+
+            x4 = hexa_vertices(10, pair_idx)
+            y4 = hexa_vertices(11, pair_idx)
+            z4 = hexa_vertices(12, pair_idx)
+
+            x5 = hexa_vertices(13, pair_idx)
+            y5 = hexa_vertices(14, pair_idx)
+            z5 = hexa_vertices(15, pair_idx)
+
+            x6 = hexa_vertices(16, pair_idx)
+            y6 = hexa_vertices(17, pair_idx)
+            z6 = hexa_vertices(18, pair_idx)
+
+            x7 = hexa_vertices(19, pair_idx)
+            y7 = hexa_vertices(20, pair_idx)
+            z7 = hexa_vertices(21, pair_idx)
+
+            x8 = hexa_vertices(22, pair_idx)
+            y8 = hexa_vertices(23, pair_idx)
+            z8 = hexa_vertices(24, pair_idx)
+
+            ! Load precomputed values from previous kernels
+            volijk = volijk_storage(pair_idx)
+            vend = vend_storage(pair_idx)
+
+            ! Compute cmax and cmin (bounds on c2 parameter)
+            cmax = -1d20
+            cmin = 1d20
+            do kk = 0, 1
+                do jj = 0, 1
+                    do ii = 0, 1
+                        cmax = max(cmax, z_lag(i + ii, j + jj, k + kk) - &
+                                   a1(tmp_mat, i, j, k)*x_lag(i + ii, j + jj, k + kk) - &
+                                   b1(tmp_mat, i, j, k)*y_lag(i + ii, j + jj, k + kk))
+                        cmin = min(cmin, z_lag(i + ii, j + jj, k + kk) - &
+                                   a1(tmp_mat, i, j, k)*x_lag(i + ii, j + jj, k + kk) - &
+                                   b1(tmp_mat, i, j, k)*y_lag(i + ii, j + jj, k + kk))
+                    end do
+                end do
+            end do
+
+            ! Quick check: if cmax == cmin, no iteration needed
+            if(cmax == cmin) then
+                c2(tmp_mat, i, j, k) = cmax
+            end if
+
+            ! ========================================================================
+            ! FIRST CONVERGENCE LOOP: Newton-Raphson (up to 15 iterations)
+            ! ========================================================================
+            c_flag = .true.
+            nnii = 0
+            cn = 0.5d0*(cmin + cmax)
+            do
+                first_convergence = first_convergence + 1
+
+                cold = cn
+                c2(tmp_mat, i, j, k) = cn
+                nnii = nnii + 1
+                if (nnii > 15) then
+                    exit
+                end if
+
+                ! First Volume_fraction_3d call at cn
+                vol_frac_counter = vol_frac_counter + 1
+                v1 = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+                                        x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+                                        a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), &
+                                        c2(tmp_mat, i, j, k), side1(tmp_mat, i, j, k), volijk, &
+                                        cut_plane_counter, square_pyramid_counter, &
+                                        physical_tetraeder_counter, tetrahedron_counter)
+
+                ! Compute finite difference step
+                delc = 1d-7*(cmax - cmin)
+                if (c2(tmp_mat, i, j, k) + delc >= cmax) then
+                    if (abs(c2(tmp_mat, i, j, k) - cmax) > 1d-8) then
+                        delc = 0.9d0*(cmax - c2(tmp_mat, i, j, k))
+                    else
+                        delc = 0.1d0*(cmin - c2(tmp_mat, i, j, k))
+                    end if
+                end if
+                if (c2(tmp_mat, i, j, k) + delc <= cmin) then
+                    if (abs(c2(tmp_mat, i, j, k) - cmin) > 1d-8) then
+                        delc = 0.9d0*(cmin - c2(tmp_mat, i, j, k))
+                    else
+                        delc = 0.1d0*(cmax - c2(tmp_mat, i, j, k))
+                    end if
+                end if
+                c1 = c2(tmp_mat, i, j, k) + delc
+
+                ! Second Volume_fraction_3d call at c1 (for derivative)
+                vol_frac_counter = vol_frac_counter + 1
+                v2 = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+                                        x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+                                        a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), &
+                                        c1, side1(tmp_mat, i, j, k), volijk, &
+                                        cut_plane_counter, square_pyramid_counter, &
+                                        physical_tetraeder_counter, tetrahedron_counter)
+
+                ! Check for degenerate derivative
+                if (abs(delc) < 1d-20) then
+                    exit
+                end if
+                dvdc = (v2 - v1) / delc
+                if (dvdc == 0) then
+                    exit
+                end if
+
+                ! Newton-Raphson update
+                cn = c2(tmp_mat, i, j, k) - (v1 - vend) / dvdc
+
+                ! Bound cn within [cmin, cmax] with reflection
+                if (cn > cmax) then
+                    cn = 2*cmax - cn
+                    if (cn < cmin) cn = 0.5d0*(cmax + cmin)
+                else if (cn < cmin) then
+                    cn = 2*cmin - cn
+                    if (cn >= cmax) cn = 0.5d0*(cmax + cmin)
+                end if
+
+                ! Convergence check
+                if (abs(v1 - vend) > 1d-1 * local_emf * volijk) cycle
+
+                c2(tmp_mat, i, j, k) = cn
+                numit = max(nnii, numit)
+                c_flag = .false.
+                exit
+            end do
+
+            ! ========================================================================
+            ! SECOND CONVERGENCE LOOP: Bisection (up to 50 iterations)
+            ! Only if first convergence failed
+            ! ========================================================================
+            ! if (c_flag) then
+
+            !     ! Evaluate at bounds to determine bracketing
+            !     vol_frac_counter = vol_frac_counter + 2
+
+            !     vvmin = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+            !                                x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+            !                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), &
+            !                                cmin, side1(tmp_mat, i, j, k), volijk, &
+            !                                cut_plane_counter, square_pyramid_counter, &
+            !                                physical_tetraeder_counter, tetrahedron_counter)
+
+            !     vvmax = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+            !                                x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+            !                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), &
+            !                                cmax, side1(tmp_mat, i, j, k), volijk, &
+            !                                cut_plane_counter, square_pyramid_counter, &
+            !                                physical_tetraeder_counter, tetrahedron_counter)
+
+            !     nnii = 0
+            !     do
+            !         second_convergence = second_convergence + 1
+
+            !         cn = 0.5d0*(cmin + cmax)
+            !         nnii = nnii + 1
+            !         if (nnii > 50) then
+            !             c2(tmp_mat, i, j, k) = cn
+            !             exit
+            !         end if
+
+            !         ! Evaluate at midpoint
+            !         vol_frac_counter = vol_frac_counter + 1
+            !         v1 = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
+            !                                 x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
+            !                                 a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), &
+            !                                 cn, side1(tmp_mat, i, j, k), volijk, &
+            !                                 cut_plane_counter, square_pyramid_counter, &
+            !                                 physical_tetraeder_counter, tetrahedron_counter)
+
+            !         ! Bisection update
+            !         if ((v1 < vend .and. vvmax > vvmin) .or. (v1 > vend .and. vvmax < vvmin)) then
+            !             cmin = cn
+            !         else
+            !             cmax = cn
+            !         end if
+
+            !         ! Convergence check
+            !         if (abs(v1 - vend) <= 1d-1*local_emf*volijk) then
+            !             exit
+            !         end if
+            !     end do
+            ! end if
+
+            ! Final assignment
+            c2(tmp_mat, i, j, k) = cn
+
+        end do  ! end do valid_idx
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+
+
+        ! END OF KERNEL 3: NEWTON-RAPHSON CONVERGENCE
+        ! ====================================================================
+
+        ! ====================================================================
+        ! CLEANUP: Deallocate intermediate storage arrays
+        ! ====================================================================
+
+        ! Remove arrays from GPU device memory 
+
+        !$OMP TARGET EXIT DATA MAP(delete: hexa_vertices, &
+        !$OMP&                             vof_stencil, volijk_storage, vend_storage, &
+        !$OMP&                             pair_indices, &
+        !$OMP&                             valid_pair_indices)
+
+        ! Deallocate on host
+        if (allocated(hexa_vertices))    deallocate(hexa_vertices)
+        if (allocated(vof_stencil))      deallocate(vof_stencil)
+        if (allocated(volijk_storage))   deallocate(volijk_storage)
+        if (allocated(vend_storage))     deallocate(vend_storage)
+        if (allocated(pair_indices))     deallocate(pair_indices)
+
+        ! AVITAY: Deallocate stream compaction array
+        if (allocated(valid_pair_indices)) deallocate(valid_pair_indices)
+
+        ! END OF KERNEL DECOMPOSITION WITH STREAM COMPACTION
+        ! ====================================================================
+
+        ! Cleanup: Remove active cell indices from device and deallocate
+                                      
+        !$OMP TARGET EXIT DATA MAP(DELETE: active_cells)
+            
+        if (allocated(active_cells)) deallocate(active_cells)
+
+        ! Label for early exit when no active cells
+100     continue
+
+        this%line_calc_top_time = this%line_calc_top_time + (omp_get_wtime() - this%line_calc_top_start)
+
+        !$OMP TARGET EXIT DATA MAP(FROM: counter_0, counter_1, first_convergence, second_convergence, &
+        !$OMP&                           vol_frac_counter, cut_plane_counter, square_pyramid_counter, &
+        !$OMP&                           physical_tetraeder_counter, tetrahedron_counter)
+
+        this%first_convergence_top = this%first_convergence_top + first_convergence
+        this%second_convergence_top = this%second_convergence_top + second_convergence
+        ! AVITAY: Accumulate Line_calc_3d geometry counters for top region
+        this%total_line_calc_vol_frac_counter_top = this%total_line_calc_vol_frac_counter_top + vol_frac_counter
+        this%total_line_calc_cut_plane_counter_top = this%total_line_calc_cut_plane_counter_top + cut_plane_counter
+        this%total_line_calc_square_pyramid_counter_top = this%total_line_calc_square_pyramid_counter_top + square_pyramid_counter
+        this%total_line_calc_physical_tetraeder_counter_top = this%total_line_calc_physical_tetraeder_counter_top + physical_tetraeder_counter
+        this%total_line_calc_tetrahederon_counter_top = this%total_line_calc_tetrahederon_counter_top + tetrahedron_counter
+
+        this%line_calc_top_0_count = this%line_calc_top_0_count + counter_0
+        this%line_calc_top_1_count = this%line_calc_top_1_count + counter_1
+
+        ! Reset counters for next iteration
+        vol_frac_counter = 0
+        cut_plane_counter = 0
+        square_pyramid_counter = 0
+        physical_tetraeder_counter = 0
+        tetrahedron_counter = 0
+        first_convergence = 0
+        second_convergence = 0
+        counter_0 = 0
+        counter_1 = 0
+
+        ! ====================================================================
+        ! AVITAY: Print TOP Line_calc_3d results before BOTTOM overwrites them
+        ! ====================================================================
+! #ifdef GPU_BUILD
+!         !$OMP TARGET UPDATE FROM(a1, b1, c2, side1)
+! #endif
+
+        ! if (this%cyc_delete == this%datafile%max_ncyc - 2) then
+        !     if (nm == 0) then
+        !         write(this%file_unit_intermediate_top, '(A)') "============================================================================================================="
+        !         write(this%file_unit_intermediate_top, '(A,I0)') "TOP LINE_CALC_3D (nm=0) - TIMESTEP NUMBER: ", this%cyc_delete
+        !         write(this%file_unit_intermediate_top, '(A)') "============================================================================================================="
+        !         write(this%file_unit_intermediate_top, '(A)') "  I    J    K   MAT  NM |        vof/mat_vof         |      a1       |     b1      |     c2    |    side1"
+        !         write(this%file_unit_intermediate_top, '(A)') "-------------------------------------------------------------------------------------------------------------"
+
+        !         do i = 1, this%nx
+        !             do j = 1, this%ny
+        !                 do k = 1, this%nz
+        !                     write(this%file_unit_intermediate_top, '(5I5,5(" | ",Z18))') i, j, k, 1, 0, &
+        !                         transfer(vof(i, j, k), 0_8), &
+        !                         transfer(a1(1, i, j, k), 0_8), &
+        !                         transfer(b1(1, i, j, k), 0_8), &
+        !                         transfer(c2(1, i, j, k), 0_8), &
+        !                         transfer(side1(1, i, j, k), 0_8)
+        !                 end do
+        !             end do
+        !         end do
+        !     else
+        !         write(this%file_unit_intermediate_top, '(A)') "============================================================================================================="
+        !         write(this%file_unit_intermediate_top, '(A,I0)') "TOP LINE_CALC_3D (nm=1) - TIMESTEP NUMBER: ", this%cyc_delete
+        !         write(this%file_unit_intermediate_top, '(A)') "============================================================================================================="
+        !         write(this%file_unit_intermediate_top, '(A)') "  I    J    K   MAT  NM |        vof/mat_vof         |      a1       |     b1      |     c2    |    side1"
+        !         write(this%file_unit_intermediate_top, '(A)') "-------------------------------------------------------------------------------------------------------------"
+
+        !         do i = 1, this%nx
+        !             do j = 1, this%ny
+        !                 do k = 1, this%nz
+        !                     do tmp_mat = 1, this%n_materials
+        !                         write(this%file_unit_intermediate_top, '(5I5,5(" | ",Z18))') i, j, k, tmp_mat, 1, &
+        !                             transfer(mat_vof(tmp_mat, i, j, k), 0_8), &
+        !                             transfer(a1(tmp_mat, i, j, k), 0_8), &
+        !                             transfer(b1(tmp_mat, i, j, k), 0_8), &
+        !                             transfer(c2(tmp_mat, i, j, k), 0_8), &
+        !                             transfer(side1(tmp_mat, i, j, k), 0_8)
+        !                     end do
+        !                 end do
+        !             end do
+        !         end do
+        !     end if
+        ! end if
+        ! ====================================================================
+        ! END TOP Line_calc_3d results printing
+        ! ====================================================================
+
+! THIS CLOSES THE GPU SECTION OF TOP LINE_CALC_3D
+
+
+!         !$OMP TARGET UPDATE TO(vof, mat_vof, a1, b1, c2, side1, x_lag, y_lag, z_lag, n_materials_in_cell)
+#else
+        this%line_calc_bottom_start = omp_get_wtime()
+
+        !$OMP PARALLEL DO COLLAPSE(3) &
+        !$OMP& PRIVATE(tmp_mat, c_flag, ip, im, jp, jm, kp, km, x1, y1, z1, x2, y2, z2, &
+        !$OMP& x3, y3, z3, x4, y4, z4, x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, vend, volijk, vijk, vipjk, &
+        !$OMP& vipjpk, vijpk, vijkp, vipjkp, vipjpkp, vijpkp, y4y1z2z1z4z1y2y1, y5y1z4z1z5z1y4y1, y2y1z5z1z2z1y5y1, &
+        !$OMP& y1y2z3z2z1z2y3y2, y6y2z1z2z6z2y1y2, y3y2z6z2z3z2y6y2, y2y3z4z3z2z3y4y3, y7y3z2z3z7z3y2y3, y4y3z7z3z4z3y7y3, &
+        !$OMP& y3y4z1z4z3z4y1y4, y8y4z3z4z8z4y3y4, y1y4z8z4z1z4y8y4, y6y5z8z5z6z5y8y5, y1y5z6z5z1z5y6y5, &
+        !$OMP& y5y8z7z8z5z8y7y8, y4y8z5z8z4z8y5y8, y7y8z4z8z7z8y4y8, z4z1x2x1x4x1z2z1, z5z1x4x1x5x1z4z1, z2z1x5x1x2x1z5z1, &
+        !$OMP& z1z2x3x2x1x2z3z2, z6z2x1x2x6x2z1z2, z3z2x6x2x3x2z6z2, z2z3x4x3x2x3z4z3, z7z3x2x3x7x3z2z3, z4z3x7x3x4x3z7z3, &
+        !$OMP& z3z4x1x4x3x4z1z4, z8z4x3x4x8x4z3z4, z1z4x8x4x1x4z8z4, z6z5x8x5x6x5z8z5, z1z5x6x5x1x5z6z5, z8z5x1x5x8x5z1z5, &
+        !$OMP& z7z6x5x6x7x6z5z6, z2z6x7x6x2x6z7z6, z5z6x2x6x5x6z2z6, z8z7x6x7x8x7z6z7, z3z7x8x7x3x7z8z7, z6z7x3x7x6x7z3z7, &
+        !$OMP& z5z8x7x8x5x8z7z8, z4z8x5x8x4x8z5z8, z7z8x4x8x7x8z4z8, x4x1y2y1y4y1x2x1, x5x1y4y1y5y1x4x1, x2x1y5y1y2y1x5x1, &
+        !$OMP& x1x2y3y2y1y2x3x2, x6x2y1y2y6y2x1x2, x3x2y6y2y3y2x6x2, x2x3y4y3y2y3x4x3, x7x3y2y3y7y3x2x3, x4x3y7y3y4y3x7x3, &
+        !$OMP& x3x4y1y4y3y4x1x4, x8x4y3y4y8y4x3x4, x1x4y8y4y1y4x8x4, x6x5y8y5y6y5x8x5, x1x5y6y5y1y5x6x5, x8x5y1y5y8y5x1x5, &
+        !$OMP& x7x6y5y6y7y6x5x6, x2x6y7y6y2y6x7x6, x5x6y2y6y5y6x2x6, x8x7y6y7y8y7x6x7, x3x7y8y7y3y7x8x7, x6x7y3y7y6y7x3x7, &
+        !$OMP& x5x8y7y8y5y8x7x8, x4x8y5y8y4y8x5x8, x7x8y4y8y7y8x4x8, y8y7z6z7z8z7y6y7, y7y6z5z6z7z6y5y6, y2y6z7z6z2z6y7y6, &
+        !$OMP& y3y7z8z7z3z7y8y7, y8y5z1z5z8z5y1y5, y5y6z2z6z5z6y2y6, y6y7z3z7z6z7y3y7, &
+        !$OMP& u1u2u4, u1u4u5, u1u2u5, u2u3u1, u2u1u6, u2u3u6, &
+        !$OMP& u3u4u2, u3u2u7, u3u4u7, u4u1u3, u4u3u8, u4u1u8, u5u8u6, u5u6u1, u5u8u1, u6u5u7, u6u7u2, u6u5u2, u7u6u8, &
+        !$OMP& u7u8u3, u7u6u3, u8u7u5, u8u5u4, u8u7u4, dfdx, dfdy, dfdz, cmax, cmin, kk, jj, ii, nnii, cn, cold, v1, delc, &
+        !$OMP& c1, v2, dvdc, vvmin, vvmax) FIRSTPRIVATE(nm, fake_num_mats, local_emf, &
+        !$OMP& nx, ny, nz, local_emf1, numit, wall_x_top, wall_x_bot, wall_y_top, wall_y_bot, wall_z_top, wall_z_bot) &
+        !$OMP& REDUCTION(+: counter_0, counter_1, first_convergence, second_convergence, vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
+        do k = k_start, k_end
+            do j = j_start, j_end
+                do i = i_start, i_end
+                    
+                    ! SCHEDULE 1
+                    
+                    ! thread_id = omp_get_thread_num()
+                    ! if (thread_id == 0) then
+                    !     start1 = omp_get_wtime()
+                    ! endif
+
+                    ! write(*,*) "nm = ", nm
+                    if (nm /= 0) then
+                        if( n_materials_in_cell(i, j, k) <= 1) cycle
+                    else ! nm == 0
+                        
+                        ! AVITAY:
+                        ! emf1 is 0.999...., and emf is roughly 0.
+                        ! we never go past the first if here! (BECAUSE vof(i,j,k) = 1)
+                        !write(*,*) "VOF(i,j,k)", vof(i, j, k)
+
+                        if (vof(i, j, k) > local_emf1) cycle
+                        if (vof(i, j, k) < local_emf) cycle
+                        !write(*,*) "VOF(i,j,k)", vof(i, j, k)
+                    end if
 
                     do tmp_mat = 1, fake_num_mats
                         if (nm /= 0) then
-                            if (mat_vof(tmp_mat, i,j,k) < this%emf) cycle
+                            if (mat_vof(tmp_mat, i,j,k) < local_emf) cycle
+                        end if
+
+                        if (nm /= 0) then
+                            counter_1 = counter_1 + 1
+                        else
+                            counter_0 = counter_0 + 1
                         end if
 
                         c_flag = .true.
@@ -3222,10 +5675,10 @@ contains
                         if (jp > this%ny .and. wall_y_top .eqv. .true.) jp = this%ny
                         if (jm < 1       .and. wall_y_bot .eqv. .true.) jm = 1
                         if (kp > this%nz .and. wall_z_top .eqv. .true.) kp = this%nz
-                        if (km < 1       .and. wall_z_bot .eqv. .true.) km = 1
+                        if (km < 1       .and. wall_z_bot .eqv. .true.) km = 1             
 
                         if (nm == 0) then
-                            vijk    =  (vof(i ,  j, k)   + vof(im, j, k)   + vof(i, j, km)+ &
+                            vijk    =  (vof(i, j, k)   + vof(im, j, k)   + vof(i, j, km)+ &
                                 vof(im,  j, km)  + vof(i , jm, k)  + vof(im, jm, k)+ &
                                 vof(i , jm, km)  + vof(im, jm, km)) / 8d0
 
@@ -3294,7 +5747,6 @@ contains
                         end if
 
 
-
                         call Vector_grad_planes(y1, y2, y3, y4, y5, y6, y7, y8, &
                             z1, z2, z3, z4, z5, z6, z7, z8, y4y1z2z1z4z1y2y1, y5y1z4z1z5z1y4y1, y2y1z5z1z2z1y5y1, &
                             y1y2z3z2z1z2y3y2, y6y2z1z2z6z2y1y2, y3y2z6z2z3z2y6y2, &
@@ -3304,6 +5756,7 @@ contains
                             y7y6z5z6z7z6y5y6, y2y6z7z6z2z6y7y6, y5y6z2z6z5z6y2y6, &
                             y8y7z6z7z8z7y6y7, y3y7z8z7z3z7y8y7, y6y7z3z7z6z7y3y7, &
                             y5y8z7z8z5z8y7y8, y4y8z5z8z4z8y5y8, y7y8z4z8z7z8y4y8)
+
                         call Vector_grad_planes(z1, z2, z3, z4, z5, z6, z7, z8, &
                             x1, x2, x3, x4, x5, x6, x7, x8, z4z1x2x1x4x1z2z1, z5z1x4x1x5x1z4z1, z2z1x5x1x2x1z5z1, &
                             z1z2x3x2x1x2z3z2, z6z2x1x2x6x2z1z2, z3z2x6x2x3x2z6z2, &
@@ -3333,7 +5786,6 @@ contains
                             u6u5u7, u6u7u2, u6u5u2, &
                             u7u6u8, u7u8u3, u7u6u3, &
                             u8u7u5, u8u5u4, u8u7u4)
-
 
                         dfdx = 1 / (12*volijk)*( &
                             (u1u2u4 * y4y1z2z1z4z1y2y1 + u1u4u5 * y5y1z4z1z5z1y4y1 + u1u2u5 * y2y1z5z1z2z1y5y1) +&
@@ -3365,13 +5817,37 @@ contains
                             (u7u6u8 * x8x7y6y7y8y7x6x7 + u7u8u3 * x3x7y8y7y3y7x8x7 + u7u6u3 * x6x7y3y7y6y7x3x7) +&
                             (u8u7u5 * x5x8y7y8y5y8x7x8 + u8u5u4 * x4x8y5y8y4y8x5x8 + u8u7u4 * x7x8y4y8y7y8x4x8))
 
+
+                        ! end1 = omp_get_wtime() - start1
+                        ! total_time1 = total_time1 + end1
+                        ! write(*,*) "GONNA call time_region subroutine"
+                        ! call this%time_region(start1, total_time1)
+                        ! write(*,*) "HAS called time_region subroutine"
+
+                        ! SCHEDULE 1
+
+                        ! SCHEDULE 2
+
+                        ! if (thread_id == 0) then
+                        !     start2 = omp_get_wtime()
+                        ! endif
+
                         if (abs(dfdz) < 1d-8) dfdz = sign(1d-8, dfdz)
                         side1(tmp_mat, i, j, k) = sign(1d0, dfdz)
                         a1(tmp_mat, i, j, k) = -dfdx / dfdz
                         b1(tmp_mat, i, j, k) = -dfdy / dfdz
 
+                        ! end2 = omp_get_wtime() - start2
+                        ! total_time2 = total_time2 + end2
+                        ! call this%time_region(start2, total_time2)
 
+                        ! SCHEDULE 2
 
+                        ! SCHEDULE 3
+                        ! if (thread_id == 0) then
+                        !     start3 = omp_get_wtime()
+                        ! endif
+                        
                         cmax = -1d20
                         cmin = 1d20
                         do kk = 0, 1
@@ -3384,23 +5860,42 @@ contains
                                 end do
                             end do
                         end do
+
+                        
+                        ! end3 = omp_get_wtime() - start3
+                        ! total_time3 = total_time3 + end3
+                        ! call this%time_region(start3, total_time3)
+                        ! SCHEDULE 3
+
+                        ! SCHEDULE 4
+                        
+                        ! if (thread_id == 0) then
+                        !     start4 = omp_get_wtime()
+                        ! endif
+                        
                         if(cmax == cmin) then
                             c2(tmp_mat, i, j, k) = cmax
                         end if
 
-
                         nnii = 0
                         cn = 0.5d0*(cmin + cmax)
                         do
+                            
+                            first_convergence = first_convergence + 1
+
                             cold = cn
                             c2(tmp_mat, i, j, k) = cn
                             nnii = nnii + 1
                             if (nnii > 15) then
                                 exit
                             end if
+
+                            vol_frac_counter = vol_frac_counter + 1
+
                             v1 = Volume_fraction_3d (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
                                 x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
-                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), c2(tmp_mat, i, j, k), side1(tmp_mat, i, j, k), volijk)
+                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), c2(tmp_mat, i, j, k), side1(tmp_mat, i, j, k), volijk, &
+                                    cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
                             delc = 1d-7*(cmax - cmin)
                             if (c2(tmp_mat, i, j, k) + delc >= cmax) then
                                 if (abs(c2(tmp_mat, i, j, k) - cmax) > 1d-8) then
@@ -3417,8 +5912,12 @@ contains
                                 end if
                             end if
                             c1 = c2(tmp_mat, i, j, k) + delc
+                            
+                            vol_frac_counter = vol_frac_counter + 1
+                            
                             v2 = Volume_fraction_3d (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
-                                x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), c1, side1(tmp_mat, i, j, k), volijk)
+                                x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), c1, side1(tmp_mat, i, j, k), volijk, &
+                                    cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
                             if (abs(delc) < 1d-20) then
                                 exit
                             end if
@@ -3434,47 +5933,90 @@ contains
                                 cn = 2*cmin - cn
                                 if (cn >= cmax) cn = 0.5d0*(cmax + cmin)
                             end if
-                            if (abs(v1 - vend) > 1d-1 * this%emf * volijk) cycle
+                            if (abs(v1 - vend) > 1d-1 * local_emf * volijk) cycle
                             c2(tmp_mat, i, j, k) = cn
                             numit = max(nnii, numit)
                             c_flag = .false.
                             exit
                         end do
                         if (c_flag) then
+
+                            vol_frac_counter = vol_frac_counter + 2
+
                             vvmin = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
                                 x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
-                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), cmin, side1(tmp_mat, i, j, k), volijk)
+                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), cmin, side1(tmp_mat, i, j, k), volijk, &
+                                    cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
 
                             vvmax = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
                                 x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
-                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), cmax, side1(tmp_mat, i, j, k), volijk)
+                                a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), cmax, side1(tmp_mat, i, j, k), volijk, &
+                                    cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
                             nnii = 0
                             do
+                                
+                                second_convergence = second_convergence + 1
+
                                 cn = 0.5d0*(cmin + cmax)
                                 nnii = nnii + 1
                                 if (nnii > 50) then
                                     c2(tmp_mat, i, j, k) = cn
                                     exit
                                 end if
+                                
+                                vol_frac_counter = vol_frac_counter + 1
+                                
                                 v1 = Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
                                     x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
-                                    a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), cn, side1(tmp_mat, i, j, k), volijk)
+                                    a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), cn, side1(tmp_mat, i, j, k), volijk, &
+                                    cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
                                 if ((v1 < vend .and. vvmax > vvmin) .or.(v1 > vend .and. vvmax < vvmin)) then
                                     cmin = cn
                                 else
                                     cmax = cn
                                 end if
-                                if (abs(v1 - vend) <= 1d-1*this%emf*volijk) then
+                                if (abs(v1 - vend) <= 1d-1*local_emf*volijk) then
                                     exit
                                 end if
                             end do
                         end if
                         c2(tmp_mat, i, j, k) = cn
+
                     end do
+
+                    ! end4 = omp_get_wtime() - start4
+                    ! total_time4 = total_time4 + end4
+                    ! call this%time_region(start4, total_time4)
+
+                    ! SCHEDULE 4
                 end do
             end do
-
         end do
+        !$OMP END PARALLEL DO
+
+        this%line_calc_bottom_time = this%line_calc_bottom_time + (omp_get_wtime() - this%line_calc_bottom_start)
+#endif
+!         !$OMP TARGET EXIT DATA MAP(FROM: counter_0, counter_1, first_convergence, second_convergence, vol_frac_counter, cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
+
+        this%first_convergence_bottom = this%first_convergence_bottom + first_convergence
+        this%second_convergence_bottom = this%second_convergence_bottom + second_convergence
+        ! AVITAY: Accumulate Line_calc_3d geometry counters for bottom region
+        this%total_line_calc_vol_frac_counter_bottom = this%total_line_calc_vol_frac_counter_bottom + vol_frac_counter
+        this%total_line_calc_cut_plane_counter_bottom = this%total_line_calc_cut_plane_counter_bottom + cut_plane_counter
+        this%total_line_calc_square_pyramid_counter_bottom = this%total_line_calc_square_pyramid_counter_bottom + square_pyramid_counter
+        this%total_line_calc_physical_tetraeder_counter_bottom = this%total_line_calc_physical_tetraeder_counter_bottom + physical_tetraeder_counter
+        this%total_line_calc_tetrahederon_counter_bottom = this%total_line_calc_tetrahederon_counter_bottom + tetrahedron_counter
+
+        this%total_first_convergence_top = this%total_first_convergence_top + this%first_convergence_top
+        this%total_second_convergence_top = this%total_second_convergence_top + this%second_convergence_top
+
+        this%total_first_convergence_bottom = this%total_first_convergence_bottom + this%first_convergence_bottom
+        this%total_second_convergence_bottom = this%total_second_convergence_bottom + this%second_convergence_bottom
+
+
+        this%line_calc_bottom_0_count = this%line_calc_bottom_0_count + counter_0
+        this%line_calc_bottom_1_count = this%line_calc_bottom_1_count + counter_1
+
         return
     end subroutine Line_calc_3d
 
@@ -3621,5 +6163,64 @@ contains
         write(*,*) "@@@ end Read_advect @@@"
 
     end subroutine Read_advect
+
+    subroutine Get_gpu_data_pointers(this, vof, x, y, z, vol, density, cell_mass, mat_id, n_materials_in_cell, &
+        mat_vof, sie_vof, density_vof, cell_mass_vof, init_mat_layers, vof_adv, mat_vof_adv, sie_vof_adv, &
+        mat_cell_mass_adv, cell_mass_adv, init_mat_layers_adv, material_x, material_y, material_z, &
+        a_mat, b_mat, c_mat, side_mat, a_adv, b_adv, c_adv, side_adv, vel_adv_weight, velocity_x, velocity_y, velocity_z, vertex_mass, sie)
+        class(advect_t), intent(inout) :: this
+        real(8), dimension(:, :, :), pointer, intent(out) :: vof, x, y, z, vol, density, cell_mass
+        real(8), dimension(:, :, :), pointer, intent(out) :: mat_id, n_materials_in_cell
+        real(8), dimension(:, :, :, :), pointer, intent(out) :: mat_vof, sie_vof, density_vof, cell_mass_vof
+        real(8), dimension(:, :, :, :), pointer, intent(out) :: init_mat_layers
+        real(8), dimension(:, :, :), pointer, intent(out) :: vof_adv, cell_mass_adv
+        real(8), dimension(:, :, :, :), pointer, intent(out) :: mat_vof_adv, sie_vof_adv, mat_cell_mass_adv
+        real(8), dimension(:, :, :, :), pointer, intent(out) :: init_mat_layers_adv
+        real(8), dimension(:, :, :), pointer, intent(out) :: material_x, material_y, material_z
+        real(8), dimension(:, :, :, :), pointer, intent(out) :: a_mat, b_mat, c_mat, side_mat
+        real(8), dimension(:, :, :, :), pointer, intent(out) :: a_adv, b_adv, c_adv, side_adv
+        real(8), dimension(:, :, :), pointer, intent(out) :: vel_adv_weight
+        real(8), dimension(:, :, :), pointer, intent(out) :: velocity_x, velocity_y, velocity_z
+        real(8), dimension(:, :, :), pointer, intent(out) :: vertex_mass
+        real(8), dimension(:, :, :), pointer, intent(out) :: sie
+
+        ! Get all data pointers needed for GPU mapping
+        call this%rezone%Point_to_coordinates_3d(material_x, material_y, material_z)
+        call this%mesh%Point_to_data(x, y, z)
+        
+        call this%total_vof%Point_to_data(vof)
+        call this%volume%Point_to_data(vol)
+        call this%mat_cells%Point_to_data(mat_id)
+        call this%total_density%Point_to_data(density)
+        call this%total_cell_mass%Point_to_data(cell_mass)
+        call this%adv_cell_mass%Point_to_data(cell_mass_adv)
+        call this%num_mat_cells%Point_to_data(n_materials_in_cell)
+        call this%vof_advect%Point_to_data(vof_adv)
+        call this%adv_mats%vof%Point_to_data(mat_vof_adv)
+        call this%adv_mats%Point_to_initial_layers(init_mat_layers_adv)
+        call this%adv_mats%cell_mass%Point_to_data(mat_cell_mass_adv)
+        call this%adv_mats%sie%Point_to_data(sie_vof_adv)
+        
+        call this%materials%vof%Point_to_data(mat_vof)
+        call this%materials%density%Point_to_data(density_vof)
+        call this%materials%sie%Point_to_data(sie_vof)
+        call this%materials%cell_mass%Point_to_data(cell_mass_vof)
+        call this%materials%Point_to_initial_layers(init_mat_layers)
+        
+        call this%adv_mats%a%Point_to_data(a_mat)
+        call this%adv_mats%b%Point_to_data(b_mat)
+        call this%adv_mats%c%Point_to_data(c_mat)
+        call this%adv_mats%side%Point_to_data(side_mat)
+        call this%a%Point_to_data(a_adv)
+        call this%b%Point_to_data(b_adv)
+        call this%c%Point_to_data(c_adv)
+        call this%side%Point_to_data(side_adv)
+
+        call this%vel_adv_weight%Point_to_data(vel_adv_weight)
+        call this%velocity%Point_to_data(velocity_x, velocity_y, velocity_z)
+        call this%vertex_mass%Point_to_data(vertex_mass)
+        call this%total_sie%Point_to_data(sie)
+        
+    end subroutine Get_gpu_data_pointers
 
 end module advect_module

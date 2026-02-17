@@ -84,6 +84,7 @@ module hydro_step_module
 
         integer, public                           :: ncyc 
         integer, public                           :: cyc_delete
+        integer                                   :: file_unit_lagrange
     contains
 
         procedure, public  :: do_time_step_2d
@@ -234,6 +235,8 @@ module hydro_step_module
 
         procedure, public :: Read_hydro_step
         generic :: read(unformatted) => Read_hydro_step
+
+        procedure, public :: Print_lagrangian_data
       
     end type hydro_step_t
 
@@ -333,6 +336,8 @@ contains
         Constructor%total_dt_de          => total_dt_de
         Constructor%total_dt_drho        => total_dt_drho
         Constructor%cyc_delete = 0
+        Constructor%file_unit_lagrange = 777
+        open(Constructor%file_unit_lagrange, file="track_validation_lagrangian", status="unknown", action="write")
         Constructor%parallel_params => parallel_params
         allocate(Constructor%rezone)
 
@@ -439,20 +444,20 @@ contains
 
         !write(*,*) "DEBUG 1: time_step_3d ENTER"
         ! Set color to orange
-        write(*,*) CHAR(27)//'[38;5;208m'
+        !write(*,*) CHAR(27)//'[38;5;208m'
         call this%Calculate_thermodynamics()
-        write(*,'(A50, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
+        !write(*,'(A50, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
 
         ! Set color to blue
-        write(*,*) CHAR(27)//'[34m'
+        !write(*,*) CHAR(27)//'[34m'
         dt_time = omp_get_wtime()  
         
         call time%Calculate_dt(this%mesh, this%velocity, this%rezone%mesh_velocity, this%vertex_mass, this%total_vof, this%emfm)
-        write(*,'(A50, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
+        !write(*,'(A50, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
         this%cyc_delete = this%cyc_delete+1
 
         ! Set color to orange
-        write(*,*) CHAR(27)//'[38;5;208m'
+        !write(*,*) CHAR(27)//'[38;5;208m'
 
         accel_time = omp_get_wtime()
 
@@ -460,10 +465,10 @@ contains
         !this%Calculate_acceleration_3d OUTPUT on device: acceleration_x, acceleration_y, acceleration_z
 
         call this%Calculate_acceleration_3d(time%dt_mid)
-        write(*,'(A50, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
+        !write(*,'(A50, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
 
         ! Set color to blue
-        write(*,*) CHAR(27)//'[34m'
+        !write(*,*) CHAR(27)//'[34m'
 
         !this%Calculate_artificial_viscosity_3d INPUT to device: acceleration_x, acceleration_y, acceleration_z,
         !pressure, x , y, z, dvel_y_dy, dvel_z_dz, dvel_x_dy, dvel_y_dx, dvel_x_dz, dvel_z_dx, dvel_y_dz, dvel_z_dy,
@@ -472,10 +477,10 @@ contains
   
         avisc_time = omp_get_wtime()
         call this%Calculate_artificial_viscosity_3d(time)
-        write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
+        !write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
 
         ! Set color to orange
-        write(*,*) CHAR(27)//'[38;5;208m'
+        !write(*,*) CHAR(27)//'[38;5;208m'
         
         vel_time = omp_get_wtime()
 
@@ -484,37 +489,48 @@ contains
         !this%Calculate_velocity_3d OUTPUT KEEP ON DEVICE: velocity_x, velocity_y, velocity_z
 
         call this%Calculate_velocity_3d(time%dt_mid)
-        write(*,'(A50, F12.6)') "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
+        !write(*,'(A50, F12.6)') "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
 
         ! Set color to blue
-        write(*,*) CHAR(27)//'[34m'
+        !write(*,*) CHAR(27)//'[34m'
 
         !this%rezone%Calculate_rezone_3d INPUT to device EXIST: x, y, z, velocity_x, velocity_y, velocity_z, 
         !this%rezone%Calculate_rezone_3d OUTPUT from device: velocity_x, velocity_y, velocity_z, mesh_velocity_x, mesh_velocity_y, mesh_velocity_z
     
         rezone_time = omp_get_wtime()
         call this%rezone%Calculate_rezone_3d(time%dt)
-        write(*,'(A50, F12.6)') "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
+        !write(*,'(A50, F12.6)') "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
 
         ! Set color to orange
-        write(*,*) CHAR(27)//'[38;5;208m'
+        !write(*,*) CHAR(27)//'[38;5;208m'
 
         energy_time = omp_get_wtime()
         call this%Calculate_energy_3d(this%init_temperature, time%dt)
-        write(*,'(A50, F12.6)') "Calculate_energy_3d time:", omp_get_wtime() - energy_time
+        !write(*,'(A50, F12.6)') "Calculate_energy_3d time:", omp_get_wtime() - energy_time
 
         ! Set color to blue
-        write(*,*) CHAR(27)//'[34m'
+        !write(*,*) CHAR(27)//'[34m'
 
         !call this%Fix_vof_3d(time%dt, 0)
         mesh_time = omp_get_wtime()
         call this%Calculate_mesh_3d(time)
-        write(*,'(A50, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
+        !write(*,'(A50, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
 
         ! reset color
-        write(*,*) CHAR(27)//'[0m'
+        !write(*,*) CHAR(27)//'[0m'
 
-        if (this%rezone%rezone_type /= 0) call this%advect%Calculate_advect_3d()
+        ! if (this%rezone%rezone_type /= 0) call this%advect%Calculate_advect_3d()
+
+        ! if (this%rezone%rezone_type /= 0) then
+        !     call this%advect%Calculate_advect_3d()
+        ! else
+        !     call this%Print_lagrangian_data()
+        ! end if
+
+        if (this%rezone%rezone_type /= 0) then
+            call this%advect%Calculate_advect_3d()
+        end if
+        call this%Print_lagrangian_data()
 
     end subroutine do_time_step_3d
 
@@ -604,14 +620,14 @@ contains
         call this%materials%dt_de          %Point_to_data(dt_de_vof)
         call this%materials%vof            %Point_to_data(mat_vof)
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 1 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 1 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         !using: vol,cell_mass, mat_vof (assume all on gpu)
         call this%Calculate_density(this%total_volume) !on GPU, and keep density and density_vof updated on GPU
         !updating: density, density_vof (keep on GPU)
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (density) part 2 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (density) part 2 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         !sound_vel   = 1d-20
@@ -654,7 +670,7 @@ contains
 
         !!$omp target update from(sound_vel, temperature, pressure, dp_drho, dp_de, temperature_vof, pressure_vof, dp_drho_vof, dp_de_vof)
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 3 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 3 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         allocate(dt_de_temp(this%nx, this%ny, this%nz))
@@ -684,7 +700,7 @@ contains
         call this%materials%Apply_eos(this%nx, this%ny, this%nz, this%emf, .true.)
         !updating: pressure, sound_vel, dp_de, dp_drho, dt_de, dt_drho, temperature (4 dimension!)
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 4 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 4 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         
@@ -709,7 +725,7 @@ contains
         end do
         !$omp end target teams distribute parallel do 
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 5 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 5 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         !!$omp target update from(pressure)
@@ -717,7 +733,7 @@ contains
 
         call this%total_pressure%Exchange_virtual_space_nonblocking()
         
-        #ifdef NAIVE_GPU
+        #ifdef BUILD_GPU
         !$omp target update from(density)
         call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.false.) !on CPU
         !$omp target update to(density)
@@ -756,7 +772,7 @@ contains
         end do
         !$omp end target teams distribute parallel do 
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 6 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 6 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         call this%total_density%Exchange_end()
@@ -767,7 +783,7 @@ contains
 
         call this%num_mat_cells%Apply_boundary(is_blocking=.false., is_offload=.false.) !always false? not mapped at all?
         
-        #ifdef NAIVE_GPU
+        #ifdef BUILD_GPU
         !$omp target update from(vol, sie, vof, cell_mass_vof, density_vof, sie_vof, mat_vof)
         call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.false.)
         call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.false.)
@@ -787,7 +803,7 @@ contains
         call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.true.)
         #endif
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 7 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 7 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         if (this%mesh%dimension == 2) then
@@ -799,7 +815,7 @@ contains
 
         !!$omp target update from(density)
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         call this%num_mat_cells%Exchange_end()
@@ -813,12 +829,12 @@ contains
 
         call this%vertex_mass%Exchange_virtual_space_blocking()
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 9 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 9 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
 
         call this%Calculate_inversed_vertex_mass()
 
-        write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time:", omp_get_wtime() - tmp
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time:", omp_get_wtime() - tmp
         call this%inversed_vertex_mass%Exchange_virtual_space_blocking()
     end subroutine Calculate_thermodynamics
 
@@ -1061,7 +1077,7 @@ contains
         !!$omp target update from(acceleration_x, acceleration_y, acceleration_z)
         !IT SEEMS ACCELERATION NEEDS TO MOVE TO CPU BEFORE RUNNING Calculate_artificial_viscosity_3D 
         !write(*,*) "acceleration boundary conditions:"
-        #ifdef NAIVE_GPU
+        #ifdef BUILD_GPU
         !$omp target update from(acceleration_x, acceleration_y, acceleration_z)
         call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.false.)
         !$omp target update to(acceleration_x, acceleration_y, acceleration_z)
@@ -1298,7 +1314,7 @@ contains
         real(8) :: x_avg, y_avg, z_avg   
         real(8) :: eff_length            
         real(8) :: eff_vel_div           
-        !real(8) :: dt_cour_temp
+        ! real(8) :: dt_cour_temp ! yonif
         real(8), dimension(:, :, :), pointer :: dt_cour_temp !yonif   
         real(8) :: linear_visc_fac_temp  
         real(8) :: quad_visc_fac_temp    
@@ -1309,8 +1325,8 @@ contains
         integer :: i, j, k  
         integer :: ip, jp, kp
         integer :: mesh_type
-        real :: global_min
-        real :: local_min
+        real(8) :: global_min
+        real(8) :: local_min
         integer :: local_i, local_j, local_k
 
 
@@ -1356,6 +1372,8 @@ contains
         !!$omp target update to(acceleration_x, acceleration_y, acceleration_z)
         !!$omp target update to(dvel_x_dx, dvel_y_dy, dvel_z_dz, dvel_x_dy, dvel_y_dx, dvel_x_dz, dvel_z_dx, dvel_y_dz, dvel_z_dy)
         !!$omp target update to(vof, pressure, density, sound_vel)
+        
+        
         !$omp target teams distribute parallel do collapse(3) private(ip, jp, kp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
         !$omp& x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, r1, r2, r3, r4, r5, r6, r7, r8,&
         !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div, quad_visc_fac_temp, linear_visc_fac_temp)&
@@ -1365,6 +1383,11 @@ contains
                 do i = 1, this%nx
                     if (vof(i, j, k) < this%emf .or. pressure(i, j, k) == 0d0) then  
                         a_visc(i, j, k) = 0d0
+                        ! IMPORTANT NOTE -  AVITAY ADDED THE NEXT LINE:
+                        dt_cour_temp(i,j,k) = HUGE(1d0)
+                        ! This is crucial because otherwise, some cells of the array
+                        ! would stay uninitialized, which will then corrupt the search
+                        ! for a global min after this loop.
                     else
                         ip = i + 1
                         jp = j + 1
@@ -1452,8 +1475,8 @@ contains
 
                         quad_visc_fac_temp   = quad_visc_fac
                         !TODO: pay attention:
-                        !linear_visc_fac_temp = linear_visc_fac(i,j,k)
-                        linear_visc_fac_temp = 0.2
+                        linear_visc_fac_temp = linear_visc_fac(i,j,k)
+                        ! linear_visc_fac_temp = 0.2
 
 
                         a_visc(i, j, k) = density(i, j, k) * eff_length * &
@@ -1462,14 +1485,17 @@ contains
 
 
                         a_visc(i, j, k) = min(0d0, eff_vel_div) * a_visc(i, j, k)
+                        
                         dt_cour_temp(i,j,k) = eff_length * eff_length / sound_vel(i ,j, k)
+                        
+                        ! dt_cour_temp = eff_length * eff_length / sound_vel(i ,j, k)
 
-                         !if (dt_cour_temp < time%dt_cour) then
-                         !    time%dt_cour = dt_cour_temp
-                         !    time%i_cour = i
-                         !    time%j_cour = j
-                         !    time%k_cour = k
-                         !end if
+                        !  if (dt_cour_temp < time%dt_cour) then
+                        !     time%dt_cour = dt_cour_temp
+                        !     time%i_cour = i
+                        !     time%j_cour = j
+                        !     time%k_cour = k
+                        !  end if
 
                     end if
                 end do
@@ -1710,7 +1736,7 @@ contains
         !$omp end target teams distribute parallel do     
         !!$omp target update from(velocity_x, velocity_y, velocity_z)
 
-        write(*,'(A70, F12.6)') "    Calculate_velocity_3d----- main loop time:", omp_get_wtime() - loop_time
+        !write(*,'(A70, F12.6)') "    Calculate_velocity_3d----- main loop time:", omp_get_wtime() - loop_time
         
         
         if (this%mesh%mesh_type /= 2) then
@@ -1722,7 +1748,7 @@ contains
         !is offloaded
         call this%velocity%Impose_no_move_3d(this%mesh%coordinates)
 
-        #ifdef NAIVE_GPU
+        #ifdef BUILD_GPU
         !$omp target update from(velocity_x, velocity_y, velocity_z)
         call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.False.)
         !$omp target update to(velocity_x, velocity_y, velocity_z)
@@ -2575,7 +2601,7 @@ call this%materials%sie%exchange_end()
         call this%mesh%coordinates%Calculate(time%dt, this%rezone%mesh_velocity) !on GPU
         call this%mesh%Exchange_virtual_space_blocking()
 
-        #ifdef NAIVE_GPU
+        #ifdef BUILD_GPU
         !$omp target update from(x, y, z)
         call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
         call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
@@ -2590,7 +2616,7 @@ call this%materials%sie%exchange_end()
 
         call this%Calculate_density(this%rezone%material_volume) !on GPU, and keep density and density_vof updated on GPU
         
-        #ifdef NAIVE_GPU
+        #ifdef BUILD_GPU
         !$omp target update from(density)
         call this%total_density%Apply_boundary(is_offload=.False.)
         !$omp target update to(density)
@@ -2599,7 +2625,7 @@ call this%materials%sie%exchange_end()
         #endif
         ! calculate volume bruh
         call this%total_volume%Calculate(this%mesh%coordinates)
-        #ifdef NAIVE_GPU
+        #ifdef BUILD_GPU
         !$omp target update from(vol)
         call this%total_volume%Apply_boundary(is_offload=.False.)
         !$omp target update to(vol)
@@ -3032,6 +3058,27 @@ call this%materials%sie%exchange_end()
 
     end subroutine Read_hydro_step
    
-   
+    subroutine Print_lagrangian_data(this)
+        implicit none
+        class(hydro_step_t), intent(in) :: this
+        integer :: i, j, k
+
+        write(this%file_unit_lagrange, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete
+        write(this%file_unit_lagrange, '(A)') "  I    J    K   |        SIE         |      DENSITY       |     CELL_MASS      |     VERTEX_MASS    |    NUM_MAT_CELLS"
+        write(this%file_unit_lagrange, '(A)') "-------------------------------------------------------------------------------------------------------------"
+        do i = 1, this%nxp
+            do j = 1, this%nyp
+                do k = 1, this%nzp
+                    write(this%file_unit_lagrange, '(3I5,5(" | ",Z18))') i, j, k, &
+                        transfer(this%total_sie%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%total_density%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%total_cell_mass%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%vertex_mass%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%num_mat_cells%data(1)%values(i, j, k), 0_8)
+                end do
+            end do
+        end do
+
+    end subroutine Print_lagrangian_data   
    
 end module hydro_step_module

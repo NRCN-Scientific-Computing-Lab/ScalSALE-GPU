@@ -168,7 +168,7 @@ contains
          end do
          !$omp end target teams distribute parallel do
          !!$omp target update from(vol)
-         write(*,'(A70, F12.6)') "Calculate() loop time:", omp_get_wtime() - start_time
+         !write(*,'(A70, F12.6)') "Calculate() loop time:", omp_get_wtime() - start_time
 
       end if
    end subroutine Calculate

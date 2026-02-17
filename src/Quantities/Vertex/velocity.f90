@@ -477,7 +477,7 @@ contains
         end do
         !$omp end target teams distribute parallel do     
         !!$omp target update from(dvel_x_dx, dvel_x_dy, dvel_x_dz, dvel_y_dx, dvel_y_dy, dvel_y_dz, dvel_z_dx, dvel_z_dy, dvel_z_dz)
-        write(*,'(A70, F12.6)') "Derivatives Kernel time:", omp_get_wtime() - start_time
+        !write(*,'(A70, F12.6)') "Derivatives Kernel time:", omp_get_wtime() - start_time
         cntr = cntr  + 1
     end subroutine Calculate_derivatives
 

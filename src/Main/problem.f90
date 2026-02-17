@@ -72,7 +72,7 @@ module problem_module
 
         integer                                               :: n_materials     
 
-        integer                                               :: wilkins_scheme 
+        integer                                               :: wilkins_scheme, max_ncyc
 
         !       integer(hid_t)                                        :: main_hdf5_diagnostics_file_id
 
@@ -197,6 +197,7 @@ contains
         nz = Constructor%nz
 
 
+        Constructor%max_ncyc = df%max_ncyc
         Constructor%dimension  = df%dimension
         Constructor%n_materials = df%reduct_num_mat
         Constructor%wilkins_scheme = df%sw_wilkins
@@ -791,9 +792,9 @@ contains
                         !call this%Write_to_files()
         ncyc = 1
         if (this%rezone_type == 0) then
-            max_ncyc = 4
+            max_ncyc = this%max_ncyc
         else
-            max_ncyc = 4
+            max_ncyc = this%max_ncyc
         end if
 
         if (this%mesh%dimension == 2) then
@@ -858,7 +859,6 @@ contains
             call this%hydro%rezone%material_volume%Point_to_data(mat_volume_target)
             call this%hydro%rezone%mesh_velocity%Point_to_data(mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target)
 
-           
             start = omp_get_wtime()
 
             if(this%parallel_params%my_rank == 0) then
@@ -878,17 +878,22 @@ contains
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target, xl_visc_mat_target)
             
             
-            write(*,*) "Initial target enter data Time:", omp_get_wtime() - start
+            !write(*,*) "Initial target enter data Time:", omp_get_wtime() - start
 
             do while (this%time%Should_continue() .and. ncyc < max_ncyc)
                 start = omp_get_wtime()
                 call this%hydro%do_time_step_3d(this%time)
+                ! !$omp parallel
+                !     !$omp single
+                !         write(*,*) "NUMBER OF THREADS: ", omp_get_num_threads()
+                !     !$omp end single
+                ! !$omp end parallel
                 call this%time%Update_time()
                 !  call this%Write_to_files()
                 counter = counter + 1
                 ncyc = ncyc + 1
-                write(*,'(A30, F12.6)') "Total cycle time: ", omp_get_wtime()-start
-                write(*,*) "#####################################################################"
+                !write(*,'(A30, F12.6)') "Total cycle time: ", omp_get_wtime()-start
+                !write(*,*) "#####################################################################"
             !      call this%cr%Checkpoint(ckpt_name)
             end do
         
@@ -898,8 +903,8 @@ contains
             !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, density_target, pressure_target, sie_vof_target, pressure_vof_target, sie_target)
 
             !total time ends before checksum!
-            write(*,*) "Total Time:", omp_get_wtime() - finish
-            write(*,*) "ncyc: ", ncyc-1
+            !write(*,*) "Total Time:", omp_get_wtime() - finish
+            !write(*,*) "ncyc: ", ncyc-1
 
             do k = 1, this%nzp
             do j = 1, this%nyp
@@ -1182,16 +1187,19 @@ contains
 
         integer :: threads
 
-        !call omp_set_num_threads(max_threads)
+        call omp_set_num_threads(max_threads)
 
         !$omp parallel
-        threads = omp_get_num_threads()
+            !$omp single
+                threads = omp_get_num_threads() ! AVITAY : THIS LINE ALREADY EXISTED, BUT IT WASN'T ENCAPSULATED INSIDE A PARALLEL REGION
+            !$omp end single
         !$omp end parallel
-        !if (threads /= max_threads) then
+
+        if (threads /= max_threads) then
             write(*,*) "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-            write(*,*) "Number of Threads:", threads
+            write(*,*) "Warning, number of threads doesn't match number of threads set in datafile"
             write(*,*) "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-        !end if
+        end if
     end subroutine Initialize_openmp
 
 

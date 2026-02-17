@@ -15,6 +15,12 @@ add_executable(main main.f90)
 #target_link_libraries(main Main Diagnostics Mesh Time_step Rezone_and_Advect Input Parallel General BC Quantities BC_Cell BC_Vertex Q_Vertex Q_Cell Material EOS)
 target_link_libraries(main Main Diagnostics Mesh Time_step Rezone_and_Advect Input Parallel Quantities Q_Vertex Q_Cell BC BC_Cell BC_Vertex Material EOS General)
 
+# Set executable name with suffix based on build target (set in parent CMakeLists.txt)
+if(DEFINED EXEC_SUFFIX)
+    set_target_properties(main PROPERTIES OUTPUT_NAME "main${EXEC_SUFFIX}")
+    message(STATUS "Executable will be named: main${EXEC_SUFFIX}")
+endif()
+
 #target_link_libraries(main Main Diagnostics Input General Parallel BC BC_Cell BC_Vertex Material Time_step Rezone_and_Advect Mesh Quantities BC_Cell Q_Vertex BC_Vertex Q_Cell Material EOS)
 
 #include_directories($ENV{HDF5_PATH}/include)

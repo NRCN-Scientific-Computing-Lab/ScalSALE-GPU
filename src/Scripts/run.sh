@@ -11,73 +11,78 @@
 rm -rf Silo_Diagnostics/*
 rm *.so 2>/dev/null
 
-# Define color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m' # No color
-
-# Remove existing vnv_* files
-rm -rf vnv_*
-
 export SCR_CONF_FILE=`pwd`/../CR/scr_conf.conf
 export SCR_RUNS=4
 if test "$1" = "cr"
 then
 	scr_mpirun -n 1 -mca btl self,sm,openib python ../Main/main.py
 else
-    #mpirun -n 1 -mca btl self,sm,openib ../exec/main
-    #mpirun -n 1 -mca btl self,sm,openib ../exec/main
-    #mpirun -n 8 ../exec/main
-    if [[ "$1" == "GPU" ]]; then
-       echo "Running on GPU"
-       export OMP_TARGET_OFFLOAD=MANDATORY
-       export OMP_NUM_THREADS=32
-       nsys profile --stats=true mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
-       #mpirun -n 1 --map-by ppr:1:node:pe=32 ../exec/main
+    NPROCS=$1
+    MODE=${2:-gpu}
 
-    elif [[ "$1" == "CPU" ]]; then
-    echo "Running on CPU with $2 threads"
-       export OMP_TARGET_OFFLOAD=DISABLED
-       export OMP_NUM_THREADS=$2
-       mpirun -n 1 --map-by ppr:1:node:pe=$2 ../exec/main
-elif [[ "$1" == "SERIAL" ]]; then
-       echo "Running in SERIAL mode"
-       export OMP_TARGET_OFFLOAD=DISABLED
-       export OMP_NUM_THREADS=1
-       mpirun -n 1 --map-by ppr:1:node:pe=1 ../exec/main
-elif [[ "$1" == "MPI" ]]; then
-       echo "Running in MPI mode with $2 ranks"
-       export OMP_TARGET_OFFLOAD=DISABLED
-       export OMP_NUM_THREADS=1
-       #mpirun -n $2 --mca pml ob1 --mca btl self,tcp ../exec/main
-       mpirun -n $2 --mca pml ob1 --mca btl vader,self --mca btl_vader_single_copy_mechanism none ../exec/main
+    # Determine executable and settings based on mode
+    case "$MODE" in
+        gpu|main_gpu)
+            EXECUTABLE="../exec/main_gpu"
+            export OMP_TARGET_OFFLOAD=MANDATORY
+            echo "================================================"
+            echo "Running GPU version with $NPROCS MPI processes"
+            echo "OMP_TARGET_OFFLOAD=MANDATORY"
+            echo "================================================"
+            ;;
+        cpu|main_cpu)
+            EXECUTABLE="../exec/main_cpu"
+            export OMP_TARGET_OFFLOAD=DISABLED
+            # CPU-specific optimization
+	    
+            #export OMP_PROC_BIND=close
+            #export OMP_PLACES=cores
 
-else
-    echo "Invalid argument: $1"
-    echo "Usage: $0 [GPU|CPU|SERIAL]"
-    exit 1
-fi
-    #nsys profile --stats=true mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
-    #mpirun -n 1 --map-by ppr:1:node:pe=$num_threads ../exec/main
-    #vtune -collect hotspots mpirun -n $1 ../exec/main
+            echo "================================================"
+            echo "Running CPU version with $NPROCS MPI processes"
+            echo "OMP_TARGET_OFFLOAD=DISABLED"
+            #echo "OMP_PROC_BIND=close, OMP_PLACES=cores"
+            echo "================================================"
+            ;;
+        *)
+            echo "Unknown mode: $MODE"
+            echo "Usage: ./run.sh <num_processes> [gpu|cpu|main_gpu|main_cpu]"
+            exit 1
+            ;;
+    esac
 
-    # Find the latest vnv file
-    latest_vnv=$(ls -t vnv_* 2>/dev/null | head -n 1)
-
-    # Check if the latest vnv file exists
-    if [ -z "$latest_vnv" ]; then
-        echo "Error: No vnv file found."
+    # Check if executable exists
+    if [ ! -f "$EXECUTABLE" ]; then
+        echo "ERROR: Executable not found: $EXECUTABLE"
+        echo "Please build first using ./clean.sh or ./make.sh"
         exit 1
     fi
 
-    # Check if baseline_vnv exists
-    if [ "$1" != "SERIAL" ]; then
-	    if [ ! -f "baseline_vnv" ]; then
-	        echo "Error: baseline_vnv file not found in the current directory."
-	        exit 1
-	    fi
+     # STANDARD RUN COMMAND:
+     mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
 
-    # Compare the latest vnv file with baseline_vnv
-    ./smart_diff.sh baseline_vnv "$latest_vnv"
-    fi
+     # RUN COMMAND FOR NSYS:
+     #nsys profile --stats=true mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
+     #nsys profile --stats=true --trace=cuda,nvtx,osrt,openmp --output=kernel_on_gpu_line_calc_on_cpu mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
+
+     # RUN COMMAND FOR NCOMPUTE:
+     #ncu --set detailed mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
+     #ncu --set detailed --export Ncu_A100_272cyc_AoS_Hexa_Vertices_LINE_CALC_3d mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
+     #ncu --set default --export Ncu_V100_advect mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
+
+     #ncu --metrics launch__registers_per_thread --export Ncu_A100_1002cyc_regiters -np $NPROCS --map-by node --bind-to none $EXECUTABLE
+
+     #ncu --replay-mode range --export Ncu_Advect_Report_V100_1 mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
+
+     #ncu --print-summary mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
+
+    # vtune -collect hpc-performance \
+    #-knob enable-stack-collection=true \
+    #-knob sampling-interval=1 \
+    #-r vtune_hpc_comprehensive \
+
+    #vtune -collect hpc-performance \
+    #-r vtune_report_cpu -- mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
+
+    #vtune -collect hotspots mpirun -n $NPROCS ../exec/main
 fi

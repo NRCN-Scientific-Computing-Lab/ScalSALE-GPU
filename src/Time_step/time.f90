@@ -299,8 +299,8 @@ contains
       real(8), dimension(:,:,:), pointer :: velocity_y       
       real(8), dimension(:,:,:), pointer :: velocity_z   
       real(8), dimension(:, :, :), pointer :: vel_grad_temp !yonif    
-      real :: global_max
-      real :: local_max
+      real(8) :: global_max
+      real(8) :: local_max
       integer :: local_i, local_j, local_k 
 
 
@@ -356,14 +356,15 @@ contains
                                       +(z(i, j, k+1) - z(i, j, k)) ** 2)
 
                vel_grad = max(abs(vel_diff_coor_diff_i), abs(vel_diff_coor_diff_j), abs(vel_diff_coor_diff_k))
+
                vel_grad_temp(i,j,k) = vel_grad
 
-               !if (vel_grad >= vel_grad_max) then 
+               ! if (vel_grad >= vel_grad_max) then 
                !   vel_grad_max  = vel_grad
                !   this%i_grad = i
                !   this%j_grad = j
                !   this%k_grad = k
-               !end if
+               ! end if
 
             end do
          end do
@@ -400,7 +401,10 @@ contains
 
         deallocate(vel_grad_temp) !yonif
 
-      write(*,*) "Calculate_vel_grad_dt_3d inside calculate_dt TIME:: ", omp_get_wtime() - start_time
+      !write(*,*) "Calculate_vel_grad_dt_3d inside calculate_dt TIME:: ", omp_get_wtime() - start_time
+
+      ! AVITAY ADDED THIS:
+      vel_grad_max = global_max
 
       if (vel_grad_max /= 0) this%dt_grad = this%dt_factor / vel_grad_max 
    end subroutine Calculate_vel_grad_dt_3d
@@ -525,8 +529,8 @@ contains
       real(8), dimension(:, :, :), pointer :: mesh_velocity_z 
       real(8), dimension(:, :, :), pointer :: vertex_mass     
       real(8), dimension(:, :, :), pointer :: vel_grad_temp !yonif 
-      real :: global_max
-      real :: local_max
+      real(8) :: global_max
+      real(8) :: local_max
       integer :: local_i, local_j, local_k
 
       real(8) :: vel_diff_x   
@@ -661,13 +665,15 @@ contains
                end if
 
                vel_grad = max(vel_grad_i_m, vel_grad_j_m, vel_grad_k_m, vel_grad_i_p, vel_grad_j_p, vel_grad_k_p)
+               
                vel_grad_temp(i,j,k) = vel_grad
-               !if (vel_rez_max < vel_grad) then
+
+               ! if (vel_rez_max < vel_grad) then
                !   vel_rez_max = vel_grad
                !   this%i_rez  = i
                !   this%j_rez  = j
                !   this%k_rez  = k
-               !end if
+               ! end if
             end do
          end do
       end do
@@ -702,11 +708,14 @@ contains
         !$omp end parallel
 
         deallocate(vel_grad_temp) !yonif
+
+        ! AVITAY ADDED THIS:
+        vel_rez_max = global_max 
         
          this%dt_rez = this%dt_factor / (vel_rez_max + 1d-30)
          this%dt_rez = max(this%dt_rez, 1d-14)
 
-         write(*,*) "Calculate_rezone_constraints_3d inside calculate_dt TIME:: ", omp_get_wtime() - start_time
+         !write(*,*) "Calculate_rezone_constraints_3d inside calculate_dt TIME:: ", omp_get_wtime() - start_time
 
 
    end subroutine Calculate_rezone_constraint_3d
