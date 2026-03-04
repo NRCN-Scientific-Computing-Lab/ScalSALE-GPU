@@ -562,17 +562,20 @@ contains
         class (coordinates_t), intent(inout)  :: coords
 
         integer :: i, j, k, nxp, nyp, nzp
-        real(8) :: radial_vel 
-        real(8) :: vel_x_tmp 
-        real(8) :: vel_y_tmp 
-        real(8) :: vel_z_tmp 
+        real(8) :: radial_vel
+        real(8) :: vel_x_tmp
+        real(8) :: vel_y_tmp
+        real(8) :: vel_z_tmp
         real(8) :: vel
-        real(8), dimension(:, :, :), pointer :: velocity_x   
-        real(8), dimension(:, :, :), pointer :: velocity_y   
-        real(8), dimension(:, :, :), pointer :: velocity_z   
-        real(8), dimension(:, :, :), pointer :: x            
-        real(8), dimension(:, :, :), pointer :: y            
-        real(8), dimension(:, :, :), pointer :: z            
+        real(8), dimension(:, :, :), pointer :: velocity_x
+        real(8), dimension(:, :, :), pointer :: velocity_y
+        real(8), dimension(:, :, :), pointer :: velocity_z
+        real(8), dimension(:, :, :), pointer :: x
+        real(8), dimension(:, :, :), pointer :: y
+        real(8), dimension(:, :, :), pointer :: z
+        real(8), dimension(:), allocatable :: radial_vel_temp
+        real(8) :: global_min
+        real(8) :: local_min
 
         if (this%no_move_flag .eqv. .false.) return
 
@@ -583,7 +586,13 @@ contains
         nyp = this%d2
         nzp = this%d3
         k = this%no_move_index
-        !$omp target teams distribute parallel do collapse(2) private(vel_x_tmp, vel_y_tmp, vel_z_tmp, vel) reduction(min: radial_vel)
+
+        ! IMPORTANT NOTE AVITAY: Changed this reduction to follow Yoni's approach for reduction of min/max on GPUs. Seems like it doesn't matter because we don't use this subroutine anyway.
+
+        allocate(radial_vel_temp(1:nxp * nyp))
+
+        !$omp target teams distribute parallel do collapse(2) private(vel_x_tmp, vel_y_tmp, vel_z_tmp, vel)&
+        !$omp& map(from: radial_vel_temp(1:nxp * nyp))
         do j = 1, nyp
             do i = 1, nxp
                           vel_x_tmp = velocity_x(i, j, k)
@@ -591,10 +600,31 @@ contains
                           vel_z_tmp = velocity_z(i, j, k)
                 vel = (vel_x_tmp*x(i,j,k) + vel_y_tmp*y(i,j,k) +vel_z_tmp*z(i,j,k)) &
                       / (x(i,j,k)*x(i,j,k) + y(i,j,k)*y(i,j,k) + z(i,j,k)*z(i,j,k))
-                radial_vel = min(radial_vel, vel)
+                radial_vel_temp((j - 1) * nxp + i) = vel
             end do
         end do
         !$omp end target teams distribute parallel do
+
+        global_min = HUGE(1d0)
+        local_min = HUGE(1d0)
+        !$omp parallel private(i) firstprivate(local_min)
+        !$omp do
+        do i = 1, nxp * nyp
+            if (radial_vel_temp(i) < local_min) then
+                local_min = radial_vel_temp(i)
+            endif
+        end do
+        !$omp end do
+
+        !$omp critical
+        if (local_min < global_min) then
+            global_min = local_min
+            radial_vel = local_min
+        endif
+        !$omp end critical
+        !$omp end parallel
+
+        deallocate(radial_vel_temp)
     
         if (radial_vel < -1d-10) then
             this%no_move_flag = .false.

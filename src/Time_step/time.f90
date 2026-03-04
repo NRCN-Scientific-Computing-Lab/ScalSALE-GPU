@@ -709,7 +709,7 @@ contains
 
         deallocate(vel_grad_temp) !yonif
 
-        ! AVITAY ADDED THIS:
+        ! IMPORTANT NOTE - AVITAY ADDED THIS:
         vel_rez_max = global_max 
         
          this%dt_rez = this%dt_factor / (vel_rez_max + 1d-30)

@@ -146,10 +146,10 @@
         "dt": 1e-14, 
 	    "cyl": 0,
         "dt_max": 0.1,
-        "max_ncyc": 242
+        "max_ncyc": 162
     },
     "rezone_advect": {
-        "rezone_type": "euler",
+        "rezone_type": "lagrange",
         "shorter_advect": false
     },
     "parallel": {
@@ -157,6 +157,6 @@
 	"npx":1,
 	"npy":1,
 	"npz":1, 
-    "threads":64
+    "threads":1
     }
 }

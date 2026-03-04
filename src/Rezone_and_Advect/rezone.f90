@@ -225,7 +225,33 @@ contains
       !x,y,z are updated on the GPU
       !!$omp target update to(vertex_mass)
       !!$omp target update to(velocity_x, velocity_y, velocity_z)
-      
+
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)            
+      !    !$omp target update from(velocity_x)
+      !    !$omp target update from(velocity_y)
+      !    !$omp target update from(velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, BEFORE FIRST LOOP ********"
+      !    do i = 0, this%nxp + 1
+      !       do j = 0, this%nyp + 1
+      !          do k = 0, this%nzp + 1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8), &                     
+      !                transfer(velocity_x(i, j, k), 0_8), &
+      !                transfer(velocity_y(i, j, k), 0_8), &
+      !                transfer(velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
+
       !$omp target teams distribute parallel do collapse(3) 
       do k = 0, this%nzp + 1
          do j = 0, this%nyp + 1
@@ -244,7 +270,59 @@ contains
       call this%material_volume%Calculate(this%material_coordinates) !on GPU
       call this%material_volume%Exchange_virtual_space_nonblocking()
 
-      !$omp target teams distribute parallel do collapse(3) private(velocity_sq, factor) 
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)         
+      !    !$omp target update from(velocity_x)
+      !    !$omp target update from(velocity_y)
+      !    !$omp target update from(velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, AFTER FIRST LOOP ********"
+      !    do i = 0, this%nxp + 1
+      !       do j = 0, this%nyp + 1
+      !          do k = 0, this%nzp + 1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8), &                     
+      !                transfer(velocity_x(i, j, k), 0_8), &
+      !                transfer(velocity_y(i, j, k), 0_8), &
+      !                transfer(velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
+
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !   !$omp target update from(mesh_velocity_x)
+      !   !$omp target update from(mesh_velocity_y)
+      !   !$omp target update from(mesh_velocity_z)         
+      !    !$omp target update from(velocity_x)
+      !    !$omp target update from(velocity_y)
+      !    !$omp target update from(velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, BEFORE VELOCITY LIMITER ********"
+      !    do i = 0, this%nxp + 1
+      !       do j = 0, this%nyp + 1
+      !          do k = 0, this%nzp + 1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8), &                     
+      !                transfer(velocity_x(i, j, k), 0_8), &
+      !                transfer(velocity_y(i, j, k), 0_8), &
+      !                transfer(velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
+
+      !$omp target teams distribute parallel do collapse(3) private(velocity_sq, factor)
       do k = 1, this%nzp
          do j = 1, this%nyp
             do i = 1, this%nxp
@@ -294,7 +372,49 @@ contains
       end select
       !!$omp target update from(velocity_x, velocity_y, velocity_z, mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
 
+      ! IMPORTANT NOTE: AVITAY CHANGED THIS TO FALSE, THIS WAS TRUE
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, BEFORE APPLY_BOUNDARY ********"
+      !    do i = 0, this%nxp+1
+      !       do j = 0, this%nyp+1
+      !           do k = 0, this%nzp+1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
+
       call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data, is_offload=.True.)
+
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, AFTER APPLY_BOUNDARY ********"
+      !    do i = 0, this%nxp+1
+      !       do j = 0, this%nyp+1
+      !           do k = 0, this%nzp+1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if            
+
       call this%material_volume%Exchange_end()
 
       this%cyc_delete = this%cyc_delete + 1

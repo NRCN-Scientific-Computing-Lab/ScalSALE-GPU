@@ -195,7 +195,7 @@ contains
         end do
       end do
       !$omp end target teams distribute parallel do
-      
+
       !!$omp target update to(density)
       !!$omp target update to(x,y,z)
 
@@ -238,14 +238,10 @@ contains
                end do
             end do
          end do
-         !$omp end target teams distribute parallel do        
+         !$omp end target teams distribute parallel do
 
-
-
-
-
-
-cyc = cyc + 1
+         cyc = cyc + 1
+         
    end subroutine Calculate_vertex_mass_3d
 
 

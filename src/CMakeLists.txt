@@ -41,7 +41,7 @@ set(ENV{JSONFORTRAN} "/home/reemh/json-fortran/build_nvhpc")
 	#set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc80,ptxinfo -Minfo=accel,mp,inline -mp=gpu -cpp -fopenmp -O3 -g -Minline=levels:10,size:10")
 	
 	# IF WE WANT TO TEST PARALLELISM CORRECTNESS:
-	set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc80,ptxinfo -Mnofma -Minfo=accel,mp,inline -mp=gpu -cpp -fopenmp -O0 -g -Minline=levels:10,size:10")
+	set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc80,ptxinfo,nofma,noflushz,nounroll -Kieee -Mnofma -Minfo=accel,mp,inline -Mbounds -traceback -mp=gpu -cpp -fopenmp -O0 -g -Minline=levels:10,size:10")
 	message(STATUS "Using GPU A100")
 
         # IF USING NVIDIA V100 GPU:

@@ -57,20 +57,20 @@ module advect_module
         type (rezone_t), pointer :: rezone
 
         type (material_t)       , pointer :: materials
-        type (material_advect_t), pointer :: adv_mats
+        type (material_advect_t), pointer, public :: adv_mats
 
         type (data_t)                                   :: area_top_out
         type (data_t)                                   :: area_top_in
 
-        type (material_quantity_t), pointer                          :: a
-        type (material_quantity_t), pointer                          :: b
-        type (material_quantity_t), pointer                          :: c
-        type (material_quantity_t), pointer                          :: side
+        type (material_quantity_t), pointer, public                  :: a
+        type (material_quantity_t), pointer, public                  :: b
+        type (material_quantity_t), pointer, public                  :: c
+        type (material_quantity_t), pointer, public                  :: side
 
         type (vertex_mass_t)                            :: adv_vertex_mass
-        type (cell_mass_t)                              :: adv_cell_mass
+        type (cell_mass_t)              , public        :: adv_cell_mass
         type (energy_t)                                 :: adv_sie
-        type (vof_t)                                    :: vof_advect
+        type (vof_t)                    , public        :: vof_advect
         type (parallel_parameters_t), pointer           :: parallel_params
 
         type (num_materials_in_cells_t)       , pointer :: num_mat_cells
@@ -88,7 +88,7 @@ module advect_module
         type (momentum_t)             , pointer, public :: momentum
         type (momentum_t)             , pointer, public :: adv_momentum
 
-        type (data_t)                                   :: vel_adv_weight
+        type (data_t)                 , public          :: vel_adv_weight
 
         type(datafile_t)                                :: datafile
 
@@ -241,8 +241,6 @@ module advect_module
         procedure, public :: Get_all_areas
 
         procedure, public :: Set_communication
-        
-        procedure, public :: Get_gpu_data_pointers
       
         procedure, public :: Write_advect
         generic :: write(unformatted) => Write_advect
@@ -6163,64 +6161,5 @@ contains
         write(*,*) "@@@ end Read_advect @@@"
 
     end subroutine Read_advect
-
-    subroutine Get_gpu_data_pointers(this, vof, x, y, z, vol, density, cell_mass, mat_id, n_materials_in_cell, &
-        mat_vof, sie_vof, density_vof, cell_mass_vof, init_mat_layers, vof_adv, mat_vof_adv, sie_vof_adv, &
-        mat_cell_mass_adv, cell_mass_adv, init_mat_layers_adv, material_x, material_y, material_z, &
-        a_mat, b_mat, c_mat, side_mat, a_adv, b_adv, c_adv, side_adv, vel_adv_weight, velocity_x, velocity_y, velocity_z, vertex_mass, sie)
-        class(advect_t), intent(inout) :: this
-        real(8), dimension(:, :, :), pointer, intent(out) :: vof, x, y, z, vol, density, cell_mass
-        real(8), dimension(:, :, :), pointer, intent(out) :: mat_id, n_materials_in_cell
-        real(8), dimension(:, :, :, :), pointer, intent(out) :: mat_vof, sie_vof, density_vof, cell_mass_vof
-        real(8), dimension(:, :, :, :), pointer, intent(out) :: init_mat_layers
-        real(8), dimension(:, :, :), pointer, intent(out) :: vof_adv, cell_mass_adv
-        real(8), dimension(:, :, :, :), pointer, intent(out) :: mat_vof_adv, sie_vof_adv, mat_cell_mass_adv
-        real(8), dimension(:, :, :, :), pointer, intent(out) :: init_mat_layers_adv
-        real(8), dimension(:, :, :), pointer, intent(out) :: material_x, material_y, material_z
-        real(8), dimension(:, :, :, :), pointer, intent(out) :: a_mat, b_mat, c_mat, side_mat
-        real(8), dimension(:, :, :, :), pointer, intent(out) :: a_adv, b_adv, c_adv, side_adv
-        real(8), dimension(:, :, :), pointer, intent(out) :: vel_adv_weight
-        real(8), dimension(:, :, :), pointer, intent(out) :: velocity_x, velocity_y, velocity_z
-        real(8), dimension(:, :, :), pointer, intent(out) :: vertex_mass
-        real(8), dimension(:, :, :), pointer, intent(out) :: sie
-
-        ! Get all data pointers needed for GPU mapping
-        call this%rezone%Point_to_coordinates_3d(material_x, material_y, material_z)
-        call this%mesh%Point_to_data(x, y, z)
-        
-        call this%total_vof%Point_to_data(vof)
-        call this%volume%Point_to_data(vol)
-        call this%mat_cells%Point_to_data(mat_id)
-        call this%total_density%Point_to_data(density)
-        call this%total_cell_mass%Point_to_data(cell_mass)
-        call this%adv_cell_mass%Point_to_data(cell_mass_adv)
-        call this%num_mat_cells%Point_to_data(n_materials_in_cell)
-        call this%vof_advect%Point_to_data(vof_adv)
-        call this%adv_mats%vof%Point_to_data(mat_vof_adv)
-        call this%adv_mats%Point_to_initial_layers(init_mat_layers_adv)
-        call this%adv_mats%cell_mass%Point_to_data(mat_cell_mass_adv)
-        call this%adv_mats%sie%Point_to_data(sie_vof_adv)
-        
-        call this%materials%vof%Point_to_data(mat_vof)
-        call this%materials%density%Point_to_data(density_vof)
-        call this%materials%sie%Point_to_data(sie_vof)
-        call this%materials%cell_mass%Point_to_data(cell_mass_vof)
-        call this%materials%Point_to_initial_layers(init_mat_layers)
-        
-        call this%adv_mats%a%Point_to_data(a_mat)
-        call this%adv_mats%b%Point_to_data(b_mat)
-        call this%adv_mats%c%Point_to_data(c_mat)
-        call this%adv_mats%side%Point_to_data(side_mat)
-        call this%a%Point_to_data(a_adv)
-        call this%b%Point_to_data(b_adv)
-        call this%c%Point_to_data(c_adv)
-        call this%side%Point_to_data(side_adv)
-
-        call this%vel_adv_weight%Point_to_data(vel_adv_weight)
-        call this%velocity%Point_to_data(velocity_x, velocity_y, velocity_z)
-        call this%vertex_mass%Point_to_data(vertex_mass)
-        call this%total_sie%Point_to_data(sie)
-        
-    end subroutine Get_gpu_data_pointers
 
 end module advect_module

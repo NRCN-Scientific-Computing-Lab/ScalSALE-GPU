@@ -752,6 +752,28 @@ contains
         real(8), dimension(:, :, :,:), pointer :: sound_vel_vof_target
         real(8), dimension(:,:,:), pointer :: xl_visc_mat_target
 
+        ! ===== ADVECT ARRAYS =====
+        real(8), dimension(:, :, :), pointer :: vof_adv_target
+        real(8), dimension(:, :, :), pointer :: cell_mass_adv_target
+        real(8), dimension(:, :, :), pointer :: vel_adv_weight_target
+        real(8), dimension(:, :, :), pointer :: mat_id_target
+
+        real(8), dimension(:, :, :, :), pointer :: mat_vof_adv_target
+        real(8), dimension(:, :, :, :), pointer :: mat_cell_mass_adv_target
+        real(8), dimension(:, :, :, :), pointer :: sie_vof_adv_target
+
+        real(8), dimension(:, :, :, :), pointer :: a_adv_target
+        real(8), dimension(:, :, :, :), pointer :: b_adv_target
+        real(8), dimension(:, :, :, :), pointer :: c_adv_target
+        real(8), dimension(:, :, :, :), pointer :: side_adv_target
+
+        real(8), dimension(:, :, :, :), pointer :: a_mat_target
+        real(8), dimension(:, :, :, :), pointer :: b_mat_target
+        real(8), dimension(:, :, :, :), pointer :: c_mat_target
+        real(8), dimension(:, :, :, :), pointer :: side_mat_target
+
+        real(8), dimension(:, :, :, :), pointer :: init_mat_layers_target
+        real(8), dimension(:, :, :, :), pointer :: init_mat_layers_adv_target
 
         real(8) :: checksum_velocity_x, checksum_velocity_y, checksum_velocity_z
         real(8) :: checksum_acceleration_x, checksum_acceleration_y, checksum_acceleration_z
@@ -859,6 +881,29 @@ contains
             call this%hydro%rezone%material_volume%Point_to_data(mat_volume_target)
             call this%hydro%rezone%mesh_velocity%Point_to_data(mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target)
 
+            ! ============================= ADVECT THINGS ========================== !
+            call this%hydro%advect%vof_advect%Point_to_data(vof_adv_target)
+            call this%hydro%advect%adv_cell_mass%Point_to_data(cell_mass_adv_target)
+            call this%hydro%advect%vel_adv_weight%Point_to_data(vel_adv_weight_target)
+            call this%mat_cells%Point_to_data(mat_id_target)
+
+            call this%hydro%advect%adv_mats%vof%Point_to_data(mat_vof_adv_target)
+            call this%hydro%advect%adv_mats%cell_mass%Point_to_data(mat_cell_mass_adv_target)
+            call this%hydro%advect%adv_mats%sie%Point_to_data(sie_vof_adv_target)
+
+            call this%hydro%advect%a%Point_to_data(a_adv_target)
+            call this%hydro%advect%b%Point_to_data(b_adv_target)
+            call this%hydro%advect%c%Point_to_data(c_adv_target)
+            call this%hydro%advect%side%Point_to_data(side_adv_target)
+
+            call this%hydro%advect%adv_mats%a%Point_to_data(a_mat_target)
+            call this%hydro%advect%adv_mats%b%Point_to_data(b_mat_target)
+            call this%hydro%advect%adv_mats%c%Point_to_data(c_mat_target)
+            call this%hydro%advect%adv_mats%side%Point_to_data(side_mat_target)
+
+            call this%materials%Point_to_initial_layers(init_mat_layers_target)
+            call this%hydro%advect%adv_mats%Point_to_initial_layers(init_mat_layers_adv_target)
+
             start = omp_get_wtime()
 
             if(this%parallel_params%my_rank == 0) then
@@ -873,8 +918,13 @@ contains
             !$omp& vof_target, vol_target, avisc_target, mat_volume_target, pressure_sum_target,&
             !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, inverse_vertex_mass_target, density_target, density_vof_target, vertex_mass_target, &
             !$omp& temperature_vof_target, temperature_target, pressure_vof_target, pressure_target, old_temperature_vof_target, sound_vel_vof_target, dp_drho_vof_target, dp_drho_target, dp_de_target, dt_de_vof_target, sound_vel_target, &
-            !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target, nmats_in_cell_target) &
-            !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &           
+            !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target, nmats_in_cell_target, &
+            !$omp& vof_adv_target, cell_mass_adv_target, vel_adv_weight_target, mat_id_target, &
+            !$omp& mat_vof_adv_target, mat_cell_mass_adv_target, sie_vof_adv_target, &
+            !$omp& a_adv_target, b_adv_target, c_adv_target, side_adv_target, &
+            !$omp& a_mat_target, b_mat_target, c_mat_target, side_mat_target, &
+            !$omp& init_mat_layers_target, init_mat_layers_adv_target) &
+            !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target, xl_visc_mat_target)
             
             
@@ -892,6 +942,25 @@ contains
                 !  call this%Write_to_files()
                 counter = counter + 1
                 ncyc = ncyc + 1
+                
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,12):", this%mesh%coordinates%data(1)%values(1,1,12)
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,13):", this%mesh%coordinates%data(1)%values(1,1,13)
+                
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,12):", x_target(1,1,12)
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,13):", x_target(1,1,13)
+                ! write(*,*) "------------------------"
+                ! !$omp target update from(x_target)
+                ! write(*,*) "AFTER, at (1,1,12):", z_target(1,1,5)
+                ! write(*,*) "AFTER, at (1,1,13):", x_target(1,1,13)
+
+                ! write(*,*) "AFTER, at (1,1,12):", this%mesh%coordinates%data(1)%values(1,1,12)
+                ! write(*,*) "AFTER, at (1,1,13):", this%mesh%coordinates%data(1)%values(1,1,13)
+
+                ! !$omp target
+                ! write(*,*) x_target(1,6,11)
+                ! !$omp end target
+
+                
                 !write(*,'(A30, F12.6)') "Total cycle time: ", omp_get_wtime()-start
                 !write(*,*) "#####################################################################"
             !      call this%cr%Checkpoint(ckpt_name)
@@ -900,7 +969,12 @@ contains
             
             !$omp target exit data map(from: x_target, y_target, z_target,&
             !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
-            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, density_target, pressure_target, sie_vof_target, pressure_vof_target, sie_target)
+            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, density_target, pressure_target, sie_vof_target, pressure_vof_target, sie_target, &
+            !$omp& vof_adv_target, cell_mass_adv_target, vel_adv_weight_target, mat_id_target, &
+            !$omp& mat_vof_adv_target, mat_cell_mass_adv_target, sie_vof_adv_target, &
+            !$omp& a_adv_target, b_adv_target, c_adv_target, side_adv_target, &
+            !$omp& a_mat_target, b_mat_target, c_mat_target, side_mat_target, &
+            !$omp& init_mat_layers_target, init_mat_layers_adv_target)
 
             !total time ends before checksum!
             !write(*,*) "Total Time:", omp_get_wtime() - finish

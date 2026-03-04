@@ -1395,6 +1395,8 @@ contains
       real(8) :: eps1, eps2                  
       integer :: i                           
 
+      !$OMP DECLARE TARGET
+
       eps1 = 1d-20
       eps2 = 1d-99
 
@@ -1487,6 +1489,8 @@ contains
       real(8), intent(in)  :: x1, y1, z1  
       real(8), intent(out) :: x2, y2, z2  
       real(8) :: l 
+
+      !$OMP DECLARE TARGET
 
       l  = d - (x1 * a + y1 * b + z1 * c)
       x2 = x1 + 2d0 * l * a
@@ -1956,6 +1960,9 @@ contains
         integer, intent(in) :: virt_nyp
         integer, intent(in) :: virt_nzp
         logical :: is_corner
+
+        !$OMP DECLARE TARGET
+
         is_corner = .false.
 
         if ( (ivirt == 1 .or. ivirt == virt_nxp) .and.&

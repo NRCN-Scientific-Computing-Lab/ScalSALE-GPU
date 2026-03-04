@@ -86,7 +86,7 @@ contains
 
 
        call this%boundary_conditions(1)%bc% Calculate (this &
-                                    ,   this%data, 0d0, 1)
+                                    ,   this%data, 0d0, 1, is_offload_local)
 
 
         if (is_blocking_local) then

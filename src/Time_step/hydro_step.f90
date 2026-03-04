@@ -56,7 +56,7 @@ module hydro_step_module
         type (volume_t)                , pointer :: total_volume         
         type (energy_t), public        , pointer :: total_sie            
         type (rezone_t), public        , pointer :: rezone               
-        type (advect_t)                , pointer :: advect               
+        type (advect_t), public        , pointer :: advect               
         type (data_t)                  , pointer :: inversed_vertex_mass
         type (vof_t)                   , pointer :: total_vof            
         type (data_t)                  , pointer :: total_dt_drho        
@@ -339,14 +339,15 @@ contains
         Constructor%file_unit_lagrange = 777
         open(Constructor%file_unit_lagrange, file="track_validation_lagrangian", status="unknown", action="write")
         Constructor%parallel_params => parallel_params
+        
         allocate(Constructor%rezone)
 
         Constructor%rezone = rezone_t(df%rezone_type, nxp, nyp, nzp, total_cell_mass%boundary_conditions,&
             velocity%boundary_conditions, mesh, velocity, vertex_mass, &
             total_cell_mass%boundary_params)
+        
+        
         allocate(Constructor%advect)
-
-
 
         Constructor%advect = advect_t(nxp, nyp, nzp,nmats, mat_ids, total_cell_mass%boundary_conditions, velocity%boundary_conditions, &
             total_cell_mass%boundary_params&
@@ -356,6 +357,7 @@ contains
             total_density, total_cell_mass, vertex_mass, &
             total_volume, velocity, emf, emfm , wilkins_scheme, parallel_params)
         Constructor%ncyc = 0
+
     end function
 
 
@@ -448,6 +450,11 @@ contains
         call this%Calculate_thermodynamics()
         !write(*,'(A50, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
 
+        if (this%cyc_delete == 116) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER THERMO (BEFORE dt) ********"
+            call this%Print_lagrangian_data()
+        end if
+
         ! Set color to blue
         !write(*,*) CHAR(27)//'[34m'
         dt_time = omp_get_wtime()  
@@ -455,6 +462,11 @@ contains
         call time%Calculate_dt(this%mesh, this%velocity, this%rezone%mesh_velocity, this%vertex_mass, this%total_vof, this%emfm)
         !write(*,'(A50, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
         this%cyc_delete = this%cyc_delete+1
+
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER DT ********"
+            call this%Print_lagrangian_data()
+        end if
 
         ! Set color to orange
         !write(*,*) CHAR(27)//'[38;5;208m'
@@ -466,6 +478,11 @@ contains
 
         call this%Calculate_acceleration_3d(time%dt_mid)
         !write(*,'(A50, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
+
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER ACCELERATION ********"
+            call this%Print_lagrangian_data()
+        end if
 
         ! Set color to blue
         !write(*,*) CHAR(27)//'[34m'
@@ -479,6 +496,11 @@ contains
         call this%Calculate_artificial_viscosity_3d(time)
         !write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
 
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER ARTIF. VISCOSITY ********"
+            call this%Print_lagrangian_data()
+        end if
+
         ! Set color to orange
         !write(*,*) CHAR(27)//'[38;5;208m'
         
@@ -491,6 +513,11 @@ contains
         call this%Calculate_velocity_3d(time%dt_mid)
         !write(*,'(A50, F12.6)') "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
 
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER CALCULATE VELOCITY ********"
+            call this%Print_lagrangian_data()
+        end if
+
         ! Set color to blue
         !write(*,*) CHAR(27)//'[34m'
 
@@ -501,12 +528,22 @@ contains
         call this%rezone%Calculate_rezone_3d(time%dt)
         !write(*,'(A50, F12.6)') "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
 
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER CALCULATE REZONE ********"
+            call this%Print_lagrangian_data()
+        end if
+
         ! Set color to orange
         !write(*,*) CHAR(27)//'[38;5;208m'
 
         energy_time = omp_get_wtime()
         call this%Calculate_energy_3d(this%init_temperature, time%dt)
         !write(*,'(A50, F12.6)') "Calculate_energy_3d time:", omp_get_wtime() - energy_time
+
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER CALCULATE ENERGY ********"
+            call this%Print_lagrangian_data()
+        end if
 
         ! Set color to blue
         !write(*,*) CHAR(27)//'[34m'
@@ -515,6 +552,11 @@ contains
         mesh_time = omp_get_wtime()
         call this%Calculate_mesh_3d(time)
         !write(*,'(A50, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
+
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* AFTER CALCULATE MESH ********"
+            call this%Print_lagrangian_data()
+        end if
 
         ! reset color
         !write(*,*) CHAR(27)//'[0m'
@@ -528,9 +570,13 @@ contains
         ! end if
 
         if (this%rezone%rezone_type /= 0) then
+            write(*,*) "WE FALSELY GO IN HERE"
             call this%advect%Calculate_advect_3d()
         end if
-        call this%Print_lagrangian_data()
+        if (this%cyc_delete == 117) then
+            write(this%file_unit_lagrange, '(A)') "******* END OF DO_TIME_STEP_3D ********"
+            call this%Print_lagrangian_data()
+        end if
 
     end subroutine do_time_step_3d
 
@@ -619,6 +665,8 @@ contains
         call this%materials%sound_vel      %Point_to_data(sound_vel_vof)
         call this%materials%dt_de          %Point_to_data(dt_de_vof)
         call this%materials%vof            %Point_to_data(mat_vof)
+        call this%materials%density        %Point_to_data(density_vof)
+        call this%materials%sie            %Point_to_data(sie_vof)
 
         !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 1 time:", omp_get_wtime() - tmp
         tmp = omp_get_wtime()
@@ -677,13 +725,15 @@ contains
 
         !$omp target enter data map(alloc: dt_de_temp) 
 
+        !$omp target teams distribute parallel do collapse(3)
          do k = 1, nz_
              do j = 1, ny_
-                do i = 1, nx_               
+                do i = 1, nx_
                     dt_de_temp(i,j,k) = 0d0
                 end do
              end do
-         end do 
+         end do
+         !$omp end target teams distribute parallel do
 
         call this%total_sie%Exchange_end()
         call this%total_cell_mass%Exchange_end()
@@ -733,12 +783,10 @@ contains
 
         call this%total_pressure%Exchange_virtual_space_nonblocking()
         
-        #ifdef BUILD_GPU
-        !$omp target update from(density)
-        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.false.) !on CPU
-        !$omp target update to(density)
+        #ifdef GPU_BUILD
+        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.true.) !on GPU
         #else
-        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.true.) !on GPU      
+        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.false.) !on CPU
         #endif
         
         !$omp target teams distribute parallel do collapse(3)
@@ -781,19 +829,10 @@ contains
 
         !!$omp target update from(pressure_sum, pressure, dp_de, dp_drho, temperature, sound_vel)
 
+        ! IMPORTANT NOTE: AVITAY CHANGED IS_OFFLOAD TO TRUE
         call this%num_mat_cells%Apply_boundary(is_blocking=.false., is_offload=.false.) !always false? not mapped at all?
         
-        #ifdef BUILD_GPU
-        !$omp target update from(vol, sie, vof, cell_mass_vof, density_vof, sie_vof, mat_vof)
-        call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.false.)
-        call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.false.)
-        call this%total_vof    %Apply_boundary(is_blocking=.false., is_offload=.false.)
-        call this%materials%cell_mass%Apply_boundary(is_blocking=.false., is_offload=.false.)
-        call this%materials%density  %Apply_boundary(is_blocking=.false., is_offload=.false.)
-        call this%materials%sie      %Apply_boundary(is_blocking=.false., is_offload=.false.)
-        call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.false.)
-        !$omp target update to(vol, sie, vof, cell_mass_vof, density_vof, sie_vof, mat_vof)
-        #else
+        #ifdef GPU_BUILD
         call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%total_vof    %Apply_boundary(is_blocking=.false., is_offload=.true.)
@@ -801,6 +840,14 @@ contains
         call this%materials%density  %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%materials%sie      %Apply_boundary(is_blocking=.false., is_offload=.true.)
         call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        #else
+        call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%total_vof    %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%cell_mass%Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%density  %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%sie      %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.false.)
         #endif
 
         !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 7 time:", omp_get_wtime() - tmp
@@ -1077,12 +1124,10 @@ contains
         !!$omp target update from(acceleration_x, acceleration_y, acceleration_z)
         !IT SEEMS ACCELERATION NEEDS TO MOVE TO CPU BEFORE RUNNING Calculate_artificial_viscosity_3D 
         !write(*,*) "acceleration boundary conditions:"
-        #ifdef BUILD_GPU
-        !$omp target update from(acceleration_x, acceleration_y, acceleration_z)
-        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.false.)
-        !$omp target update to(acceleration_x, acceleration_y, acceleration_z)
-        #else      
-        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.True.) !ON GPU
+        #ifdef GPU_BUILD
+        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.true.) !ON GPU
+        #else
+        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.false.) !ON CPU
         #endif
         !YONI: calculate_derivatives does not update velocity to GPU. please see if it necessary here or not
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
@@ -1656,7 +1701,38 @@ contains
 
         call this%a_visc%Exchange_end()
 
-        loop_time = omp_get_wtime() 
+        if (this%cyc_delete == 117) then
+            #ifdef GPU_BUILD
+            !$omp target update from(velocity_x)
+            !$omp target update from(velocity_y)
+            !$omp target update from(velocity_z)
+            !$omp target update from(acceleration_x)
+            !$omp target update from(acceleration_y)
+            !$omp target update from(acceleration_z)
+            !$omp target update from(a_visc)
+            !$omp target update from(inversed_vertex_mass)
+            #endif
+            write(777, '(A)') "******* IN CALC_VELOCITY_3D, BEFORE MAIN LOOP ********"
+            write(777, '(A)') "--- vel_x, vel_y, vel_z | acc_x, acc_y, acc_z | a_visc, inv_vmass ---"
+            do i = 0, this%nxp + 1
+                do j = 0, this%nyp + 1
+                    do k = 0, this%nzp + 1
+                        write(777, '(3I5,8(" | ",Z18))') i, j, k, &
+                            transfer(velocity_x(i, j, k), 0_8), &
+                            transfer(velocity_y(i, j, k), 0_8), &
+                            transfer(velocity_z(i, j, k), 0_8), &
+                            transfer(acceleration_x(i, j, k), 0_8), &
+                            transfer(acceleration_y(i, j, k), 0_8), &
+                            transfer(acceleration_z(i, j, k), 0_8), &
+                            transfer(a_visc(i, j, k), 0_8), &
+                            transfer(inversed_vertex_mass(i, j, k), 0_8)
+                    end do
+                end do
+            end do
+            flush(777)
+        end if
+
+        loop_time = omp_get_wtime()
 
 
         !EXIST ON GPU:a_visc, acceleration_x, acceleration_y, acceleration_z, x, y, z, inversed_vertex_mass
@@ -1733,12 +1809,31 @@ contains
                 end do
             end do
         end do
-        !$omp end target teams distribute parallel do     
+        !$omp end target teams distribute parallel do
         !!$omp target update from(velocity_x, velocity_y, velocity_z)
 
         !write(*,'(A70, F12.6)') "    Calculate_velocity_3d----- main loop time:", omp_get_wtime() - loop_time
-        
-        
+
+        if (this%cyc_delete == 117) then
+            #ifdef GPU_BUILD
+            !$omp target update from(velocity_x)
+            !$omp target update from(velocity_y)
+            !$omp target update from(velocity_z)
+            #endif
+            write(777, '(A)') "******* IN CALC_VELOCITY_3D, AFTER MAIN LOOP ********"
+            do i = 0, this%nxp + 1
+                do j = 0, this%nyp + 1
+                    do k = 0, this%nzp + 1
+                        write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+                            transfer(velocity_x(i, j, k), 0_8), &
+                            transfer(velocity_y(i, j, k), 0_8), &
+                            transfer(velocity_z(i, j, k), 0_8)
+                    end do
+                end do
+            end do
+            flush(777)
+        end if
+
         if (this%mesh%mesh_type /= 2) then
             !YONI: TODO: offload! for now assume not called so we are fine. 
             write(*,*) "Impose_spherical_symmetry is called from Calculate_velocity_3d"
@@ -1748,18 +1843,76 @@ contains
         !is offloaded
         call this%velocity%Impose_no_move_3d(this%mesh%coordinates)
 
-        #ifdef BUILD_GPU
-        !$omp target update from(velocity_x, velocity_y, velocity_z)
-        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.False.)
-        !$omp target update to(velocity_x, velocity_y, velocity_z)
+        if (this%cyc_delete == 117) then
+            #ifdef GPU_BUILD
+            !$omp target update from(velocity_x)
+            !$omp target update from(velocity_y)
+            !$omp target update from(velocity_z)
+            #endif
+            write(777, '(A)') "******* IN CALC_VELOCITY_3D, AFTER IMPOSE_NO_MOVE ********"
+            do i = 0, this%nxp + 1
+                do j = 0, this%nyp + 1
+                    do k = 0, this%nzp + 1
+                        write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+                            transfer(velocity_x(i, j, k), 0_8), &
+                            transfer(velocity_y(i, j, k), 0_8), &
+                            transfer(velocity_z(i, j, k), 0_8)
+                    end do
+                end do
+            end do
+            flush(777)
+        end if
+
+        #ifdef GPU_BUILD
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.true.) !ON GPU
         #else
-        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.True.) !ON GPU
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.false.) !ON CPU
         #endif
+
+        if (this%cyc_delete == 117) then
+            #ifdef GPU_BUILD
+            !$omp target update from(velocity_x)
+            !$omp target update from(velocity_y)
+            !$omp target update from(velocity_z)
+            #endif
+            write(777, '(A)') "******* IN CALC_VELOCITY_3D, AFTER APPLY_BOUNDARY ********"
+            do i = 0, this%nxp + 1
+                do j = 0, this%nyp + 1
+                    do k = 0, this%nzp + 1
+                        write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+                            transfer(velocity_x(i, j, k), 0_8), &
+                            transfer(velocity_y(i, j, k), 0_8), &
+                            transfer(velocity_z(i, j, k), 0_8)
+                    end do
+                end do
+            end do
+            flush(777)
+        end if
 
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, this%total_vof, this%total_volume&
             , this%nx, this%ny, this%nz, this%emf)
             call this%velocity%Exchange_end()
-       
+
+        if (this%cyc_delete == 117) then
+            #ifdef GPU_BUILD
+            !$omp target update from(velocity_x)
+            !$omp target update from(velocity_y)
+            !$omp target update from(velocity_z)
+            #endif
+            write(777, '(A)') "******* IN CALC_VELOCITY_3D, AFTER CALC_DERIVATIVES ********"
+            do i = 0, this%nxp + 1
+                do j = 0, this%nyp + 1
+                    do k = 0, this%nzp + 1
+                        write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+                            transfer(velocity_x(i, j, k), 0_8), &
+                            transfer(velocity_y(i, j, k), 0_8), &
+                            transfer(velocity_z(i, j, k), 0_8)
+                    end do
+                end do
+            end do
+            flush(777)
+        end if
+
     end subroutine Calculate_velocity_3d
 
 
@@ -2111,7 +2264,7 @@ contains
                         else
                             sie_vof_temp = sie_vof(tmp_mat, i, j, k)
                             if (nmats_in_cell(i, j, k) == 1d0) then
-                                pressure_temp = pressure(i, j, k) 
+                                pressure_temp = pressure(i, j, k)
                                 dp_de_temp    = dp_de   (i, j, k)
                                 dp_drho_temp  = dp_drho (i, j, k)
                             else
@@ -2119,7 +2272,7 @@ contains
                                 dp_de_temp    = dp_de_vof   (tmp_mat, i, j, k)
                                 dp_drho_temp  = dp_drho_vof (tmp_mat, i, j, k)
                             end if
-                            pressure_temp  = pressure_temp * vof(i, j, k)   
+                            pressure_temp  = pressure_temp * vof(i, j, k)
                             mass_vof_temp  = cell_mass_vof(tmp_mat, i, j, k)
 
 
@@ -2597,40 +2750,58 @@ call this%materials%sie%exchange_end()
         call this%total_density     %Point_to_data(density)
         call this%rezone%mesh_velocity  %Point_to_data(mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
 
+        ! IMPORTANT NOTE: PRINT HERE x,y,z, x_tag, y_tag, z_tag, dt
+        ! if (this%cyc_delete == 117 ) then
+        !     write(this%file_unit_lagrange, '(A)') "******* FIRST PRINT IN CALCULATE_MESH_3D ********"
+        !     call this%Print_lagrangian_data()
+        ! end if
+
         ! calculate the coordinates
         call this%mesh%coordinates%Calculate(time%dt, this%rezone%mesh_velocity) !on GPU
+
+        ! IMPORTANT NOTE: PRINT HERE x,y,z, x_tag, y_tag, z_tag, dt
+        ! if (this%cyc_delete == 117 ) then
+	    !     write(this%file_unit_lagrange, '(A)') "******* AFTER CALL TO CALCULATE COORDINATES ********"
+        !     call this%Print_lagrangian_data()
+        ! end if
+
+
         call this%mesh%Exchange_virtual_space_blocking()
 
-        #ifdef BUILD_GPU
-        !$omp target update from(x, y, z)
-        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
-        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
-        !$omp target update to(x, y, z)
+        ! if (this%cyc_delete == 117 ) then
+	    !     write(this%file_unit_lagrange, '(A)') "******* AFTER EXCHANGE VIRTUAL SPACE BLOCKING ********"
+        !     call this%Print_lagrangian_data()
+        ! end if
+
+        #ifdef GPU_BUILD
+        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.true.)
+        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.true.)
         #else
-        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.True.)
-        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.True.)
+        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.false.)
+        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.false.)
         #endif
+
+        ! if (this%cyc_delete == 117 ) then
+	    !     write(this%file_unit_lagrange, '(A)') "******* AFTER APPLY BOUNDARY ********"
+        !     call this%Print_lagrangian_data()
+        ! end if
 
         call this%total_vof%Exchange_end()
         call this%materials%vof%Exchange_end()
 
         call this%Calculate_density(this%rezone%material_volume) !on GPU, and keep density and density_vof updated on GPU
         
-        #ifdef BUILD_GPU
-        !$omp target update from(density)
-        call this%total_density%Apply_boundary(is_offload=.False.)
-        !$omp target update to(density)
+        #ifdef GPU_BUILD
+        call this%total_density%Apply_boundary(is_offload=.true.)
         #else
-        call this%total_density%Apply_boundary(is_offload=.True.)
+        call this%total_density%Apply_boundary(is_offload=.false.)
         #endif
         ! calculate volume bruh
         call this%total_volume%Calculate(this%mesh%coordinates)
-        #ifdef BUILD_GPU
-        !$omp target update from(vol)
-        call this%total_volume%Apply_boundary(is_offload=.False.)
-        !$omp target update to(vol)
-        #else    
-        call this%total_volume%Apply_boundary(is_offload=.True.)
+        #ifdef GPU_BUILD
+        call this%total_volume%Apply_boundary(is_offload=.true.)
+        #else
+        call this%total_volume%Apply_boundary(is_offload=.false.)
         #endif
 
 
@@ -3061,23 +3232,86 @@ call this%materials%sie%exchange_end()
     subroutine Print_lagrangian_data(this)
         implicit none
         class(hydro_step_t), intent(in) :: this
+        real(8), dimension(:, :, :), pointer :: x_target              
+        real(8), dimension(:, :, :), pointer :: y_target              
+        real(8), dimension(:, :, :), pointer :: z_target  
+
+        real(8), dimension(:, :, :), pointer :: velocity_x      
+        real(8), dimension(:, :, :), pointer :: velocity_y      
+        real(8), dimension(:, :, :), pointer :: velocity_z      
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_x 
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_y 
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_z 
+
+        real(8), dimension(:, :, :), pointer :: mat_x_target     
+        real(8), dimension(:, :, :), pointer :: mat_y_target              
+        real(8), dimension(:, :, :), pointer :: mat_z_target
+
         integer :: i, j, k
+
+        call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
+
+        call this%velocity         %Point_to_data(velocity_x, velocity_y, velocity_z)
+        call this%rezone%mesh_velocity  %Point_to_data(mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
+
+        ! call this%hydro%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
+        call this%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
+
+        ! Synchronize GPU data back to CPU before printing
+        #ifdef GPU_BUILD
+        !!$omp target update from(x_target)
+        ! !$omp target update from(y_target)
+        ! !$omp target update from(z_target)
+
+        !$omp target update from(velocity_x)
+        !$omp target update from(velocity_y)
+        !$omp target update from(velocity_z)
+        !$omp target update from(mesh_velocity_x)
+        !$omp target update from(mesh_velocity_y)
+        !$omp target update from(mesh_velocity_z)
+
+        !!$omp target update from(mat_x_target)
+        !!$omp target update from(mat_y_target)
+        !!$omp target update from(mat_z_target)
+
+        ! !$omp target update from(this%total_volume%data(1)%values)
+        ! !$omp target update from(this%total_sie%data(1)%values)
+        ! !$omp target update from(this%total_density%data(1)%values)
+        ! !$omp target update from(this%total_cell_mass%data(1)%values)
+        ! !$omp target update from(this%vertex_mass%data(1)%values)
+        ! !$omp target update from(this%num_mat_cells%data(1)%values)
+        #endif
 
         write(this%file_unit_lagrange, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete
         write(this%file_unit_lagrange, '(A)') "  I    J    K   |        SIE         |      DENSITY       |     CELL_MASS      |     VERTEX_MASS    |    NUM_MAT_CELLS"
         write(this%file_unit_lagrange, '(A)') "-------------------------------------------------------------------------------------------------------------"
-        do i = 1, this%nxp
-            do j = 1, this%nyp
-                do k = 1, this%nzp
+        do i = 0, this%nxp+1
+            do j = 0, this%nyp+1
+                do k = 0, this%nzp+1
                     write(this%file_unit_lagrange, '(3I5,5(" | ",Z18))') i, j, k, &
-                        transfer(this%total_sie%data(1)%values(i, j, k), 0_8), &
-                        transfer(this%total_density%data(1)%values(i, j, k), 0_8), &
-                        transfer(this%total_cell_mass%data(1)%values(i, j, k), 0_8), &
-                        transfer(this%vertex_mass%data(1)%values(i, j, k), 0_8), &
-                        transfer(this%num_mat_cells%data(1)%values(i, j, k), 0_8)
+                        !transfer(x_target(i, j, k), 0_8), &
+                        transfer(mesh_velocity_x(i, j, k), 0_8), &
+                        transfer(mesh_velocity_y(i, j, k), 0_8), &
+                        transfer(mesh_velocity_z(i, j, k), 0_8), &
+                        transfer(velocity_x(i, j, k), 0_8), &
+                        transfer(velocity_y(i, j, k), 0_8), &
+                        transfer(velocity_z(i, j, k), 0_8)
+
+                        ! transfer(mat_x_target(i, j, k), 0_8), &
+                        ! transfer(mat_y_target(i, j, k), 0_8), &
+                        ! transfer(mat_z_target(i, j, k), 0_8)
+
+
+                        !transfer(this%total_volume%data(1)%values(i, j, k), 0_8)!, &
+                        ! transfer(this%total_density%data(1)%values(i, j, k), 0_8), &
+                        ! transfer(this%total_cell_mass%data(1)%values(i, j, k), 0_8), &
+                        ! transfer(this%vertex_mass%data(1)%values(i, j, k), 0_8), &
+                        ! transfer(this%num_mat_cells%data(1)%values(i, j, k), 0_8)
                 end do
             end do
         end do
+
+        flush(this%file_unit_lagrange)
 
     end subroutine Print_lagrangian_data   
    
