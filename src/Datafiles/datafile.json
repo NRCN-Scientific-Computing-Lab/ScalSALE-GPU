@@ -146,7 +146,7 @@
         "dt": 1e-14, 
 	    "cyl": 0,
         "dt_max": 0.1,
-        "max_ncyc": 162
+        "max_ncyc": 220
     },
     "rezone_advect": {
         "rezone_type": "lagrange",
@@ -157,6 +157,6 @@
 	"npx":1,
 	"npy":1,
 	"npz":1, 
-    "threads":1
+    "threads":64
     }
 }

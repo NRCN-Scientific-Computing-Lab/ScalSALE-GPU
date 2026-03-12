@@ -574,7 +574,6 @@ contains
         real(8), dimension(:, :, :), pointer :: y
         real(8), dimension(:, :, :), pointer :: z
         real(8), dimension(:), allocatable :: radial_vel_temp
-        real(8) :: global_min
         real(8) :: local_min
 
         if (this%no_move_flag .eqv. .false.) return
@@ -605,7 +604,6 @@ contains
         end do
         !$omp end target teams distribute parallel do
 
-        global_min = HUGE(1d0)
         local_min = HUGE(1d0)
         !$omp parallel private(i) firstprivate(local_min)
         !$omp do
@@ -617,8 +615,7 @@ contains
         !$omp end do
 
         !$omp critical
-        if (local_min < global_min) then
-            global_min = local_min
+        if (local_min < radial_vel) then
             radial_vel = local_min
         endif
         !$omp end critical

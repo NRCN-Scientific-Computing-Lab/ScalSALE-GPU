@@ -841,7 +841,7 @@ contains
             call this%velocity%dvelocity_z_dz%Point_to_data(dvel_z_dz_target)
             call this%total_density  %Point_to_data(density_target)
             call this%total_inverse_vertex_mass%Point_to_data(inverse_vertex_mass_target)
-            call this%hydro%rezone%vertex_mass%Point_to_data(vertex_mass_target)
+            call this%total_vertex_mass%Point_to_data(vertex_mass_target)
             call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
             call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
             call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
@@ -923,9 +923,9 @@ contains
             !$omp& mat_vof_adv_target, mat_cell_mass_adv_target, sie_vof_adv_target, &
             !$omp& a_adv_target, b_adv_target, c_adv_target, side_adv_target, &
             !$omp& a_mat_target, b_mat_target, c_mat_target, side_mat_target, &
-            !$omp& init_mat_layers_target, init_mat_layers_adv_target) &
+            !$omp& init_mat_layers_target, init_mat_layers_adv_target, xl_visc_mat_target) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &
-            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target, xl_visc_mat_target)
+            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
             
             
             !write(*,*) "Initial target enter data Time:", omp_get_wtime() - start

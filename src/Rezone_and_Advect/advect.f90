@@ -2818,7 +2818,10 @@ contains
         wall_z_bot = this%parallel_params%is_wall_z_bot
 
 
-        call this%rezone  %Point_to_coordinates_3d(material_x, material_y, material_z)
+        !call this%rezone  %Point_to_coordinates_3d(material_x, material_y, material_z)
+
+        call this%rezone  %material_coordinates%Point_to_data(material_x, material_y, material_z)
+
         call this%mesh    %Point_to_data          (         x,          y,          z)
         call this%velocity%Point_to_data          (velocity_x, velocity_y, velocity_z)
 
@@ -2915,8 +2918,33 @@ contains
 
         data_movement_start2 = omp_get_wtime() 
 
-        !$OMP TARGET UPDATE TO(vof, mat_vof, a_adv, b_adv, c_adv, side_adv, a_mat, b_mat, c_mat, side_mat, material_x, material_y, material_z, n_materials_in_cell) 
+        ! do i=0,nxp+1
+        !     do j=0,nyp+1
+        !         do k=0,nzp+1
+        !             if (this%cyc_delete < 2) then
+        !             write(142,'(A, 3I, 6(Z17))') "ADVECT", i, j, k, material_x(i,j,k), material_y(i,j,k), &
+        !             material_z(i,j,k), x(i,j,k), y(i,j,k), z(i,j,k)
+        !             end if
+        !         end do
+        !     end do
+        ! end do
+
+        !!$OMP TARGET UPDATE TO(vof, mat_vof, a_adv, b_adv, c_adv, side_adv, a_mat, b_mat, c_mat, side_mat, n_materials_in_cell) 
         !!$OMP TARGET ENTER DATA MAP(TO: vof, mat_vof, a_adv, b_adv, c_adv, side_adv, a_mat, b_mat, c_mat, side_mat, material_x, material_y, material_z, n_materials_in_cell) 
+        
+        ! !$OMP TARGET UPDATE from(velocity_x)
+        ! if (this%cyc_delete > 0 .and. this%cyc_delete < 2) then
+        !     write(142,'(A, 1I)') "CYCLE: ", this%cyc_delete
+        !     do i=0,nxp+1
+        !         do j=0,nyp+1
+        !             do k=0,nzp+1
+        !                 ! if (this%cyc_delete < 150 ) then
+        !                 write(142,'(A, 3I, 1(Z17))') "ADVECT", i, j, k, velocity_x(i,j,k)
+        !                 ! end if
+        !             end do
+        !         end do
+        !     end do
+        ! end if
 
         data_movement_time2 = omp_get_wtime() - data_movement_start2
 
@@ -3119,10 +3147,10 @@ contains
         
         ! ** STATIC ARRAYS ARE AUTOMATICALLY MAPPED TO-FROM THE GPU. **
 
-        !$OMP TARGET UPDATE TO(x, y, z, vof_adv, &
-        !$OMP& mat_vof_adv, sie_vof, vol, mat_id, init_mat_layers, mat_cell_mass_adv, &
-        !$OMP& cell_mass_adv, sie_vof_adv, init_mat_layers_adv, density, cell_mass, &
-        !$OMP& density_vof, cell_mass_vof)
+        !!$OMP TARGET UPDATE TO(x, y, z, vof_adv, &
+        !!$OMP& mat_vof_adv, sie_vof, vol, mat_id, init_mat_layers, mat_cell_mass_adv, &
+        !!$OMP& cell_mass_adv, sie_vof_adv, init_mat_layers_adv, density, cell_mass, &
+        !!$OMP& density_vof, cell_mass_vof)
 
         !!$OMP TARGET ENTER DATA MAP(TO: vof, material_x, material_y, material_z, x, y, z, vof_adv, &
         !!$OMP& mat_vof_adv, sie_vof, vol, mat_id, n_materials_in_cell, init_mat_layers, mat_cell_mass_adv, &
@@ -3587,6 +3615,11 @@ contains
         !     deallocate(local_adv_mats_fxtm)
         ! end if
 
+                ! hexa_vol4 = Hexahedron_volume(x_mid_lag2, y_mid_lag2, z_mid_lag2, x_lag2    , y_lag2    , z_lag2    , &
+                !     x_lag3    , y_lag3    , z_lag3    , x_lag4    , y_lag4    , z_lag4    , &
+                !     x_mid2    , y_mid2    , z_mid2    , x2        , y2        , z2        , &
+                !     x3        , y3        , z3        , x4        , y4        , z4          )
+
         ! !$OMP END PARALLEL
 #ifdef GPU_BUILD
         !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
@@ -3836,7 +3869,7 @@ contains
 
 
 #ifdef GPU_BUILD
-    !$OMP TARGET UPDATE TO(vof_adv, mat_vof_adv, mat_vof, vol, mat_cell_mass_adv, sie_vof_adv, init_mat_layers_adv)
+    !!$OMP TARGET UPDATE TO(vof_adv, mat_vof_adv, mat_vof, vol, mat_cell_mass_adv, sie_vof_adv, init_mat_layers_adv)
     !$omp target teams distribute parallel do collapse(3) private(i,j,k,tmp_mat, vof_factor) 
 #else
     !$omp parallel do collapse(3) private(j, i, k, tmp_mat, vof_factor) 
@@ -3923,7 +3956,7 @@ contains
 
 
 #ifdef GPU_BUILD
-    !$OMP TARGET UPDATE TO(vof, mat_id, cell_mass, sie, n_materials_in_cell)
+    !!$OMP TARGET UPDATE TO(vof, mat_id, cell_mass, sie, n_materials_in_cell)
     !$omp target teams distribute parallel do collapse(3) private(i,j,k)
     do k = 0,nz+1
         do j = 0,ny+1
@@ -3949,7 +3982,7 @@ contains
         
         !can add =0 to in loop
 #ifdef GPU_BUILD
-    !$OMP TARGET UPDATE TO(mat_vof, mat_cell_mass_adv, sie_vof, cell_mass_vof)
+    !!$OMP TARGET UPDATE TO(mat_vof, mat_cell_mass_adv, sie_vof, cell_mass_vof)
     !$omp target teams distribute parallel do collapse(3) private(i,j,k,tmp_mat)
 #else
     !$omp parallel do collapse(3) schedule(static) private(j, i, tmp_mat) 
@@ -4007,22 +4040,46 @@ contains
 #ifdef GPU_BUILD
     !$omp target update from(cell_mass)
 #endif
-
+       !$OMP TARGET UPDATE from(vertex_mass)
+        if (this%cyc_delete > -1 .and. this%cyc_delete < 2) then
+            !write(142,'(A, 1I)') "CYCLE: ", this%cyc_delete
+            do i=0,this%nxp+1
+                do j=0,this%nyp+1
+                    do k=0,this%nzp+1
+                        ! if (this%cyc_delete < 150 ) then
+                        write(142,'(A, 4I, 1(Z17))') "BEFORE", this%cyc_delete, i, j, k, vertex_mass(i,j,k)
+                        ! end if
+                    end do
+                end do
+            end do
+        end if
 
                 call this%vertex_mass%Calculate_vertex_mass_3d(this%mesh%coordinates, this%total_density, &
                     this%total_cell_mass)
                 call this%vertex_mass%Exchange_virtual_space_blocking()
 
                 call this%materials%vof%Exchange_virtual_space_blocking()
-                
+                      !$OMP TARGET UPDATE from(vertex_mass)
+        if (this%cyc_delete > -1 .and. this%cyc_delete < 2) then
+           ! write(142,'(A, 1I)') "CYCLE: ", this%cyc_delete
+            do i=0,this%nxp+1
+                do j=0,this%nyp+1
+                    do k=0,this%nzp+1
+                        ! if (this%cyc_delete < 150 ) then
+                        write(142,'(A, 4I, 1(Z17))') "AFTER",this%cyc_delete, i, j, k, vertex_mass(i,j,k)
+                        ! end if
+                    end do
+                end do
+            end do
+        end if
 
 #ifdef GPU_BUILD
-    !$omp target update to(vertex_mass)
+    !!$omp target update to(vertex_mass)
 #endif
 
 
 #ifdef GPU_BUILD
-    !$OMP TARGET UPDATE TO(vel_adv_weight, density)
+    !!$OMP TARGET UPDATE TO(vel_adv_weight, density)
     !$omp target teams distribute parallel do collapse(3) private(i,j,k)
 #else
     !$omp parallel do collapse(3) schedule(static) private(i,j,k)
@@ -4050,7 +4107,7 @@ contains
 
 
 #ifdef GPU_BUILD
-    !$OMP TARGET UPDATE TO(velocity_x_adv, velocity_y_adv, velocity_z_adv, velocity_x, velocity_y, velocity_z)
+    !!$OMP TARGET UPDATE TO(velocity_x_adv, velocity_y_adv, velocity_z_adv, velocity_x, velocity_y, velocity_z)
     !$omp target teams distribute parallel do collapse(3)
     do k = 0, nzp+1
         do j = 0, nyp+1
@@ -4099,7 +4156,7 @@ contains
 
 !check collapse(3) for original scheme
 #ifdef GPU_BUILD
-    !$OMP TARGET UPDATE TO(velocity_x_adv, velocity_y_adv, velocity_z_adv)
+    !!$OMP TARGET UPDATE TO(velocity_x_adv, velocity_y_adv, velocity_z_adv)
     !$omp target teams distribute parallel do private(k, j, i, tet_counter, tet_vol, tet_counter_min, &
         !$omp& tet_vol_diff_min, i1, j1, k1, i2, j2, k2, i3, j3, k3, material_tet_vol, material_tet_vol_sign, tet_vol_diff , &
         !$omp& i_tet1, j_tet1, k_tet1, i_tet2, j_tet2, k_tet2, i_tet3, j_tet3, k_tet3, weight0, weight1, weight2, weight3, &
@@ -4309,7 +4366,6 @@ contains
     velocity_z = velocity_z_adv
 #endif
 
-
 #ifdef GPU_BUILD 
     !$omp target teams distribute parallel do collapse(3) private(i,j,k,velocity_sq, vel_factor)
 #else 
@@ -4346,7 +4402,8 @@ contains
     
 #endif
 
-        call this%velocity%Apply_boundary(this%mesh%coordinates%data)
+        ! IMPORTANT NOTE: WE ADDED THE IS BLOCKING AND IS OFFLOAD ARGUMENTS.
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.true.)
 
 
         deallocate(vof_correction)
@@ -4358,6 +4415,9 @@ contains
         deallocate(active_j)
         deallocate(active_k)
 #endif
+
+
+
 
         this%cyc_delete=this%cyc_delete+1
 
