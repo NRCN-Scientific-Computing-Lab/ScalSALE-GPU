@@ -1,17 +1,17 @@
 # .
 #!/usr/bin/env bash
-# Usage: ./cmp.sh [-v for vimdiff] <c for clean | m for make>
+# Usage: ./cmp.sh [-v for vimdiff] <c for clean | m for make | r for run>
 set -euo pipefail
 
 use_vimdiff=0
 
-if [ "$1" = "-v" ]; then
+if [ "${1:-}" = "-v" ]; then
     use_vimdiff=1
     shift
 fi
 
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 [-v] [c|m]"
+    echo "Usage: $0 [-v] [c|m|r]"
     exit 1
 fi
 
@@ -24,8 +24,11 @@ case "$mode" in
     m)
         ./make.sh
         ;;
+    r)
+        echo "Skipping build, running existing binaries."
+        ;;
     *)
-        echo "Invalid argument. Use 'c' or 'm'."
+        echo "Invalid argument. Use 'c', 'm', or 'r'."
         exit 1
         ;;
 esac
