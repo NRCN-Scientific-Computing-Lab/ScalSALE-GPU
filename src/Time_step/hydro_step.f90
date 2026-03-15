@@ -1576,34 +1576,37 @@ contains
         argmin_time = omp_get_wtime()
 
         global_min = HUGE(1.0)
-        local_min = HUGE(1.0)
-        !$omp parallel private(i, j, k, local_i, local_j, local_k) firstprivate(local_min)
+        !local_min = HUGE(1.0)
+
+        !!$omp parallel private(i, j, k) 
+        !!$omp do collapse(3) reduction(min:global_min)
+        !$omp target teams distribute parallel do collapse(3) reduction(min:global_min)
+        do k = 1, this%nz
+        do j = 1, this%ny
+        do i = 1, this%nx
+            global_min = min(global_min, dt_cour_temp(i,j,k))
+        end do
+        end do
+        end do
+        !$omp end target teams distribute parallel do
+        !$omp parallel private(i, j, k)
         !$omp do collapse(3)
         do k = 1, this%nz
         do j = 1, this%ny
         do i = 1, this%nx
-            if (dt_cour_temp(i,j,k) < local_min) then
-                local_min = dt_cour_temp(i,j,k)
-                local_i = i
-                local_j = j
-                local_k = k
+            if (dt_cour_temp(i,j,k) == global_min) then
+                !$omp critical
+                time%i_cour = i
+                time%j_cour = j
+                time%k_cour = k
+                !$omp end critical
             endif
         end do
         end do
         end do
         !$omp end do
-
-        !$omp critical
-        if (local_min < global_min) then
-            global_min = local_min
-            time%dt_cour = local_min
-            time%i_cour = local_i
-            time%j_cour = local_j
-            time%k_cour = local_k
-        endif
-        !$omp end critical
         !$omp end parallel
-
+        time%dt_cour = global_min
         deallocate(dt_cour_temp) !yonif
 
         call this%a_visc%Exchange_virtual_space_nonblocking()
