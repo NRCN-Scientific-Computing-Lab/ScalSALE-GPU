@@ -490,7 +490,7 @@ contains
   
         avisc_time = omp_get_wtime()
         call this%Calculate_artificial_viscosity_3d(time)
-        !write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
+        write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
 
         ! Set color to orange
         !write(*,*) CHAR(27)//'[38;5;208m'
@@ -576,7 +576,7 @@ contains
 
   
 
-        if (this%cyc_delete > 195 ) then
+        if (this%cyc_delete > 170 ) then
             call this%Print_data()
         end if
 
@@ -1379,7 +1379,8 @@ contains
         real(8) :: cos_acc, sin_acc      
         real(8) :: x_avg, y_avg, z_avg   
         real(8) :: eff_length            
-        real(8) :: eff_vel_div           
+        real(8) :: eff_vel_div         
+        real(8) :: argmin_time ! Shahar  
         ! real(8) :: dt_cour_temp ! yonif
         real(8), dimension(:, :, :), pointer :: dt_cour_temp !yonif   
         real(8) :: linear_visc_fac_temp  
@@ -1572,6 +1573,7 @@ contains
 
         !WE KEEP a_visc ON GPU!
         !!$omp target update from(a_visc)
+        argmin_time = omp_get_wtime()
 
         global_min = HUGE(1.0)
         local_min = HUGE(1.0)
@@ -1606,6 +1608,9 @@ contains
 
         call this%a_visc%Exchange_virtual_space_nonblocking()
         time%dt_cour = sqrt(time%dt_cour) / time%dt_cour_fac
+        
+        write(*,'(A50, F12.6)') "Argmin time:", omp_get_wtime() - argmin_time
+
 
 
     end subroutine Calculate_artificial_viscosity_3d
