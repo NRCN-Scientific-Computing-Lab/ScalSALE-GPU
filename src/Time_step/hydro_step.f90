@@ -1580,7 +1580,7 @@ contains
                 !local_k = k
                 !!$omp end critical
             endif
-        end do
+        end do !checking
         end do
         end do
         !!$omp target exit data map(delete: linear_visc_fac)
