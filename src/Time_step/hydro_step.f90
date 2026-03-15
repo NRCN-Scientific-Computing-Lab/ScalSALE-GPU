@@ -1444,7 +1444,7 @@ contains
         !$omp target teams distribute parallel do collapse(3) reduction(min:global_min) private(ip, jp, kp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
         !$omp& x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, r1, r2, r3, r4, r5, r6, r7, r8,&
         !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div, quad_visc_fac_temp, linear_visc_fac_temp)&
-        !$omp& map(from: dt_cour_temp(1:this%nx, 1:this%ny, 1:this%nz))
+        !$omp& map(alloc: dt_cour_temp(1:this%nx, 1:this%ny, 1:this%nz))
         do k = 1, this%nz
             do j = 1, this%ny
                 do i = 1, this%nx
@@ -1568,13 +1568,32 @@ contains
                 end do
             end do
         end do
-        !$omp end target teams distribute parallel do
+        !$omp target teams distribute parallel do collapse(3) private(i, j, k)
+        do k = 1, this%nz
+        do j = 1, this%ny
+        do i = 1, this%nx
+            if (dt_cour_temp(i,j,k) == global_min) then
+                !!$omp critical
+                !$omp atomic write
+                local_i = (k-1)*this%ny*this%nx + (j-1)*this%nx + i
+                !local_j = j
+                !local_k = k
+                !!$omp end critical
+            endif
+        end do
+        end do
+        end do
         !!$omp target exit data map(delete: linear_visc_fac)
 
         !WE KEEP a_visc ON GPU!
         !!$omp target update from(a_visc)
-        argmin_time = omp_get_wtime()
-
+        argmin_time = omp_get_wtime()   
+        ! time%i_cour = local_i
+        ! time%j_cour = local_j
+        ! time%k_cour = local_k
+        time%k_cour = (local_i - 1) / (this%nx * this%ny) + 1
+        time%j_cour = mod(local_i - 1, this%nx * this%ny) / this%nx + 1
+        time%i_cour = mod(mod(local_i - 1, this%nx * this%ny), this%nx) + 1
         !global_min = HUGE(1.0)
         !local_min = HUGE(1.0)
 
@@ -1589,23 +1608,23 @@ contains
         ! end do
         ! end do
         ! !$omp end target teams distribute parallel do
-        !$omp parallel private(i, j, k)
-        !$omp do collapse(3)
-        do k = 1, this%nz
-        do j = 1, this%ny
-        do i = 1, this%nx
-            if (dt_cour_temp(i,j,k) == global_min) then
-                !$omp critical
-                time%i_cour = i
-                time%j_cour = j
-                time%k_cour = k
-                !$omp end critical
-            endif
-        end do
-        end do
-        end do
-        !$omp end do
-        !$omp end parallel
+        !!$omp parallel private(i, j, k)
+        !!$omp do collapse(3)
+        ! do k = 1, this%nz
+        ! do j = 1, this%ny
+        ! do i = 1, this%nx
+        !     if (dt_cour_temp(i,j,k) == global_min) then
+        !         !$omp critical
+        !         time%i_cour = i
+        !         time%j_cour = j
+        !         time%k_cour = k
+        !         !$omp end critical
+        !     endif
+        ! end do
+        ! end do
+        ! end do
+        !!$omp end do
+        !!$omp end parallel
         time%dt_cour = global_min
         deallocate(dt_cour_temp) !yonif
 
