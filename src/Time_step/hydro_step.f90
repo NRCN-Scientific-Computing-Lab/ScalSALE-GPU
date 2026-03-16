@@ -626,7 +626,7 @@ contains
         real(8) :: tmp
         integer :: tmp_mat  
         integer :: i, j, k     
-        integer :: nx_, ny_, nz_, nmats_, emf_
+        integer :: nx_, ny_, nz_, nmats_, emf_ ! BUG
         nx_ = this%nx
         ny_ = this%ny
         nz_ = this%nz
@@ -1381,7 +1381,7 @@ contains
         real(8) :: eff_length            
         real(8) :: eff_vel_div         
         real(8) :: argmin_time ! Shahar  
-        ! real(8) :: dt_cour_temp ! yonif
+        !real(8) :: dt_cour_temp ! yonif
         real(8), dimension(:, :, :), pointer :: dt_cour_temp !yonif   
         real(8) :: linear_visc_fac_temp  
         real(8) :: quad_visc_fac_temp    
@@ -1392,16 +1392,14 @@ contains
         integer :: i, j, k  
         integer :: ip, jp, kp
         integer :: mesh_type
-        real(8) :: global_min
+        real(8) :: global_min, dt_local, emf_
         real(8) :: local_min
-        integer :: local_i, local_j, local_k
-        integer:: thisnx, thisny, thisnz
-        thisnx = this%nx
-        thisny = this%ny
-        thisnz = this%nz
+        integer :: packed_idx
+        integer :: nx_, ny_, nz_
+        !integer :: local_i, local_j, local_k
+        
+        allocate(dt_cour_temp(1:this%nx, 1:this%ny, 1:this%nz)) !yonif
 
-
-        allocate(dt_cour_temp(1:thisnx, 1:thisny, 1:thisnz)) !yonif
 
         call this%a_visc%Update_visc_factors()
         linear_visc_fac => this%a_visc%xl_visc_mat
@@ -1444,15 +1442,23 @@ contains
         !!$omp target update to(dvel_x_dx, dvel_y_dy, dvel_z_dz, dvel_x_dy, dvel_y_dx, dvel_x_dz, dvel_z_dx, dvel_y_dz, dvel_z_dy)
         !!$omp target update to(vof, pressure, density, sound_vel)
         
-        
-        !$omp target teams distribute parallel do collapse(3) private(ip, jp, kp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
+        nx_ = this%nx
+        ny_ = this%ny
+        nz_ = this%nz
+
+        global_min = HUGE(1.0)
+        packed_idx = -1
+
+        !$omp target data map(tofrom: global_min) map(alloc: dt_cour_temp(1:nx_,1:ny_,1:nz_))
+        !$omp target teams
+
+        !$omp distribute parallel do collapse(3) reduction(min:global_min) private(ip, jp, kp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
         !$omp& x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, r1, r2, r3, r4, r5, r6, r7, r8,&
-        !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div, quad_visc_fac_temp, linear_visc_fac_temp)&
-        !$omp& map(from: dt_cour_temp(1:thisnx, 1:thisny, 1:thisnz))
-        do k = 1, thisnz
-            do j = 1, thisny
-                do i = 1, thisnx
-                    if (vof(i, j, k) < this%emf .or. pressure(i, j, k) == 0d0) then  
+        !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div, quad_visc_fac_temp, linear_visc_fac_temp, dt_local)
+        do k = 1, nz_
+            do j = 1, ny_
+                do i = 1, nx_
+                    if (vof(i, j, k) < emf_ .or. pressure(i, j, k) == 0d0) then  
                         a_visc(i, j, k) = 0d0
                         ! IMPORTANT NOTE -  AVITAY ADDED THE NEXT LINE:
                         dt_cour_temp(i,j,k) = HUGE(1d0)
@@ -1557,10 +1563,11 @@ contains
 
                         a_visc(i, j, k) = min(0d0, eff_vel_div) * a_visc(i, j, k)
                         
-                        dt_cour_temp(i,j,k) = eff_length * eff_length / sound_vel(i ,j, k)
+                        dt_local = eff_length * eff_length / sound_vel(i ,j, k)
+                        dt_cour_temp(i,j,k) = dt_local
                         
-                        ! dt_cour_temp = eff_length * eff_length / sound_vel(i ,j, k)
-
+                        !dt_cour_temp = eff_length * eff_length / sound_vel(i ,j, k)
+                        global_min = min(global_min, dt_local)
                         !  if (dt_cour_temp < time%dt_cour) then
                         !     time%dt_cour = dt_cour_temp
                         !     time%i_cour = i
@@ -1572,43 +1579,70 @@ contains
                 end do
             end do
         end do
-        !$omp end target teams distribute parallel do
-        !!$omp target exit data map(delete: linear_visc_fac)
+        !$omp end distribute parallel do
 
-        !WE KEEP a_visc ON GPU!
-        !!$omp target update from(a_visc)
-        argmin_time = omp_get_wtime()
-
-        global_min = HUGE(1.0)
-        local_min = HUGE(1.0)
-        !$omp parallel private(i, j, k, local_i, local_j, local_k) firstprivate(local_min)
-        !$omp do collapse(3)
-        do k = 1, thisnz
-        do j = 1, thisny
-        do i = 1, thisnx
-            if (dt_cour_temp(i,j,k) < local_min) then
-                local_min = dt_cour_temp(i,j,k)
-                local_i = i
-                local_j = j
-                local_k = k
+        !$omp distribute parallel do collapse(3) private(i, j, k)
+        do k = 1, nz_
+        do j = 1, ny_
+        do i = 1, nx_
+            if (dt_cour_temp(i,j,k) == global_min) then
+                !$omp atomic write
+                packed_idx = (k-1)*ny_*nx_ + (j-1)*nx_ + i
             endif
         end do
         end do
         end do
-        !$omp end do nowait
+        !$omp end distribute parallel do
+        !$omp end teams
+        !$omp end target
+        !!$omp target exit data map(delete: dt_cour_temp)
+        !$omp end target data
 
-        !$omp critical
-        if (local_min < global_min) then
-            global_min = local_min
-            time%dt_cour = local_min
-            time%i_cour = local_i
-            time%j_cour = local_j
-            time%k_cour = local_k
-        endif
-        !$omp end critical
-        !$omp end parallel
 
+        !!$omp target exit data map(delete: linear_visc_fac)
+        !WE KEEP a_visc ON GPU!
+        !!$omp target update from(a_visc)
+        argmin_time = omp_get_wtime()   
+        ! time%i_cour = local_i
+        ! time%j_cour = local_j
+        ! time%k_cour = local_k
+        time%k_cour = (packed_idx - 1) / (nx_ * ny_) + 1
+        time%j_cour = mod(packed_idx - 1, nx_ * ny_) / nx_ + 1
+        time%i_cour = mod(mod(packed_idx - 1, nx_ * ny_), nx_) + 1
+        !global_min = HUGE(1.0)
+        !local_min = HUGE(1.0)
+
+        !!$omp parallel private(i, j, k) 
+        !!$omp do collapse(3) reduction(min:global_min)
+        ! !$omp target teams distribute parallel do collapse(3) reduction(min:global_min)
+        ! do k = 1, this%nz
+        ! do j = 1, this%ny
+        ! do i = 1, this%nx
+        !     global_min = min(global_min, dt_cour_temp(i,j,k))
+        ! end do
+        ! end do
+        ! end do
+        ! !$omp end target teams distribute parallel do
+        !!$omp parallel private(i, j, k)
+        !!$omp do collapse(3)
+        ! do k = 1, this%nz
+        ! do j = 1, this%ny
+        ! do i = 1, this%nx
+        !     if (dt_cour_temp(i,j,k) == global_min) then
+        !         !$omp critical
+        !         time%i_cour = i
+        !         time%j_cour = j
+        !         time%k_cour = k
+        !         !$omp end critical
+        !     endif
+        ! end do
+        ! end do
+        ! end do
+        !!$omp end do
+        !!$omp end parallel
+        time%dt_cour = global_min
         deallocate(dt_cour_temp) !yonif
+        
 
         call this%a_visc%Exchange_virtual_space_nonblocking()
         time%dt_cour = sqrt(time%dt_cour) / time%dt_cour_fac
