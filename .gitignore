@@ -37,8 +37,8 @@
 src/Scripts/diags*
 src/Scripts/velocity_result.txt
 src/Scripts/track*
+src/Scripts/vnv*
 src/Scripts/debug*
-
 build_cpu/*
 build_gpu/*
 build/*

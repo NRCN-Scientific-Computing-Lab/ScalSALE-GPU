@@ -1,0 +1,206 @@
+================================================
+Running GPU version with 1 MPI processes
+OMP_TARGET_OFFLOAD=MANDATORY
+================================================
+ 0
+  making the sod
+ done mesh
+ Done diagnostics
+ finished building problem
+ Number of Available devices:             1
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.007948
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.003407
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002473
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.003424
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.003298
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.003426
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.003444
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.003419
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002555
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002543
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002552
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002542
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002530
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002505
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002463
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002506
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002446
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002448
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002443
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002507
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002445
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 99
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002450
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002507
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002451
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002461
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002493
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002451
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002451
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002452
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002447
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002448
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002444
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002452
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002442
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002454
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002445
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002448
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002445
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002450
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002445
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002069
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002330
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002072
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002244
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002078
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002100
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002075
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 101
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002085
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000
+  Calculate_rezone_constraints_3d inside calculate_dt time:     0.002071
+                                            max value time:       169.00000000000000000000
+                                             ijk: 101 1 100
+                                        val time:   169.000000

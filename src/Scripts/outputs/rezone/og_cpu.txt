@@ -1,0 +1,108 @@
+================================================
+Running CPU version with 1 MPI processes
+OMP_TARGET_OFFLOAD=DISABLED
+================================================
+ 0
+  making the sod
+ done mesh
+ Done diagnostics
+ finished building problem
+ Number of Available devices:             0
+Calculate_rezone_constraints_3d inside calculate_d time:    0.034812
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038090
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.037556
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038060
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038091
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038003
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038153
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038094
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038051
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038086
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038105
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038430
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038774
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038687
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038761
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038146
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038365
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038075
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.037993
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038320
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038694
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038643
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038505
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038182
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038121
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038071
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038190
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038176
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038135
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038102
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038058
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038185
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038261
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.037886
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038150
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038461
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038213
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.037968
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038130
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038037
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038416
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038155
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038180
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038130
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038183
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.040220
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038336
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038008
+                                  max value time:         0.00000000000000000001
+Calculate_rezone_constraints_3d inside calculate_d time:    0.038188
+                                  max value time:         0.00000000000000000001

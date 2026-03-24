@@ -146,7 +146,7 @@ contains
       integer :: i_dt_reason   
       integer :: j_dt_reason   
       integer :: k_dt_reason   
-
+      real(8) :: velgrad_time
 
 
 
@@ -157,7 +157,9 @@ contains
          call this%Calculate_vel_grad_dt_2d      (mesh, velocity, vof)
          call this%Calculate_rezone_constraint_2d(mesh, vertex_mass, velocity, mesh_velocity, emfm)
       else if(mesh%dimension == 3) then
+         !velgrad_time = omp_get_wtime()
          call this%Calculate_vel_grad_dt_3d      (mesh, velocity)
+         !write(*,'(A50, F12.6)') "Calculate_vel_grad_dt_3d time:", omp_get_wtime() - velgrad_time
          call this%Calculate_rezone_constraint_3d(mesh, vertex_mass, velocity, mesh_velocity, emfm)
       end if
 
@@ -401,7 +403,8 @@ contains
 
         deallocate(vel_grad_temp) !yonif
 
-      !write(*,*) "Calculate_vel_grad_dt_3d inside calculate_dt TIME:: ", omp_get_wtime() - start_time
+      !write(*,'(A50, F12.6)') "Calculate_vel_grad_dt_3d inside calculate_dt time: ", omp_get_wtime() - start_time
+      !write(*,'(A50, F12.6)') "max value time: ", global_max
 
       ! AVITAY ADDED THIS:
       vel_grad_max = global_max
@@ -664,9 +667,7 @@ contains
                   vel_grad_k_m = eps
                end if
 
-               vel_grad = max(vel_grad_i_m, vel_grad_j_m, vel_grad_k_m, vel_grad_i_p, vel_grad_j_p, vel_grad_k_p)
-               
-               vel_grad_temp(i,j,k) = vel_grad
+               vel_grad_temp(i,j,k) = max(vel_grad_i_m, vel_grad_j_m, vel_grad_k_m, vel_grad_i_p, vel_grad_j_p, vel_grad_k_p)
 
                ! if (vel_rez_max < vel_grad) then
                !   vel_rez_max = vel_grad

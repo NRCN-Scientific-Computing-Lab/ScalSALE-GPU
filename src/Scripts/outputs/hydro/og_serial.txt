@@ -1,0 +1,206 @@
+================================================
+Running CPU version with 1 MPI processes
+OMP_TARGET_OFFLOAD=DISABLED
+================================================
+ 0
+  making the sod
+ done mesh
+ Done diagnostics
+ finished building problem
+ Number of Available devices:             0
+                                           hydro step time:     0.069682
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069427
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069635
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069651
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069673
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069622
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069670
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069449
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069665
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069623
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069654
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069669
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069753
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069634
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069485
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069697
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069640
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069690
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069717
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069650
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069590
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069700
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069683
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069436
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069607
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069658
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069642
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069719
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069712
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069377
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069416
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069500
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069408
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069633
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069391
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069370
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069625
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069506
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069561
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069389
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069408
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069693
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069676
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069611
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069507
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069530
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069612
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069695
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945
+                                           hydro step time:     0.069662
+                                            min value time:         0.00000000113155834945
+                                             ijk: 100 100 1
+                                        val time:         0.00000000113155834945

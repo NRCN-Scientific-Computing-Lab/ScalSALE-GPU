@@ -2,7 +2,7 @@
 #!/usr/bin/env bash
 # Usage: ./cmp.sh [-v for vimdiff] <c for clean | m for make | r for run>
 set -euo pipefail
-
+# DONT USE!!!!!!
 use_vimdiff=0
 
 if [ "${1:-}" = "-v" ]; then

@@ -1,0 +1,523 @@
+================================================
+Running CPU version with 1 MPI processes
+OMP_TARGET_OFFLOAD=DISABLED
+================================================
+ 0
+  making the sod
+ done mesh
+ Done diagnostics
+ finished building problem
+ Number of Available devices:             0
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.054318
+                                  max value time:     0.000000
+                                         ijk val: 60 60 60     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053754
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053772
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053755
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053749
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053767
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053766
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053780
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053752
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053758
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053761
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053759
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053782
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053760
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053759
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053767
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053759
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053766
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053752
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053764
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053764
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053749
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053782
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053749
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053761
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053758
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053783
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053754
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053764
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053753
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053754
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053751
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053750
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053768
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053777
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053754
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053753
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053760
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053764
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053761
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053784
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053759
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053755
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053749
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053778
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053765
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053750
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053765
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053782
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053751
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000000
+                                         ijk val: 1 57 33     0.000000
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053760
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053758
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053759
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053778
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053765
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053759
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053759
+                                  max value time:     0.000001
+                                         ijk val: 1 57 33     0.000001
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053761
+                                  max value time:     0.000002
+                                         ijk val: 1 57 33     0.000002
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053760
+                                  max value time:     0.000002
+                                         ijk val: 1 57 33     0.000002
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053764
+                                  max value time:     0.000002
+                                         ijk val: 1 57 33     0.000002
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053767
+                                  max value time:     0.000002
+                                         ijk val: 1 57 33     0.000002
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053775
+                                  max value time:     0.000002
+                                         ijk val: 32 58 1     0.000002
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053758
+                                  max value time:     0.000002
+                                         ijk val: 35 55 1     0.000002
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053755
+                                  max value time:     0.000003
+                                         ijk val: 35 55 1     0.000003
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053756
+                                  max value time:     0.000003
+                                         ijk val: 35 55 1     0.000003
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053761
+                                  max value time:     0.000003
+                                         ijk val: 35 55 1     0.000003
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053769
+                                  max value time:     0.000004
+                                         ijk val: 35 55 1     0.000004
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053757
+                                  max value time:     0.000004
+                                         ijk val: 35 55 1     0.000004
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000004
+                                         ijk val: 35 55 1     0.000004
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053761
+                                  max value time:     0.000005
+                                         ijk val: 35 55 1     0.000005
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053760
+                                  max value time:     0.000005
+                                         ijk val: 35 55 1     0.000005
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053771
+                                  max value time:     0.000006
+                                         ijk val: 35 55 1     0.000006
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053777
+                                  max value time:     0.000006
+                                         ijk val: 35 55 1     0.000006
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000007
+                                         ijk val: 60 1 30     0.000007
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053790
+                                  max value time:     0.000008
+                                         ijk val: 31 60 1     0.000008
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.000008
+                                         ijk val: 31 60 1     0.000008
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053782
+                                  max value time:     0.000009
+                                         ijk val: 31 60 1     0.000009
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053771
+                                  max value time:     0.000010
+                                         ijk val: 31 60 1     0.000010
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053762
+                                  max value time:     0.000011
+                                         ijk val: 1 60 31     0.000011
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053768
+                                  max value time:     0.000012
+                                         ijk val: 31 60 1     0.000012
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.000014
+                                         ijk val: 31 60 1     0.000014
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053782
+                                  max value time:     0.000015
+                                         ijk val: 1 31 60     0.000015
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053769
+                                  max value time:     0.000016
+                                         ijk val: 1 31 60     0.000016
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053777
+                                  max value time:     0.000018
+                                         ijk val: 1 31 60     0.000018
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053777
+                                  max value time:     0.000020
+                                         ijk val: 1 31 60     0.000020
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.000022
+                                         ijk val: 1 31 60     0.000022
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053778
+                                  max value time:     0.000024
+                                         ijk val: 1 31 60     0.000024
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053779
+                                  max value time:     0.000026
+                                         ijk val: 1 31 60     0.000026
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053763
+                                  max value time:     0.000029
+                                         ijk val: 1 31 60     0.000029
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053772
+                                  max value time:     0.000032
+                                         ijk val: 1 31 60     0.000032
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053772
+                                  max value time:     0.000035
+                                         ijk val: 1 31 60     0.000035
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053777
+                                  max value time:     0.000039
+                                         ijk val: 1 31 60     0.000039
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053776
+                                  max value time:     0.000043
+                                         ijk val: 1 31 60     0.000043
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053778
+                                  max value time:     0.000047
+                                         ijk val: 1 31 60     0.000047
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.000051
+                                         ijk val: 1 31 59     0.000051
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053783
+                                  max value time:     0.000057
+                                         ijk val: 1 31 59     0.000057
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053769
+                                  max value time:     0.000062
+                                         ijk val: 1 31 59     0.000062
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053780
+                                  max value time:     0.000068
+                                         ijk val: 1 31 59     0.000068
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053771
+                                  max value time:     0.000075
+                                         ijk val: 1 31 59     0.000075
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053788
+                                  max value time:     0.000083
+                                         ijk val: 1 31 59     0.000083
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053800
+                                  max value time:     0.000091
+                                         ijk val: 1 31 59     0.000091
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.000100
+                                         ijk val: 1 31 59     0.000100
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053764
+                                  max value time:     0.000110
+                                         ijk val: 1 31 59     0.000110
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053787
+                                  max value time:     0.000121
+                                         ijk val: 1 31 59     0.000121
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053771
+                                  max value time:     0.000133
+                                         ijk val: 1 31 59     0.000133
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053791
+                                  max value time:     0.000147
+                                         ijk val: 1 31 59     0.000147
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.000161
+                                         ijk val: 1 31 59     0.000161
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053775
+                                  max value time:     0.000178
+                                         ijk val: 1 31 59     0.000178
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053787
+                                  max value time:     0.000195
+                                         ijk val: 1 31 59     0.000195
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053773
+                                  max value time:     0.000215
+                                         ijk val: 1 31 59     0.000215
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053789
+                                  max value time:     0.000236
+                                         ijk val: 1 31 59     0.000236
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053775
+                                  max value time:     0.000260
+                                         ijk val: 1 31 59     0.000260
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053778
+                                  max value time:     0.000286
+                                         ijk val: 1 31 59     0.000286
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053775
+                                  max value time:     0.000315
+                                         ijk val: 1 31 59     0.000315
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053773
+                                  max value time:     0.000346
+                                         ijk val: 1 31 59     0.000346
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053783
+                                  max value time:     0.000381
+                                         ijk val: 1 31 59     0.000381
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053780
+                                  max value time:     0.000419
+                                         ijk val: 1 31 59     0.000419
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053766
+                                  max value time:     0.000461
+                                         ijk val: 1 31 59     0.000461
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.000507
+                                         ijk val: 1 31 59     0.000507
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053772
+                                  max value time:     0.000557
+                                         ijk val: 1 31 59     0.000557
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053765
+                                  max value time:     0.000613
+                                         ijk val: 1 31 59     0.000613
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053769
+                                  max value time:     0.000674
+                                         ijk val: 1 31 59     0.000674
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053780
+                                  max value time:     0.000742
+                                         ijk val: 1 31 59     0.000742
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053775
+                                  max value time:     0.000816
+                                         ijk val: 1 31 59     0.000816
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053780
+                                  max value time:     0.000898
+                                         ijk val: 1 31 59     0.000898
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053780
+                                  max value time:     0.000988
+                                         ijk val: 1 31 59     0.000988
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053782
+                                  max value time:     0.001086
+                                         ijk val: 1 31 59     0.001086
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053773
+                                  max value time:     0.001195
+                                         ijk val: 1 31 59     0.001195
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053806
+                                  max value time:     0.001314
+                                         ijk val: 1 31 59     0.001314
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053772
+                                  max value time:     0.001446
+                                         ijk val: 1 31 59     0.001446
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.001590
+                                         ijk val: 1 31 59     0.001590
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.001749
+                                         ijk val: 1 31 59     0.001749
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053781
+                                  max value time:     0.001924
+                                         ijk val: 1 31 59     0.001924
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.002117
+                                         ijk val: 1 31 59     0.002117
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053780
+                                  max value time:     0.002329
+                                         ijk val: 1 31 59     0.002329
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053774
+                                  max value time:     0.002561
+                                         ijk val: 1 31 59     0.002561
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053770
+                                  max value time:     0.002817
+                                         ijk val: 1 31 59     0.002817
+Calculate_vel_grad_dt_3d inside calculate_dt time:    0.053779
+                                  max value time:     0.003099
+                                         ijk val: 1 31 59     0.003099

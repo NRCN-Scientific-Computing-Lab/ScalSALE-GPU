@@ -1,0 +1,117 @@
+   subroutine Calculate_vel_grad_dt_3d(this, mesh, velocity)
+      class (time_t)               , intent(in out):: this
+      class(mesh_base_t), pointer  , intent(in)    :: mesh
+      type (velocity_t), pointer   , intent(in)    :: velocity
+
+      integer :: nx, ny, nz
+
+      real(8), dimension(:,:,:), pointer :: x
+      real(8), dimension(:,:,:), pointer :: y
+      real(8), dimension(:,:,:), pointer :: z
+      real(8), dimension(:,:,:), pointer :: velocity_x
+      real(8), dimension(:,:,:), pointer :: velocity_y
+      real(8), dimension(:,:,:), pointer :: velocity_z
+      real(8), dimension(:, :, :), pointer :: vel_grad_temp
+      real(8) :: global_max
+      integer :: packed_idx
+
+      integer :: i, j, k
+      real(8) :: vel_grad
+      real(8) :: vel_grad_max
+      real(8) :: vel_diff_coor_diff_i
+      real(8) :: vel_diff_coor_diff_j
+      real(8) :: vel_diff_coor_diff_k
+      real(8) :: dx_i, dy_i, dz_i
+      real(8) :: dx_j, dy_j, dz_j
+      real(8) :: dx_k, dy_k, dz_k
+      real(8) :: dvx_i, dvy_i, dvz_i
+      real(8) :: dvx_j, dvy_j, dvz_j
+      real(8) :: dvx_k, dvy_k, dvz_k
+      real(8) :: inv_denom_i, inv_denom_j, inv_denom_k
+      real(8) :: start_time
+
+      call mesh%Point_to_data(x, y, z)
+      call velocity%Point_to_data(velocity_x, velocity_y, velocity_z)
+
+      vel_grad_max = 0d0
+      this%dt_grad = 1d20
+      nx = velocity%d1 - 1
+      ny = velocity%d2 - 1
+      nz = velocity%d3 - 1
+
+      allocate(vel_grad_temp(1:nx, 1:ny, 1:nz))
+
+      start_time = omp_get_wtime()
+      global_max = -1d0
+      packed_idx = -1
+      !$omp target data map(tofrom: global_max, packed_idx) map(alloc: vel_grad_temp(1:nx, 1:ny, 1:nz))
+      !$omp target teams distribute parallel do collapse(3) &
+      !$omp& private(vel_grad, vel_diff_coor_diff_i, vel_diff_coor_diff_j, vel_diff_coor_diff_k, &
+      !$omp&         dx_i, dy_i, dz_i, dvx_i, dvy_i, dvz_i, inv_denom_i, &
+      !$omp&         dx_j, dy_j, dz_j, dvx_j, dvy_j, dvz_j, inv_denom_j, &
+      !$omp&         dx_k, dy_k, dz_k, dvx_k, dvy_k, dvz_k, inv_denom_k) &
+      !$omp& reduction(max:global_max)
+      do k = 1, nz
+         do j = 1, ny
+            do i = 1, nx
+               dx_i = x(i+1, j, k) - x(i, j, k)
+               dy_i = y(i+1, j, k) - y(i, j, k)
+               dz_i = z(i+1, j, k) - z(i, j, k)
+               dvx_i = velocity_x(i+1, j, k) - velocity_x(i, j, k)
+               dvy_i = velocity_y(i+1, j, k) - velocity_y(i, j, k)
+               dvz_i = velocity_z(i+1, j, k) - velocity_z(i, j, k)
+               inv_denom_i = 1d0 / (dx_i * dx_i + dy_i * dy_i + dz_i * dz_i)
+               vel_diff_coor_diff_i = (dvx_i * dx_i + dvy_i * dy_i + dvz_i * dz_i) * inv_denom_i
+
+               dx_j = x(i, j+1, k) - x(i, j, k)
+               dy_j = y(i, j+1, k) - y(i, j, k)
+               dz_j = z(i, j+1, k) - z(i, j, k)
+               dvx_j = velocity_x(i, j+1, k) - velocity_x(i, j, k)
+               dvy_j = velocity_y(i, j+1, k) - velocity_y(i, j, k)
+               dvz_j = velocity_z(i, j+1, k) - velocity_z(i, j, k)
+               inv_denom_j = 1d0 / (dx_j * dx_j + dy_j * dy_j + dz_j * dz_j)
+               vel_diff_coor_diff_j = (dvx_j * dx_j + dvy_j * dy_j + dvz_j * dz_j) * inv_denom_j
+
+               dx_k = x(i, j, k+1) - x(i, j, k)
+               dy_k = y(i, j, k+1) - y(i, j, k)
+               dz_k = z(i, j, k+1) - z(i, j, k)
+               dvx_k = velocity_x(i, j, k+1) - velocity_x(i, j, k)
+               dvy_k = velocity_y(i, j, k+1) - velocity_y(i, j, k)
+               dvz_k = velocity_z(i, j, k+1) - velocity_z(i, j, k)
+               inv_denom_k = 1d0 / (dx_k * dx_k + dy_k * dy_k + dz_k * dz_k)
+               vel_diff_coor_diff_k = (dvx_k * dx_k + dvy_k * dy_k + dvz_k * dz_k) * inv_denom_k
+
+               vel_grad = max(abs(vel_diff_coor_diff_i), abs(vel_diff_coor_diff_j), abs(vel_diff_coor_diff_k))
+               vel_grad_temp(i,j,k) = vel_grad
+               if (vel_grad > global_max) global_max = vel_grad
+            end do
+         end do
+      end do
+      !$omp end target teams distribute parallel do
+
+      !$omp target teams distribute parallel do collapse(3) map(to: global_max) map(tofrom: packed_idx)
+      do k = 1, nz
+         do j = 1, ny
+            do i = 1, nx
+               if (vel_grad_temp(i,j,k) == global_max) then
+                  !$omp atomic write
+                  packed_idx = (k-1)*ny*nx + (j-1)*nx + i
+               endif
+            end do
+         end do
+      end do
+      !$omp end target teams distribute parallel do
+      !$omp end target data
+
+      this%i_grad = mod(mod(packed_idx - 1, nx * ny), nx) + 1
+      this%j_grad = mod(packed_idx - 1, nx * ny) / nx + 1
+      this%k_grad = (packed_idx - 1) / (nx * ny) + 1
+      write(*,'(A50, F12.6)') "Calculate_vel_grad_dt_3d inside calculate_dt time: ", omp_get_wtime() - start_time
+      write(*,'(A50, F12.6)') "max value time: ", global_max
+      write(*,'(A50, 3(I0,1X))') "ijk: ", this%i_grad, this%j_grad, this%k_grad
+      write(*,'(A50, F12.6)') "val time: ", vel_grad_temp(this%i_grad,this%j_grad,this%k_grad)
+      deallocate(vel_grad_temp)
+
+      vel_grad_max = global_max
+      if (vel_grad_max /= 0d0) this%dt_grad = this%dt_factor / vel_grad_max
+   end subroutine Calculate_vel_grad_dt_3d

@@ -1,0 +1,32 @@
+================================================
+ScalSALE Incremental Build
+================================================
+Build GPU: 1
+Build CPU: 0
+================================================
+
+========================================
+Rebuilding GPU version...
+========================================
+[  6%] Built target Parallel
+[ 14%] Built target General
+[ 19%] Built target Input
+[ 22%] Built target BC
+[ 24%] Built target Quantities
+[ 35%] Built target BC_Vertex
+[ 42%] Built target BC_Cell
+[ 61%] Built target Q_Cell
+[ 70%] Built target Q_Vertex
+[ 75%] Built target Mesh
+[ 79%] Built target EOS
+[ 84%] Built target Material
+[ 88%] Built target Rezone_and_Advect
+[ 89%] Building Fortran object Time_step/CMakeFiles/Time_step.dir/time.f90.o
+NVFORTRAN-S-0034-Syntax error at or near ) (/home/shaharm/Desktop/github_repos/ScalSALE-GPU/src/Time_step/time.f90: 352)
+  0 inform,   0 warnings,   1 severes, 0 fatal for calculate_vel_grad_dt_3d
+make[2]: *** [Time_step/CMakeFiles/Time_step.dir/build.make:88: Time_step/CMakeFiles/Time_step.dir/time.f90.o] Error 2
+make[1]: *** [CMakeFiles/Makefile2:708: Time_step/CMakeFiles/Time_step.dir/all] Error 2
+make: *** [Makefile:91: all] Error 2
+
+ERROR: GPU rebuild failed
+

@@ -829,7 +829,7 @@ contains
             end do
 
         else if (this%mesh%dimension == 3) then
-        
+
             call this%velocity%dvelocity_x_dx%Point_to_data(dvel_x_dx_target)
             call this%velocity%dvelocity_x_dy%Point_to_data(dvel_x_dy_target)
             call this%velocity%dvelocity_x_dz%Point_to_data(dvel_x_dz_target)
@@ -977,7 +977,7 @@ contains
             !$omp& init_mat_layers_target, init_mat_layers_adv_target)
 
             !total time ends before checksum!
-            !write(*,*) "Total Time:", omp_get_wtime() - finish
+            write(*,'(A60, F12.6)') "Total Time:", omp_get_wtime() - finish
             !write(*,*) "ncyc: ", ncyc-1
 
             do k = 1, this%nzp

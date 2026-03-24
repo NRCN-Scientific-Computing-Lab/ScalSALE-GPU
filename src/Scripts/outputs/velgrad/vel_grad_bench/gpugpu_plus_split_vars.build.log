@@ -1,0 +1,184 @@
+================================================
+ScalSALE Incremental Build
+================================================
+Build GPU: 1
+Build CPU: 0
+================================================
+
+========================================
+Rebuilding GPU version...
+========================================
+[  6%] Built target Parallel
+[ 14%] Built target General
+[ 19%] Built target Input
+[ 22%] Built target BC
+[ 24%] Built target Quantities
+[ 35%] Built target BC_Vertex
+[ 42%] Built target BC_Cell
+[ 61%] Built target Q_Cell
+[ 70%] Built target Q_Vertex
+[ 75%] Built target Mesh
+[ 79%] Built target EOS
+[ 84%] Built target Material
+[ 88%] Built target Rezone_and_Advect
+[ 89%] Building Fortran object Time_step/CMakeFiles/Time_step.dir/time.f90.o
+calculate_vel_grad_dt_3d:
+    352, !$omp target teams distribute parallel do
+        352, Generating "nvkernel_time_module_calculate_vel_grad_dt_3d__F1L352_2" GPU kernel
+    352, Generating implicit map(tofrom:velocity_z(:,:,:),x(:,:,:),z(:,:,:),y(:,:,:),vel_grad_temp(:,:,:),velocity_x(:,:,:),velocity_y(:,:,:),global_max) 
+    441, !$omp target teams distribute parallel do
+        351, Generating map(tofrom:global_max) 
+             Generating map(alloc:vel_grad_temp(1:nx,1:ny,1:nz)) 
+             Generating map(tofrom:packed_idx) 
+        441, Generating "nvkernel_time_module_calculate_vel_grad_dt_3d__F1L441_4" GPU kernel
+    441, Generating implicit map(tofrom:vel_grad_temp(:,:,:)) 
+         Generating map(tofrom:packed_idx) 
+         Generating implicit map(to:global_max) 
+calculate_rezone_constraint_3d:
+    646, !$omp target teams distribute parallel do
+        646, Generating "nvkernel_time_module_calculate_rezone_constraint_3d__F1L646_10" GPU kernel
+    646, Generating implicit map(tofrom:velocity_z(:,:,:)) 
+         Generating map(from:vel_grad_temp(1:nxp,1:nyp,1:nzp)) 
+         Generating implicit map(tofrom:velocity_x(:,:,:),mesh_velocity_x(:,:,:),velocity_y(:,:,:),mesh_velocity_y(:,:,:),vertex_mass(:,:,:),x(:,:,:),z(:,:,:),y(:,:,:),mesh_velocity_z(:,:,:)) 
+    745, !$omp parallel
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'nvkernel_time_module_calculate_rezone_constraint_3d__F1L646_10_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_time_module_calculate_rezone_constraint_3d__F1L646_10_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 72 registers, 728 bytes cmem[0], 16 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_time_module_calculate_vel_grad_dt_3d__F1L441_4_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_time_module_calculate_vel_grad_dt_3d__F1L441_4_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 60 registers, 440 bytes cmem[0]
+ptxas info    : Compiling entry function 'nvkernel_time_module_calculate_vel_grad_dt_3d__F1L352_2_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_time_module_calculate_vel_grad_dt_3d__F1L352_2_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 208 registers, 24 bytes smem, 576 bytes cmem[0]
+[ 90%] Building Fortran object Time_step/CMakeFiles/Time_step.dir/hydro_step.f90.o
+calculate_thermodynamics:
+    691, !$omp target teams distribute parallel do
+        691, Generating "nvkernel_hydro_step_module_calculate_thermodynamics__F1L691_2" GPU kernel
+    691, Generating implicit map(tofrom:pressure(:,:,:),temperature(:,:,:),sound_vel(:,:,:),dp_drho(:,:,:),dp_de(:,:,:)) 
+    705, !$omp target teams distribute parallel do
+        705, Generating "nvkernel_hydro_step_module_calculate_thermodynamics__F1L705_4" GPU kernel
+    705, Generating implicit map(tofrom:temperature_vof(:,:,:,:),vof(:,:,:),pressure_vof(:,:,:,:),dp_drho_vof(:,:,:,:),dp_de_vof(:,:,:,:)) 
+    730, Generating target enter data map(create: dt_de_temp(:,:,:))
+    732, !$omp target teams distribute parallel do
+        732, Generating "nvkernel_hydro_step_module_calculate_thermodynamics__F1L732_6" GPU kernel
+    732, Generating implicit map(tofrom:dt_de_temp(:,:,:)) 
+    763, !$omp target teams distribute parallel do
+        763, Generating "nvkernel_hydro_step_module_calculate_thermodynamics__F1L763_8" GPU kernel
+    763, Generating implicit map(tofrom:dt_de_vof(:,:,:,:),temperature_vof_old(:,:,:,:),this,sound_vel_vof(:,:,:,:),temperature(:,:,:),dt_de_temp(:,:,:),pressure_vof(:,:,:,:),sound_vel(:,:,:),mat_vof(:,:,:,:),pressure(:,:,:),dp_de_vof(:,:,:,:),dp_drho(:,:,:),cell_mass_vof(:,:,:,:),dp_de(:,:,:),dp_drho_vof(:,:,:,:)) 
+    796, !$omp target teams distribute parallel do
+        796, Generating "nvkernel_hydro_step_module_calculate_thermodynamics__F1L796_10" GPU kernel
+    796, Generating implicit map(tofrom:this,vof(:,:,:),temperature(:,:,:),dt_de_temp(:,:,:),dp_drho(:,:,:),dp_de(:,:,:),cell_mass(:,:,:)) 
+    809, Generating target exit data map(delete: dt_de_temp(:,:,:)) finalize
+    817, !$omp target teams distribute parallel do
+        817, Generating "nvkernel_hydro_step_module_calculate_thermodynamics__F1L817_12" GPU kernel
+    817, Generating implicit map(tofrom:this,pressure_sum(:,:,:),pressure(:,:,:)) 
+calculate_density:
+    933, !$omp target teams distribute parallel do
+        933, Generating "nvkernel_hydro_step_module_calculate_density__F1L933_26" GPU kernel
+    933, Generating implicit map(tofrom:density(:,:,:),cell_mass(:,:,:),vol(:,:,:),this) 
+    943, !$omp target teams distribute parallel do
+        943, Generating "nvkernel_hydro_step_module_calculate_density__F1L943_28" GPU kernel
+    943, Generating implicit map(tofrom:mat_vof(:,:,:,:),cell_mass_vof(:,:,:,:),density_vof(:,:,:,:),vol(:,:,:),this) 
+calculate_inversed_vertex_mass:
+    972, !$omp target teams distribute parallel do
+        972, Generating "nvkernel_hydro_step_module_calculate_inversed_vertex_mass__F1L972_34" GPU kernel
+    972, Generating implicit map(tofrom:inversed_vertex_mass(:,:,:),this,vertex_mass(:,:,:)) 
+calculate_acceleration_3d:
+   1078, !$omp target teams distribute parallel do
+       1078, Generating "nvkernel_hydro_step_module_calculate_acceleration_3d__F1L1078_38" GPU kernel
+   1078, Generating implicit map(tofrom:pressure_sum(:,:,:),this,x(:,:,:),z(:,:,:),y(:,:,:),acceleration_z(:,:,:),inversed_vertex_mass(:,:,:),acceleration_x(:,:,:),acceleration_y(:,:,:)) 
+calculate_artificial_viscosity_3d:
+   1443, !$omp target teams distribute parallel do
+       1443, Generating "nvkernel_hydro_step_module_calculate_artificial_viscosity_3d__F1L1443_42" GPU kernel
+   1443, Generating implicit map(tofrom:sound_vel(:,:,:),this,linear_visc_fac(:,:,:),a_visc(:,:,:),acceleration_x(:,:,:),acceleration_y(:,:,:),vof(:,:,:),x(:,:,:),z(:,:,:),y(:,:,:)) 
+         Generating map(from:dt_cour_temp(1:this%nx,1:this%ny,1:this%nz)) 
+         Generating implicit map(tofrom:dvel_y_dx(:,:,:),dvel_z_dy(:,:,:),dvel_x_dx(:,:,:),dvel_x_dz(:,:,:),dvel_x_dy(:,:,:),dvel_y_dz(:,:,:),dvel_y_dy(:,:,:),dvel_z_dx(:,:,:),dvel_z_dz(:,:,:),acceleration_z(:,:,:),pressure(:,:,:),density(:,:,:)) 
+   1578, !$omp parallel
+calculate_velocity_3d:
+   1731, !$omp target teams distribute parallel do
+       1731, Generating "nvkernel_hydro_step_module_calculate_velocity_3d__F1L1731_47" GPU kernel
+   1731, Generating implicit map(tofrom:inversed_vertex_mass(:,:,:),velocity_z(:,:,:),x(:,:,:),z(:,:,:),y(:,:,:),this,a_visc(:,:,:),acceleration_z(:,:,:),velocity_x(:,:,:),acceleration_x(:,:,:),velocity_y(:,:,:),acceleration_y(:,:,:)) 
+calculate_energy_3d:
+   2147, !$omp target teams distribute parallel do
+       2147, Generating "nvkernel_hydro_step_module_calculate_energy_3d__F1L2147_51" GPU kernel
+   2147, Generating implicit map(tofrom:temperature_vof(:,:,:,:),this,pressure_vof(:,:,:,:),sie_vof(:,:,:,:),temperature(:,:,:),mat_vof(:,:,:,:),vol(:,:,:),vof(:,:,:),dp_drho_vof(:,:,:,:),sie(:,:,:),mat_vol(:,:,:),nmats_in_cell(:,:,:),cell_mass_vof(:,:,:,:),dp_de_vof(:,:,:,:),pressure(:,:,:),dp_de(:,:,:),dp_drho(:,:,:),a_visc(:,:,:)) 
+print_data:
+   3164, Generating update from(this%total_volume$p%cell_quantity_t%data$p%values(:,:,:))
+   3165, Generating update from(this%total_sie$p%cell_quantity_t%data$p%values(:,:,:))
+   3166, Generating update from(this%total_density$p%cell_quantity_t%data$p%values(:,:,:))
+   3167, Generating update from(this%total_cell_mass$p%cell_quantity_t%data$p%values(:,:,:))
+   3168, Generating update from(this%vertex_mass$p%vertex_quantity_t%data$p%values(:,:,:))
+   3169, Generating update from(this%num_mat_cells$p%cell_quantity_t%data$p%values(:,:,:))
+   3170, Generating update from(this%total_pressure$p%cell_quantity_t%data$p%values(:,:,:))
+ptxas info    : 0 bytes gmem
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_energy_3d__F1L2147_51_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_energy_3d__F1L2147_51_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 62 registers, 816 bytes cmem[0], 16 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_velocity_3d__F1L1731_47_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_velocity_3d__F1L1731_47_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 220 registers, 664 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_artificial_viscosity_3d__F1L1443_42_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_artificial_viscosity_3d__F1L1443_42_
+    432 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 128 registers, 944 bytes cmem[0], 32 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_acceleration_3d__F1L1078_38_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_acceleration_3d__F1L1078_38_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 202 registers, 592 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_inversed_vertex_mass__F1L972_34_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_inversed_vertex_mass__F1L972_34_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 40 registers, 440 bytes cmem[0]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_density__F1L943_28_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_density__F1L943_28_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 75 registers, 488 bytes cmem[0]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_density__F1L933_26_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_density__F1L933_26_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 72 registers, 464 bytes cmem[0]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_thermodynamics__F1L817_12_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_thermodynamics__F1L817_12_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 62 registers, 440 bytes cmem[0]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_thermodynamics__F1L796_10_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_thermodynamics__F1L796_10_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 50 registers, 664 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_thermodynamics__F1L763_8_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_thermodynamics__F1L763_8_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 66 registers, 864 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_thermodynamics__F1L732_6_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_thermodynamics__F1L732_6_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 58 registers, 528 bytes cmem[0]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_thermodynamics__F1L705_4_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_thermodynamics__F1L705_4_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 48 registers, 536 bytes cmem[0], 8 bytes cmem[2]
+ptxas info    : Compiling entry function 'nvkernel_hydro_step_module_calculate_thermodynamics__F1L691_2_' for 'sm_80'
+ptxas info    : Function properties for nvkernel_hydro_step_module_calculate_thermodynamics__F1L691_2_
+    0 bytes stack frame, 0 bytes spill stores, 0 bytes spill loads
+ptxas info    : Used 78 registers, 520 bytes cmem[0]
+[ 92%] Linking Fortran static library ../archive/libTime_step.a
+[ 92%] Built target Time_step
+[ 94%] Built target Diagnostics
+[ 97%] Built target Main
+[ 98%] Linking Fortran executable /home/shaharm/Desktop/github_repos/ScalSALE-GPU/src/exec/main_gpu
+[100%] Built target main
+
+SUCCESS: GPU rebuild completed
+
+
+================================================
+Rebuild Summary
+================================================
+GPU executable: src/exec/main_gpu [OK]
+================================================
