@@ -1395,10 +1395,17 @@ contains
         real(8) :: local_min
         integer :: local_i, local_j, local_k
         real(8) :: start_time
+        integer :: packed_idx
+        real(8) :: dt_tmp
+        integer :: nxp, nyp, nzp
+        real(8) :: thisemf
+        thisemf = this%emf
+        nxp = this%nx
+        nyp = this%ny
+        nzp = this%nz
 
 
-
-        allocate(dt_cour_temp(1:this%nx, 1:this%ny, 1:this%nz)) !yonif
+        allocate(dt_cour_temp(1:nxp, 1:nyp, 1:nzp)) !yonif
 
         call this%a_visc%Update_visc_factors()
         linear_visc_fac => this%a_visc%xl_visc_mat
@@ -1441,15 +1448,19 @@ contains
         !!$omp target update to(dvel_x_dx, dvel_y_dy, dvel_z_dz, dvel_x_dy, dvel_y_dx, dvel_x_dz, dvel_z_dx, dvel_y_dz, dvel_z_dy)
         !!$omp target update to(vof, pressure, density, sound_vel)
         start_time = omp_get_wtime()
+        global_min = 1d20
+        packed_idx = -1
+        !$omp target data map(tofrom: global_min, packed_idx) map(alloc: dt_cour_temp(1:nxp, 1:nyp, 1:nzp)) 
         
-        !$omp target teams distribute parallel do collapse(3) private(ip, jp, kp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
+        !$omp target teams distribute parallel do collapse(3)&
+        !$omp& private(dt_tmp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
         !$omp& x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, r1, r2, r3, r4, r5, r6, r7, r8,&
-        !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div, quad_visc_fac_temp, linear_visc_fac_temp)&
-        !$omp& map(from: dt_cour_temp(1:this%nx, 1:this%ny, 1:this%nz))
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    if (vof(i, j, k) < this%emf .or. pressure(i, j, k) == 0d0) then  
+        !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div)&
+        !$omp& reduction(min:global_min)
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
+                    if (vof(i, j, k) < thisemf .or. pressure(i, j, k) == 0d0) then  
                         a_visc(i, j, k) = 0d0
                         ! IMPORTANT NOTE -  AVITAY ADDED THE NEXT LINE:
                         dt_cour_temp(i,j,k) = HUGE(1d0)
@@ -1457,21 +1468,21 @@ contains
                         ! would stay uninitialized, which will then corrupt the search
                         ! for a global min after this loop.
                     else
-                        ip = i + 1
-                        jp = j + 1
-                        kp = k + 1
+                        ! ip = i + 1
+                        ! jp = j + 1
+                        ! kp = k + 1
 
-                        avg_acc_x = (acceleration_x(i , j , k ) + acceleration_x(ip , j , k  ) + acceleration_x(i , j+1, k  ) &
-                            +acceleration_x(ip, jp, k ) + acceleration_x(i  , j , kp)  + acceleration_x(ip, j  , k+1) &
-                            +acceleration_x(i , jp, kp) + acceleration_x(ip , jp, kp)) * 0.125d0
+                        avg_acc_x = (acceleration_x(i , j , k ) + acceleration_x(i + 1 , j , k  ) + acceleration_x(i , j+1, k  ) &
+                            +acceleration_x(i + 1, j + 1, k ) + acceleration_x(i  , j , k + 1)  + acceleration_x(i + 1, j  , k+1) &
+                            +acceleration_x(i , j + 1, k + 1) + acceleration_x(i + 1 , j + 1, k + 1)) * 0.125d0
 
-                        avg_acc_y = (acceleration_y(i , j , k ) + acceleration_y(ip, j , k )  + acceleration_y(i , jp,k ) &
-                            +acceleration_y(ip, jp, k ) + acceleration_y(i , j , kp)  + acceleration_y(ip, j ,kp) &
-                            +acceleration_y(i , jp, kp) + acceleration_y(ip, jp, kp)) * 0.125d0
+                        avg_acc_y = (acceleration_y(i , j , k ) + acceleration_y(i + 1, j , k )  + acceleration_y(i , j + 1,k ) &
+                            +acceleration_y(i + 1, j + 1, k ) + acceleration_y(i , j , k + 1)  + acceleration_y(i + 1, j ,k + 1) &
+                            +acceleration_y(i , j + 1, k + 1) + acceleration_y(i + 1, j + 1, k + 1)) * 0.125d0
 
-                        avg_acc_z = (acceleration_z(i , j , k ) + acceleration_z(ip, j , k  )  + acceleration_z(i , jp, k  ) &
-                            +acceleration_z(ip, jp, k ) + acceleration_z(i , j , kp )  + acceleration_z(ip, j , kp ) &
-                            +acceleration_z(i , jp, kp) + acceleration_z(ip, jp, kp )) * 0.125d0
+                        avg_acc_z = (acceleration_z(i , j , k ) + acceleration_z(i + 1, j , k  )  + acceleration_z(i , j + 1, k  ) &
+                            +acceleration_z(i + 1, j + 1, k ) + acceleration_z(i , j , k + 1 )  + acceleration_z(i + 1, j , k + 1 ) &
+                            +acceleration_z(i , j + 1, k + 1) + acceleration_z(i + 1, j + 1, k + 1 )) * 0.125d0
 
                         tot_acc = sqrt(avg_acc_x * avg_acc_x + avg_acc_y * avg_acc_y + avg_acc_z * avg_acc_z)
 
@@ -1479,42 +1490,42 @@ contains
                         if (tot_acc < 1d-8 .or. (mesh_type /= 2 .and. k < i_sphere) ) then 
 
 
-                            r1 = sqrt(x(i  , j  , kp) ** 2d0 + y(i  , j  , kp) ** 2d0 + z(i  , j  , kp) ** 2d0)
-                            r2 = sqrt(x(ip, j  , kp) ** 2d0 + y(ip, j  , kp) ** 2d0 + z(ip, j  , kp) ** 2d0)
-                            r3 = sqrt(x(i  , jp, kp) ** 2d0 + y(i  , jp, kp) ** 2d0 + z(i  , jp, kp) ** 2d0)
-                            r4 = sqrt(x(ip, jp, kp) ** 2d0 + y(ip, jp, kp) ** 2d0 + z(ip, jp, kp) ** 2d0)
+                            r1 = sqrt(x(i  , j  , k + 1) ** 2d0 + y(i  , j  , k + 1) ** 2d0 + z(i  , j  , k + 1) ** 2d0)
+                            r2 = sqrt(x(i + 1, j  , k + 1) ** 2d0 + y(i + 1, j  , k + 1) ** 2d0 + z(i + 1, j  , k + 1) ** 2d0)
+                            r3 = sqrt(x(i  , j + 1, k + 1) ** 2d0 + y(i  , j + 1, k + 1) ** 2d0 + z(i  , j + 1, k + 1) ** 2d0)
+                            r4 = sqrt(x(i + 1, j + 1, k + 1) ** 2d0 + y(i + 1, j + 1, k + 1) ** 2d0 + z(i + 1, j + 1, k + 1) ** 2d0)
                             r5 = sqrt(x(i  , j  , k  ) ** 2d0 + y(i  , j  , k  ) ** 2d0 + z(i  , j  , k  ) ** 2d0)
-                            r6 = sqrt(x(ip, j  , k  ) ** 2d0 + y(ip, j  , k  ) ** 2d0 + z(ip, j  , k  ) ** 2d0)
-                            r7 = sqrt(x(i  , jp, k  ) ** 2d0 + y(i  , jp, k  ) ** 2d0 + z(i  , jp, k  ) ** 2d0)
-                            r8 = sqrt(x(ip, jp, k  ) ** 2d0 + y(ip, jp, k  ) ** 2d0 + z(ip, jp, k  ) ** 2d0)
+                            r6 = sqrt(x(i + 1, j  , k  ) ** 2d0 + y(i + 1, j  , k  ) ** 2d0 + z(i + 1, j  , k  ) ** 2d0)
+                            r7 = sqrt(x(i  , j + 1, k  ) ** 2d0 + y(i  , j + 1, k  ) ** 2d0 + z(i  , j + 1, k  ) ** 2d0)
+                            r8 = sqrt(x(i + 1, j + 1, k  ) ** 2d0 + y(i + 1, j + 1, k  ) ** 2d0 + z(i + 1, j + 1, k  ) ** 2d0)
                             eff_length = (r1 + r2 + r3 + r4 - r5 - r6 - r7 - r8) / 4d0
                         else
                             x1 = x(i, j, k)
-                            x2 = x(ip, j, k)
-                            x3 = x(ip, jp, k)
-                            x4 = x(i, jp, k)
-                            x5 = x(i, j, kp)
-                            x6 = x(ip, j, kp)
-                            x7 = x(ip, jp, kp)
-                            x8 = x(i, jp, kp)
+                            x2 = x(i + 1, j, k)
+                            x3 = x(i + 1, j + 1, k)
+                            x4 = x(i, j + 1, k)
+                            x5 = x(i, j, k + 1)
+                            x6 = x(i + 1, j, k + 1)
+                            x7 = x(i + 1, j + 1, k + 1)
+                            x8 = x(i, j + 1, k + 1)
 
                             y1 = y(i, j, k)
-                            y2 = y(ip, j, k)
-                            y3 = y(ip, jp, k)
-                            y4 = y(i, jp, k)
-                            y5 = y(i, j, kp)
-                            y6 = y(ip, j, kp)
-                            y7 = y(ip, jp, kp)
-                            y8 = y(i, jp, kp)
+                            y2 = y(i + 1, j, k)
+                            y3 = y(i + 1, j + 1, k)
+                            y4 = y(i, j + 1, k)
+                            y5 = y(i, j, k + 1)
+                            y6 = y(i + 1, j, k + 1)
+                            y7 = y(i + 1, j + 1, k + 1)
+                            y8 = y(i, j + 1, k + 1)
 
                             z1 = z(i, j, k)
-                            z2 = z(ip, j, k)
-                            z3 = z(ip, jp, k)
-                            z4 = z(i, jp, k)
-                            z5 = z(i, j, kp)
-                            z6 = z(ip, j, kp)
-                            z7 = z(ip, jp, kp)
-                            z8 = z(i, jp, kp)
+                            z2 = z(i + 1, j, k)
+                            z3 = z(i + 1, j + 1, k)
+                            z4 = z(i, j + 1, k)
+                            z5 = z(i, j, k + 1)
+                            z6 = z(i + 1, j, k + 1)
+                            z7 = z(i + 1, j + 1, k + 1)
+                            z8 = z(i, j + 1, k + 1)
 
                             x_avg = (x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8) * 0.125d0
                             y_avg = (y1 + y2 + y3 + y4 + y5 + y6 + y7 + y8) * 0.125d0
@@ -1537,72 +1548,44 @@ contains
                                 (avg_acc_x ** 2 + avg_acc_y ** 2 + avg_acc_z ** 2 + 1d-20)
                         end if
 
+                        a_visc(i, j, k) = min(0d0, eff_vel_div) * density(i, j, k) * eff_length * &
+                            (quad_visc_fac * eff_length * eff_vel_div &
+                            -linear_visc_fac(i,j,k) * sqrt(sound_vel(i ,j, k)))
 
-
-
-
-                        quad_visc_fac_temp   = quad_visc_fac
-                        !TODO: pay attention:
-                        linear_visc_fac_temp = linear_visc_fac(i,j,k)
-                        ! linear_visc_fac_temp = 0.2
-
-
-                        a_visc(i, j, k) = density(i, j, k) * eff_length * &
-                            (quad_visc_fac_temp * eff_length * eff_vel_div &
-                            -linear_visc_fac_temp * sqrt(sound_vel(i ,j, k)))
-
-
-                        a_visc(i, j, k) = min(0d0, eff_vel_div) * a_visc(i, j, k)
-                        
-                        dt_cour_temp(i,j,k) = eff_length * eff_length / sound_vel(i ,j, k)
-                        
-                        ! dt_cour_temp = eff_length * eff_length / sound_vel(i ,j, k)
-
-                        !  if (dt_cour_temp < time%dt_cour) then
-                        !     time%dt_cour = dt_cour_temp
-                        !     time%i_cour = i
-                        !     time%j_cour = j
-                        !     time%k_cour = k
-                        !  end if
+                        dt_tmp = eff_length * eff_length / sound_vel(i ,j, k)
+                        dt_cour_temp(i,j,k) = dt_tmp
+                        global_min = min(dt_tmp, global_min)
 
                     end if
                 end do
             end do
         end do
         !$omp end target teams distribute parallel do
+        !$omp target teams distribute parallel do collapse(3) map(to: global_min) map(tofrom: packed_idx)
+            do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
+                if (dt_cour_temp(i,j,k) == global_min) then
+                    !$omp atomic write
+                    packed_idx = (k-1)*nyp*nxp + (j-1)*nxp + i
+                endif
+                end do
+            end do
+            end do
+        !$omp end target teams distribute parallel do
+        !$omp end target data
         !!$omp target exit data map(delete: linear_visc_fac)
 
         !WE KEEP a_visc ON GPU!
         !!$omp target update from(a_visc)
 
-        global_min = HUGE(1.0)
-        local_min = HUGE(1.0)
-        !$omp parallel private(i, j, k, local_i, local_j, local_k) firstprivate(local_min)
-        !$omp do collapse(3)
-        do k = 1, this%nz
-        do j = 1, this%ny
-        do i = 1, this%nx
-            if (dt_cour_temp(i,j,k) < local_min) then
-                local_min = dt_cour_temp(i,j,k)
-                local_i = i
-                local_j = j
-                local_k = k
-            endif
-        end do
-        end do
-        end do
-        !$omp end do
+        time%i_cour = mod(mod(packed_idx - 1, nxp * nyp), nxp) + 1
+        time%j_cour = mod(packed_idx - 1, nxp * nyp) / nxp + 1
+        time%k_cour = (packed_idx - 1) / (nxp * nyp) + 1
 
-        !$omp critical
-        if (local_min < global_min) then
-            global_min = local_min
-            time%dt_cour = local_min
-            time%i_cour = local_i
-            time%j_cour = local_j
-            time%k_cour = local_k
-        endif
-        !$omp end critical
-        !$omp end parallel
+        time%dt_cour = global_min
+     
+
         ! write(*,'(A60, F12.6)') "hydro step time: ", omp_get_wtime() - start_time
         ! write(*,'(A60, F30.20)') "min value time: ", global_min
         ! write(*,'(A50, 3(I0,1X))') "ijk: ", time%i_cour, time%j_cour, time%k_cour
