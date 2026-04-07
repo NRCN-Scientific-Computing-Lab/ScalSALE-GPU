@@ -584,13 +584,13 @@ contains
       global_max = -1
       packed_idx = -1
       !$omp target data map(tofrom: global_max, packed_idx) map(alloc: vel_grad_temp(1:nxp, 1:nyp, 1:nzp)) 
-      !$omp target teams distribute parallel do collapse(3) private(vel_diff_x,vel_diff_y,vel_diff_z,len_sq,vel_grad_i_p, vel_grad_j_p, vel_grad_k_p, vel_grad_i_m, vel_grad_j_m, vel_grad_k_m)&
+      !$omp target teams distribute parallel do collapse(3) private(vel_grad, vel_diff_x,vel_diff_y,vel_diff_z,len_sq,vel_grad_i_p, vel_grad_j_p, vel_grad_k_p, vel_grad_i_m, vel_grad_j_m, vel_grad_k_m)&
       !$omp& reduction(max:global_max) 
       do k = 1, nzp
          do j = 1, nyp
             do i = 1, nxp
                if(vertex_mass(i, j, k) < emfm) then 
-                  vel_grad_temp(i,j,k) = 0d0 ! Shahar Added, this was a bug!
+                  vel_grad_temp(i,j,k) = vel_rez_max ! Shahar Added, this was a bug!
                   cycle
                end if
                vel_diff_x = velocity_x(i, j, k) - mesh_velocity_x(i, j, k)

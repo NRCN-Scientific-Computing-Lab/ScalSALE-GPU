@@ -1398,6 +1398,8 @@ contains
         integer :: packed_idx
         real(8) :: dt_tmp
         integer :: nxp, nyp, nzp
+        real(8) :: thisemf
+        thisemf = this%emf
         nxp = this%nx
         nyp = this%ny
         nzp = this%nz
@@ -1451,14 +1453,14 @@ contains
         !$omp target data map(tofrom: global_min, packed_idx) map(alloc: dt_cour_temp(1:nxp, 1:nyp, 1:nzp)) 
         
         !$omp target teams distribute parallel do collapse(3)&
-        !$omp& private(avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
+        !$omp& private(dt_tmp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
         !$omp& x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, r1, r2, r3, r4, r5, r6, r7, r8,&
-        !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div, linear_visc_fac_temp)&
+        !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div)&
         !$omp& reduction(min:global_min)
         do k = 1, nzp
             do j = 1, nyp
                 do i = 1, nxp
-                    if (vof(i, j, k) < this%emf .or. pressure(i, j, k) == 0d0) then  
+                    if (vof(i, j, k) < thisemf .or. pressure(i, j, k) == 0d0) then  
                         a_visc(i, j, k) = 0d0
                         ! IMPORTANT NOTE -  AVITAY ADDED THE NEXT LINE:
                         dt_cour_temp(i,j,k) = HUGE(1d0)

@@ -590,7 +590,10 @@ contains
       do k = 1, nzp
          do j = 1, nyp
             do i = 1, nxp
-               if(vertex_mass(i, j, k) < emfm) cycle
+               if(vertex_mass(i, j, k) < emfm) then 
+                  vel_grad_temp(i,j,k) = vel_rez_max ! Shahar Added, this was a bug!
+                  cycle
+               end if
                vel_diff_x = velocity_x(i, j, k) - mesh_velocity_x(i, j, k)
                vel_diff_y = velocity_y(i, j, k) - mesh_velocity_y(i, j, k)
                vel_diff_z = velocity_z(i, j, k) - mesh_velocity_z(i, j, k)
