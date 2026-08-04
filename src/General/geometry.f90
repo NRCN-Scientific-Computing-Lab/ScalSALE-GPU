@@ -38,8 +38,7 @@ contains
       end if
    end function Triangle_volume
 
-   subroutine Physical_tetraeder_volume_3d(a, b, c, i1, i2, i4, ic1, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, t_vol, &
-                                            cut_plane_counter, tetrahederon_counter)
+   subroutine Physical_tetraeder_volume_3d(a, b, c, i1, i2, i4, ic1, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, t_vol)
       implicit none
       real(8), intent(in)  :: a, b, c
       integer, intent(in)  :: i1, i2, i4, ic1, ic4
@@ -48,8 +47,6 @@ contains
       real(8), intent(in)  :: x_cen, y_cen, z_cen
       integer, intent(in)  :: in_out(8)
       real(8), intent(out) :: t_vol
-      ! AVITAY: Added counters for comprehensive kernel call tracking
-      integer(kind=8), intent(inout) :: cut_plane_counter, tetrahederon_counter
 
       real(8)              :: xc, yc, zc, t_vol1, t_vol2
       integer              :: in_tot
@@ -64,38 +61,31 @@ contains
 
       if (in_tot == 3) then
          t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4))
-         tetrahederon_counter = tetrahederon_counter + 1
          return
       end if
 
       if (in_out(i1) == 1) then
          if (in_out(i2) == 1) then
             t_vol1 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4))
-            tetrahederon_counter = tetrahederon_counter + 1
 
             call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
-            cut_plane_counter = cut_plane_counter + 1
 
             t_vol2 = Tetrahederon_volume(x_cen, y_cen, z_cen, x_cut(ic4), y_cut(ic4), z_cut(ic4), xc, yc, zc, xs(i4), ys(i4), zs(i4))
-            tetrahederon_counter = tetrahederon_counter + 1
+
             t_vol = t_vol1 - t_vol2
             return
          else if (in_out(i4) == 1) then
             t_vol1 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4))
-            tetrahederon_counter = tetrahederon_counter + 1
 
             call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
-            cut_plane_counter = cut_plane_counter + 1
 
             t_vol2 = Tetrahederon_volume(x_cen, y_cen, z_cen, x_cut(ic1), y_cut(ic1), z_cut(ic1), xs(i2), ys(i2), zs(i2), xc, yc, zc)
-            tetrahederon_counter = tetrahederon_counter + 1
 
             t_vol = t_vol1 - t_vol2
             return
          else
             t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), x_cut(ic1), y_cut(ic1), z_cut(ic1), &
                                          x_cut(ic4), y_cut(ic4), z_cut(ic4))
-            tetrahederon_counter = tetrahederon_counter + 1
             return
          end if
       end if
@@ -103,26 +93,20 @@ contains
          if (in_out(i4) == 1) then
             t_vol1 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), &
                                           xs(i4), ys(i4), zs(i4))
-            tetrahederon_counter = tetrahederon_counter + 1
 
             t_vol2 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), x_cut(ic1), y_cut(ic1), &
                                           z_cut(ic1), x_cut(ic4), y_cut(ic4), z_cut(ic4))
-            tetrahederon_counter = tetrahederon_counter + 1
 
             t_vol = t_vol1 - t_vol2
             return
          else
             call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
-            cut_plane_counter = cut_plane_counter + 1
             t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, x_cut(ic1), y_cut(ic1), z_cut(ic1), xs(i2), ys(i2), zs(i2), xc, yc, zc)
-            tetrahederon_counter = tetrahederon_counter + 1
             return
          end if
       end if
       call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
-      cut_plane_counter = cut_plane_counter + 1
       t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i4), ys(i4), zs(i4), x_cut(ic4), y_cut(ic4), z_cut(ic4), xc, yc, zc)
-      tetrahederon_counter = tetrahederon_counter + 1
 
       return
    end subroutine Physical_tetraeder_volume_3d
@@ -359,8 +343,7 @@ contains
 
    ! AVITAY
    function Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5 ,x6, y6, z6,&
-                               x7, y7, z7, x8, y8, z8, a, b, c, side, geo_vol, &
-                               cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter) result(phys_vol)
+                               x7, y7, z7, x8, y8, z8, a, b, c, side, geo_vol) result(phys_vol)
 
       implicit none
       ! AVITAY: CHANGED THESE TO VALUE, TO ALLOW GPU PARALLELIZATION IN Volume_material_3d (advect.f90)
@@ -369,8 +352,6 @@ contains
       !                        x7, y7, z7, x8, y8, z8, a, b, c, side, geo_vol
       real(8), intent(in):: x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5 ,x6, y6, z6,&
                              x7, y7, z7, x8, y8, z8, a, b, c, side, geo_vol
-      ! AVITAY: Added counters for comprehensive kernel call tracking
-      integer(kind=8), intent(inout) :: cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahederon_counter
 
       real(8)     :: zt, x_tot, y_tot, z_tot, tot_vol, temp
       integer     :: i, in_tot, n_cut
@@ -428,73 +409,61 @@ contains
       if (in_out(1) /= in_out(2)) then
          call Cut_plane( a, b, -1d0, -c, xs(1), ys(1), zs(1), xs(2), ys(2), zs(2), &
                      x_cut(1), y_cut(1), z_cut(1))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(2) /= in_out(3)) then
          call Cut_plane( a, b, -1d0, -c, xs(2), ys(2), zs(2), xs(3), ys(3), zs(3), &
                      x_cut(2), y_cut(2), z_cut(2))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(3)/=in_out(4)) then
          call Cut_plane( a, b, -1d0, -c, xs(3), ys(3), zs(3), xs(4), ys(4), zs(4), &
                      x_cut(3), y_cut(3), z_cut(3))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(4) /= in_out(1)) then
          call Cut_plane( a, b, -1d0, -c, xs(4), ys(4), zs(4), xs(1), ys(1), zs(1), &
                      x_cut(4), y_cut(4), z_cut(4))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(5) /= in_out(6)) then
          call Cut_plane( a, b, -1d0, -c, xs(5), ys(5), zs(5), xs(6), ys(6), zs(6), &
                      x_cut(5), y_cut(5), z_cut(5))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(6) /= in_out(7)) then
          call Cut_plane( a, b, -1d0, -c, xs(6), ys(6), zs(6), xs(7), ys(7), zs(7), &
                      x_cut(6), y_cut(6), z_cut(6))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(7) /= in_out(8)) then
          call Cut_plane( a, b, -1d0, -c, xs(7), ys(7), zs(7), xs(8), ys(8), zs(8), &
                      x_cut(7), y_cut(7), z_cut(7))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(8) /= in_out(5)) then
          call Cut_plane( a, b, -1d0, -c, xs(8), ys(8), zs(8), xs(5), ys(5), zs(5), &
                      x_cut(8), y_cut(8), z_cut(8))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(1) /= in_out(5)) then
          call Cut_plane( a, b, -1d0, -c, xs(1), ys(1), zs(1), xs(5), ys(5), zs(5), &
                      x_cut(9), y_cut(9), z_cut(9))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(2) /= in_out(6)) then
          call Cut_plane( a, b, -1d0, -c, xs(2), ys(2), zs(2), xs(6), ys(6), zs(6), &
                      x_cut(10), y_cut(10), z_cut(10))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(3) /= in_out(7)) then
          call Cut_plane( a, b, -1d0, -c, xs(3), ys(3), zs(3), xs(7), ys(7), zs(7), &
                      x_cut(11), y_cut(11), z_cut(11))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       if (in_out(4) /= in_out(8)) then
          call Cut_plane( a, b, -1d0, -c, xs(4), ys(4), zs(4), xs(8), ys(8), zs(8), &
                      x_cut(12), y_cut(12), z_cut(12))
-         cut_plane_counter = cut_plane_counter + 1
          n_cut = n_cut + 1
       end if
       x_tot = 0.
@@ -511,29 +480,17 @@ contains
       y_cen = y_tot / n_cut
       z_cen = z_tot / n_cut
       tot_vol = 0.
-      call Square_pyramid_volume(a, b, c, 1, 2, 3, 4, 1, 2, 3, 4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp, &
-                                 cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter)
-      square_pyramid_counter = square_pyramid_counter + 1
+      call Square_pyramid_volume(a, b, c, 1, 2, 3, 4, 1, 2, 3, 4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 8, 7, 6 ,5 , 7, 6, 5, 8, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp, &
-                                 cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter)
-      square_pyramid_counter = square_pyramid_counter + 1
+      call Square_pyramid_volume(a, b, c, 8, 7, 6 ,5 , 7, 6, 5, 8, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 1, 5, 6, 2, 9, 5, 10, 1, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp, &
-                                 cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter)
-      square_pyramid_counter = square_pyramid_counter + 1
+      call Square_pyramid_volume(a, b, c, 1, 5, 6, 2, 9, 5, 10, 1, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 2, 6, 7, 3, 10 ,6, 11, 2, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp, &
-                                 cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter)
-      square_pyramid_counter = square_pyramid_counter + 1
+      call Square_pyramid_volume(a, b, c, 2, 6, 7, 3, 10 ,6, 11, 2, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 3, 7, 8, 4, 11, 7, 12, 3, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp, &
-                                 cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter)
-      square_pyramid_counter = square_pyramid_counter + 1
+      call Square_pyramid_volume(a, b, c, 3, 7, 8, 4, 11, 7, 12, 3, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 4, 8, 5, 1, 12, 8, 9, 4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp, &
-                                 cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter)
-      square_pyramid_counter = square_pyramid_counter + 1
+      call Square_pyramid_volume(a, b, c, 4, 8, 5, 1, 12, 8, 9, 4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
       phys_vol = tot_vol
 
@@ -541,8 +498,7 @@ contains
    end function Volume_fraction_3d
    ! AVITAY 
 
-   subroutine Square_pyramid_volume(a, b, c, i1, i2, i3, i4, ic1, ic2, ic3, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, pvol, &
-                                      cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter)
+   subroutine Square_pyramid_volume(a, b, c, i1, i2, i3, i4, ic1, ic2, ic3, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, pvol)
       implicit none
       real(8), intent(in)  :: a, b, c
       integer, intent(in)  :: i1, i2, i3, i4, ic1, ic2, ic3, ic4
@@ -559,8 +515,6 @@ contains
       ! integer, value :: in_out(8)
 
       real(8), intent(out) :: pvol
-      ! AVITAY: Added counters for comprehensive kernel call tracking
-      integer(kind=8), intent(inout) :: cut_plane_counter, physical_tetraeder_counter, tetrahederon_counter
 
       real(8)              :: temp, tri_vol
       integer :: in_tot
@@ -573,21 +527,13 @@ contains
          return
       end if
       temp = 0.
-      call Physical_tetraeder_volume_3d(a, b, c, i1, i2, i4, ic1, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol, &
-                                         cut_plane_counter, tetrahederon_counter)
-      physical_tetraeder_counter = physical_tetraeder_counter + 1
+      call Physical_tetraeder_volume_3d(a, b, c, i1, i2, i4, ic1, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
       temp = temp + tri_vol ! * 4
-      call Physical_tetraeder_volume_3d(a, b, c, i2, i3, i1, ic2, ic1, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol, &
-                                         cut_plane_counter, tetrahederon_counter)
-      physical_tetraeder_counter = physical_tetraeder_counter + 1
+      call Physical_tetraeder_volume_3d(a, b, c, i2, i3, i1, ic2, ic1, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
       temp = temp + tri_vol
-      call Physical_tetraeder_volume_3d(a, b, c, i3, i4, i2, ic3, ic2, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol, &
-                                         cut_plane_counter, tetrahederon_counter)
-      physical_tetraeder_counter = physical_tetraeder_counter + 1
+      call Physical_tetraeder_volume_3d(a, b, c, i3, i4, i2, ic3, ic2, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
       temp = temp + tri_vol
-      call Physical_tetraeder_volume_3d(a, b, c, i4, i1, i3, ic4, ic3, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol, &
-                                         cut_plane_counter, tetrahederon_counter)
-      physical_tetraeder_counter = physical_tetraeder_counter + 1
+      call Physical_tetraeder_volume_3d(a, b, c, i4, i1, i3, ic4, ic3, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
       temp = temp + tri_vol
       pvol = temp / 12.
       return

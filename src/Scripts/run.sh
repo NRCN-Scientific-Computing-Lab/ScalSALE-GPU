@@ -65,9 +65,20 @@ else
      #nsys profile --stats=true mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
      #nsys profile --stats=true --trace=cuda,nvtx,osrt,openmp --output=kernel_on_gpu_line_calc_on_cpu mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
 
+     # START PROFILING ACCORDING TO cudaProfileStart()
+     #nsys profile --capture-range=cudaProfilerApi --trace=cuda,osrt --cuda-memory-usage=true --gpu-metrics-device=all --stats=true mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
+
+     # START PROFILING RIGHT AWAY:
+     #nsys profile --trace=cuda,osrt --cuda-memory-usage=true --gpu-metrics-device=all --stats=true mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
+
+
      # RUN COMMAND FOR NCOMPUTE:
+     # Profile only advect kernels using regex pattern, start profiling only when cudaProfilerStart() is called
+     #ncu -k "regex:^nvkernel_advect_module" --profile-from-start no --set detailed --export ADVECT_KERNELS_NEW mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
+
+     #ncu --set default --print-summary per-kernel mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
      #ncu --set detailed mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
-     #ncu --set detailed --export Ncu_A100_272cyc_AoS_Hexa_Vertices_LINE_CALC_3d mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
+     #ncu --set detailed --export SLOW_TOP_LINE_CALC mpirun -np $NPROCS --map-by node --bind-to none $EXECUTABLE
      #ncu --set default --export Ncu_V100_advect mpirun -np $NPROCS --map-by node --bind-to none ../exec/main
 
      #ncu --metrics launch__registers_per_thread --export Ncu_A100_1002cyc_regiters -np $NPROCS --map-by node --bind-to none $EXECUTABLE

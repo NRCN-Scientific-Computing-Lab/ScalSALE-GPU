@@ -262,7 +262,7 @@ contains
 
         write(*,*) trim(my_id)
 
-        open(unit=69, file="diags" // trim(my_id), status="replace", action="write")
+        ! open(unit=69, file="diags" // trim(my_id), status="replace", action="write")
 
         if (Constructor%wilkins_scheme == 1) then 
             allocate(Constructor%previous_vertex_mass)
@@ -643,7 +643,7 @@ contains
         class (problem_t), intent(in out) :: this
         integer :: i, error_hdf5
 
-        close(69)
+        ! close(69)
         do i=1,size(this%textual_diagnostics(1:))
             call this%textual_diagnostics(i)%Close_diagnostic
         end do
@@ -780,6 +780,9 @@ contains
         real(8) :: checksum_acceleration_x, checksum_acceleration_y, checksum_acceleration_z
         real(8) :: checksum_x, checksum_y, checksum_z, checksum_sie_vof, checksum_pressure_vof
         real(8) :: checksum_density, checksum_pressure, checksum_total_sie
+
+        integer, dimension(:), pointer :: i_virt, j_virt, k_virt
+
         character(len=8) :: date, time
         integer :: iunit
         character(len=30) :: filename
@@ -905,6 +908,9 @@ contains
             call this%materials%Point_to_initial_layers(init_mat_layers_target)
             call this%hydro%advect%adv_mats%Point_to_initial_layers(init_mat_layers_adv_target)
 
+            ! ==== VERTEX MASS ==== !
+            call this%parallel_params%Point_to_virtual_array(i_virt, j_virt, k_virt)
+
             start = omp_get_wtime()
 
             !$omp target enter data map(to: x_target, y_target, z_target,&
@@ -919,7 +925,7 @@ contains
             !$omp& mat_vof_adv_target, mat_cell_mass_adv_target, sie_vof_adv_target, &
             !$omp& a_adv_target, b_adv_target, c_adv_target, side_adv_target, &
             !$omp& a_mat_target, b_mat_target, c_mat_target, side_mat_target, &
-            !$omp& init_mat_layers_target, init_mat_layers_adv_target, xl_visc_mat_target) &
+            !$omp& init_mat_layers_target, init_mat_layers_adv_target, xl_visc_mat_target, k_virt, i_virt, j_virt) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
             
@@ -970,69 +976,16 @@ contains
             !$omp& mat_vof_adv_target, mat_cell_mass_adv_target, sie_vof_adv_target, &
             !$omp& a_adv_target, b_adv_target, c_adv_target, side_adv_target, &
             !$omp& a_mat_target, b_mat_target, c_mat_target, side_mat_target, &
-            !$omp& init_mat_layers_target, init_mat_layers_adv_target)
+            !$omp& init_mat_layers_target, init_mat_layers_adv_target, k_virt, i_virt, j_virt)
 
             !total time ends before checksum!
             write(*,'(A60, F12.6)') "Total Time:", omp_get_wtime() - finish
             !write(*,*) "ncyc: ", ncyc-1
 
-            do k = 1, this%nzp
-            do j = 1, this%nyp
-            do i = 1, this%nxp
+            ! Runtime checksum/V&V file generation is disabled. The checksum
+            ! loops were removed because their only consumer was the per-rank
+            ! V&V output file.
 
-                checksum_velocity_x = checksum_velocity_x + velocity_x_target(i, j, k)
-                checksum_velocity_y = checksum_velocity_y + velocity_y_target(i, j, k)
-                checksum_velocity_z = checksum_velocity_z + velocity_z_target(i, j, k)
-
-                checksum_acceleration_x = checksum_acceleration_x + acceleration_x_target(i, j, k)
-                checksum_acceleration_y = checksum_acceleration_y + acceleration_y_target(i, j, k)
-                checksum_acceleration_z = checksum_acceleration_z + acceleration_z_target(i, j, k)
-
-                checksum_x = checksum_x + x_target(i, j, k)
-                checksum_y = checksum_y + y_target(i, j, k)
-                checksum_z = checksum_z + z_target(i, j, k)
-
-                checksum_density = checksum_density + density_target(i,j,k)
-                checksum_pressure = checksum_pressure + pressure_target(i,j,k)
-                checksum_total_sie = checksum_total_sie + sie_target(i,j,k)
-        end do
-        end do
-        end do
-
-        do k = 1, this%nzp
-        do j = 1, this%nyp
-        do i = 1, this%nxp
-        do m=1, this%hydro%nmats
-            checksum_sie_vof = checksum_sie_vof + sie_vof_target(m, i, j, k)
-            checksum_pressure_vof = checksum_pressure_vof + pressure_vof_target(m, i, j, k)
-        end do
-        end do
-        end do
-        end do
-
-
-        call date_and_time(date, time)
-        write(filename, '(A,"_",A)') "vnv", trim(adjustl(date)) // "_" // trim(adjustl(time))
-
-        iunit = 10
-        open(unit=iunit, file=filename, status="unknown", action="write")
-    
-        write(iunit, '(A,Z17)') "Checksum for velocity_x: ", checksum_velocity_x
-        write(iunit, '(A,Z17)') "Checksum for velocity_y: ", checksum_velocity_y
-        write(iunit, '(A,Z17)') "Checksum for velocity_z: ", checksum_velocity_z
-        write(iunit, '(A,Z17)') "Checksum for acceleration_x: ", checksum_acceleration_x
-        write(iunit, '(A,Z17)') "Checksum for acceleration_y: ", checksum_acceleration_y
-        write(iunit, '(A,Z17)') "Checksum for acceleration_z: ", checksum_acceleration_z
-        write(iunit, '(A,Z17)') "Checksum for x: ", checksum_x
-        write(iunit, '(A,Z17)') "Checksum for y: ", checksum_y
-        write(iunit, '(A,Z17)') "Checksum for z: ", checksum_z
-        write(iunit, '(A,Z17)') "Checksum for density: ", checksum_density
-        write(iunit, '(A,Z17)') "Checksum for pressure: ", checksum_pressure
-        write(iunit, '(A,Z17)') "Checksum for total_sie: ", checksum_total_sie
-        write(iunit, '(A,Z17)') "Checksum for sie_vof: ", checksum_sie_vof
-        write(iunit, '(A,Z17)') "Checksum for pressure_vof: ", checksum_pressure_vof
-        close(iunit)
-            
         end if
 
         !print some cell quantities at the end of the calculation to help you debug your code.
@@ -1043,9 +996,11 @@ contains
         !open (unit=411, file='total_pressure_result.txt', status = 'replace')  
         !write(411,*) this%total_pressure%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
         !close (411)
-        open (unit=412, file='velocity_result.txt', status = 'replace')  
-        write(412,*) this%velocity%data(1)%values(0:this%nxp, 0:this%nyp, 0:this%nzp) 
-        close (412)
+
+        ! open (unit=412, file='velocity_result.txt', status = 'replace')
+        ! write(412,*) this%velocity%data(1)%values(0:this%nxp, 0:this%nyp, 0:this%nzp)
+        ! close (412)
+
         !open (unit=413, file='total_cell_mass_result.txt', status = 'replace')  
         !write(413,*) this%total_cell_mass%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
         !close (413)
@@ -1054,16 +1009,16 @@ contains
         !close (414)
 
         call this%Close_files()
-        if (this%parallel_params%my_rank == 0) then
+!        if (this%parallel_params%my_rank == 0) then
 
 !            write(str1, *) this%global_nx
 !            write(str2, *) this%num_proc
 !            write(*,*) str1,str2
 !            open (71, status = 'replace', file = trim(tmp2(:len(trim(tmp2)) -4 ) // "_" &
 !                // trim(tmp) // ".txt"))
-            open (71, status = 'replace', file = "runtime_" // trim(int2str(this%global_nx)) // "_" // trim(int2str(this%num_proc)) // ".txt")
-            write(71,*) "Total Time:", omp_get_wtime() - finish
-        end if
+!            open (71, status = 'replace', file = "runtime_" // trim(int2str(this%global_nx)) // "_" // trim(int2str(this%num_proc)) // ".txt")
+!            write(71,*) "Total Time:", omp_get_wtime() - finish
+!        end if
         
     end subroutine Start_calculation
 
@@ -1235,7 +1190,7 @@ contains
             df%npx, df%npy, df%npz, coords, 1)
 
 
-        this%communication_parameters_material = communication_parameters_t(df%reduct_num_mat, this%nxp, this%nyp, this%nzp, num_neighbors, communicator,&
+        this%communication_parameters_material = communication_parameters_t(df%reduct_num_mat, this%nx, this%ny, this%nz, num_neighbors, communicator,&
             df%npx, df%npy, df%npz, coords, 0)
 
 

@@ -177,13 +177,10 @@ contains
       virt_nzp = this%parallel_params%virt_nzp
       call this%parallel_params%Point_to_virtual_array(i_virt, j_virt, k_virt)
 
-
       call this       %Point_to_data(1, vertex_mass)
       call c_mass     %Point_to_data(cell_mass)
       call tot_density%Point_to_data(density)
       call coordinates%Point_to_data(x, y, z)
-
-      !vertex_mass(1:nxp, 1:nyp , 1:nzp) = 0d0
 
       if (counter > 1) then
          !$omp target teams distribute parallel do collapse(3)
@@ -196,7 +193,11 @@ contains
          end do
          !$omp end target teams distribute parallel do
 
-         !$omp target teams distribute parallel do collapse(3) map(to: i_tetr, j_tetr, k_tetr, i_virt, j_virt, k_virt) private(i, j, k, t, kk, jj, ii, i1, i2, i3, j1, j2, j3, k1, k2, k3)
+         ! The virtual-index arrays are persistently mapped in problem.f90.
+         !$omp target teams distribute parallel do collapse(3) &
+         !$omp& map(to: i_tetr, j_tetr, k_tetr) &
+         !$omp& private(i, j, k, t, kk, jj, ii, i1, i2, i3, &
+         !$omp&         j1, j2, j3, k1, k2, k3)
          do k = 1, nzp
             do j = 1, nyp
                do i = 1, nxp
@@ -221,11 +222,13 @@ contains
                             (j_virt(jj) == virt_nyp .and. wall_y_top) .or. &
                             (k_virt(kk) == 0 .and. wall_z_bot) .or. &
                             (k_virt(kk) == virt_nzp .and. wall_z_top))) then
-                           vertex_mass(i, j, k) = vertex_mass(i, j, k) + density(ii, jj, kk) * &
-                              Tetrahederon_volume(x(i,j,k), y(i,j,k), z(i,j,k), &
-                                                  x(i1,j1,k1), y(i1,j1,k1), z(i1,j1,k1), &
-                                                  x(i2,j2,k2), y(i2,j2,k2), z(i2,j2,k2), &
-                                                  x(i3,j3,k3), y(i3,j3,k3), z(i3,j3,k3))
+                           vertex_mass(i, j, k) = vertex_mass(i, j, k) + &
+                              density(ii, jj, kk) * &
+                              Tetrahederon_volume( &
+                                 x(i,j,k), y(i,j,k), z(i,j,k), &
+                                 x(i1,j1,k1), y(i1,j1,k1), z(i1,j1,k1), &
+                                 x(i2,j2,k2), y(i2,j2,k2), z(i2,j2,k2), &
+                                 x(i3,j3,k3), y(i3,j3,k3), z(i3,j3,k3))
                         end if
                      end if
                   end do
@@ -245,7 +248,9 @@ contains
          end do
          !$omp end parallel do
 
-         !$omp parallel do collapse(3) private(i, j, k, t, kk, jj, ii, i1, i2, i3, j1, j2, j3, k1, k2, k3)
+         !$omp parallel do collapse(3) &
+         !$omp& private(i, j, k, t, kk, jj, ii, i1, i2, i3, &
+         !$omp&         j1, j2, j3, k1, k2, k3)
          do k = 1, nzp
             do j = 1, nyp
                do i = 1, nxp
@@ -270,11 +275,13 @@ contains
                             (j_virt(jj) == virt_nyp .and. wall_y_top) .or. &
                             (k_virt(kk) == 0 .and. wall_z_bot) .or. &
                             (k_virt(kk) == virt_nzp .and. wall_z_top))) then
-                           vertex_mass(i, j, k) = vertex_mass(i, j, k) + density(ii, jj, kk) * &
-                              Tetrahederon_volume(x(i,j,k), y(i,j,k), z(i,j,k), &
-                                                  x(i1,j1,k1), y(i1,j1,k1), z(i1,j1,k1), &
-                                                  x(i2,j2,k2), y(i2,j2,k2), z(i2,j2,k2), &
-                                                  x(i3,j3,k3), y(i3,j3,k3), z(i3,j3,k3))
+                           vertex_mass(i, j, k) = vertex_mass(i, j, k) + &
+                              density(ii, jj, kk) * &
+                              Tetrahederon_volume( &
+                                 x(i,j,k), y(i,j,k), z(i,j,k), &
+                                 x(i1,j1,k1), y(i1,j1,k1), z(i1,j1,k1), &
+                                 x(i2,j2,k2), y(i2,j2,k2), z(i2,j2,k2), &
+                                 x(i3,j3,k3), y(i3,j3,k3), z(i3,j3,k3))
                         end if
                      end if
                   end do

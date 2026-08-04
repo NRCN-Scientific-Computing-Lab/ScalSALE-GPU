@@ -76,10 +76,10 @@ contains
 
         if (rank /= 0) then
             tmp2 = trim(this%file_prefix)
-            open (this%diagnostics_group_file, status = 'replace', file = trim(tmp2(:len(trim(tmp2)) -4 ) // "_" &
-                // trim(tmp) // ".txt"))
+            ! open (this%diagnostics_group_file, status = 'replace', file = trim(tmp2(:len(trim(tmp2)) -4 ) // "_" &
+            !     // trim(tmp) // ".txt"))
         else
-            open (this%diagnostics_group_file, status = 'replace', file = trim(this%file_prefix))
+            ! open (this%diagnostics_group_file, status = 'replace', file = trim(this%file_prefix))
         end if
 
 
@@ -105,53 +105,53 @@ contains
         select case( trim(this%file_prefix) )
 
             case ('time.txt')
-                write(this%diagnostics_group_file,1001), this%time%current_cycle,this%time%time_passed,this%time%dt
+                ! write(this%diagnostics_group_file,1001), this%time%current_cycle,this%time%time_passed,this%time%dt
 
             case ('position_x.txt')
                 call this%hydro_step%Point_to_mesh_data(ptr_x, ptr_y)
 
-                write(this%diagnostics_group_file,1002), ptr_x(1:nxp,1:nyp,1:nzp)
+                ! write(this%diagnostics_group_file,1002), ptr_x(1:nxp,1:nyp,1:nzp)
             case ('position_y.txt')
                 call this%hydro_step%Point_to_mesh_data(ptr_x, ptr_y)
-                write(this%diagnostics_group_file,1002), ptr_y(1:nxp,1:nyp,1:nzp)
+                ! write(this%diagnostics_group_file,1002), ptr_y(1:nxp,1:nyp,1:nzp)
 
             case ('position_z.txt')
                 if (nzp /= 1) then
                     call this%hydro_step%Point_to_mesh_data(ptr_x, ptr_y, ptr_z)
-                    write(this%diagnostics_group_file,1002), ptr_z(1:nxp,1:nyp,1:nzp)
+                    ! write(this%diagnostics_group_file,1002), ptr_z(1:nxp,1:nyp,1:nzp)
                 end if
             case ('velocity_x.txt')
                 call this%hydro_step%Point_to_velocity_data(ptr_x, ptr_y)
-                write(this%diagnostics_group_file,1002), ptr_x(1:nxp,1:nyp,1:nzp)
+                ! write(this%diagnostics_group_file,1002), ptr_x(1:nxp,1:nyp,1:nzp)
 
             case ('velocity_y.txt')
                 call this%hydro_step%Point_to_velocity_data(ptr_x, ptr_y)
-                write(this%diagnostics_group_file,1002), ptr_y(1:nxp,1:nyp,1:nzp)
+                ! write(this%diagnostics_group_file,1002), ptr_y(1:nxp,1:nyp,1:nzp)
 
             case ('velocity_z.txt')
                 if (nzp /= 1) then
                     call this%hydro_step%Point_to_velocity_data(ptr_x, ptr_y, ptr_z)
-                    write(this%diagnostics_group_file,1002), ptr_z(1:nxp,1:nyp,1:nzp)
+                    ! write(this%diagnostics_group_file,1002), ptr_z(1:nxp,1:nyp,1:nzp)
                 end if
             case ('pressure.txt')
                 call this%hydro_step%Point_to_pressure_data(ptr_x)
-                write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
+                ! write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
 
             case ('density.txt')
                 call this%hydro_step%Point_to_density_data(ptr_x)
-                write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
+                ! write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
 
             case ('sie.txt')
                 call this%hydro_step%Point_to_sie_data(ptr_x)
-                write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
+                ! write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
 
             case ('index.txt')
                 call this%hydro_step%Point_to_mat_id_data(ptr_x)
-                write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
+                ! write(this%diagnostics_group_file,1002), ptr_x(1:nx,1:ny,1:nz)
 
             case default
-                write (this%diagnostics_group_file,*) 'The specified file name does ' // &
-                    'not correspond to any known variable'
+                ! write (this%diagnostics_group_file,*) 'The specified file name does ' // &
+                !     'not correspond to any known variable'
         end select
 
     end subroutine textual_diagnostic_apply
@@ -160,7 +160,7 @@ contains
         implicit none
         class (textual_diagnostic_t), intent(in out)               :: this
 
-        close(this%diagnostics_group_file)
+        ! close(this%diagnostics_group_file)
     end subroutine textual_diagnostic_close
 
 end module textual_diagnostic_module

@@ -85,6 +85,9 @@ module hydro_step_module
         integer, public                           :: ncyc 
         integer, public                           :: cyc_delete
         integer                                   :: file_unit_lagrange
+
+        ! AVITAY
+        integer                                   :: max_ncyc
     contains
 
         procedure, public  :: do_time_step_2d
@@ -337,7 +340,7 @@ contains
         Constructor%total_dt_drho        => total_dt_drho
         Constructor%cyc_delete = 0
         Constructor%file_unit_lagrange = 777
-        open(Constructor%file_unit_lagrange, file="track_validation_lagrangian", status="unknown", action="write")
+        ! open(Constructor%file_unit_lagrange, file="track_validation_lagrangian", status="unknown", action="write")
         Constructor%parallel_params => parallel_params
         
         allocate(Constructor%rezone)
@@ -357,6 +360,9 @@ contains
             total_density, total_cell_mass, vertex_mass, &
             total_volume, velocity, emf, emfm , wilkins_scheme, parallel_params)
         Constructor%ncyc = 0
+
+        ! AVITAY
+        Constructor%max_ncyc = df%max_ncyc
 
     end function
 
@@ -438,6 +444,9 @@ contains
         real(8), dimension(:, :, :), pointer :: vertex_mass 
 
         integer :: i,j,k
+
+        integer :: max_ncyc
+
         real(8) :: accel_time, avisc_time, vel_time, thermo_time, rezone_time, energy_time, mesh_time, dt_time
 
         call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
@@ -451,8 +460,10 @@ contains
         call this%inversed_vertex_mass%Point_to_data(inversed_vertex_mass)
         call this%vertex_mass%Point_to_data(vertex_mass)
 
-        thermo_time = omp_get_wtime()
+        max_ncyc = this%max_ncyc
 
+
+        thermo_time = omp_get_wtime()
 
         !write(*,*) "DEBUG 1: time_step_3d ENTER"
         ! Set color to orange
@@ -566,23 +577,13 @@ contains
         ! reset color
         !write(*,*) CHAR(27)//'[0m'
 
-        ! if (this%rezone%rezone_type /= 0) call this%advect%Calculate_advect_3d()
-
-        ! if (this%rezone%rezone_type /= 0) then
-        !     call this%advect%Calculate_advect_3d()
-        ! else
-        !     call this%Print_data()
-        ! end if
-
- 
-
         if (this%rezone%rezone_type /= 0) then
             call this%advect%Calculate_advect_3d()
         end if
 
-  
-
-        ! if (this%cyc_delete > 195 ) then
+        ! Runtime debug-file output is disabled. Calling Print_data with its
+        ! OPEN statement disabled causes Fortran to create fort.777 implicitly.
+        ! if (this%cyc_delete > max_ncyc - 5 ) then
         !     call this%Print_data()
         ! end if
 
@@ -637,11 +638,11 @@ contains
         nx_ = this%nx
         ny_ = this%ny
         nz_ = this%nz
-        nmats_ = this%nmats
-        emf_ = this%emf
         nxp_ = this%nxp
         nyp_ = this%nyp
         nzp_ = this%nzp
+        nmats_ = this%nmats
+        emf_ = this%emf
 
         tmp = omp_get_wtime()
         call this%total_sie%Exchange_virtual_space_nonblocking()
@@ -1578,6 +1579,15 @@ contains
                                 (avg_acc_x ** 2 + avg_acc_y ** 2 + avg_acc_z ** 2 + 1d-20)
                         end if
 
+
+                        ! IMPORTANT NOTE: THE ORIGINAL ('main' branch) BACKUS HAD THIS DONE IN 2 SEPARATE STEPS. THIS CHANGES THE RESULTS BECAUSE OF ROUND-UPS.
+                        ! a_visc(i, j, k) = density(i, j, k) * eff_length * &
+                        !     (quad_visc_fac * eff_length * eff_vel_div &
+                        !     -linear_visc_fac(i,j,k) * sqrt(sound_vel(i ,j, k)))
+
+                        ! a_visc(i, j, k) = min(0d0, eff_vel_div) * a_visc(i, j, k)
+
+                        ! ONE LINER
                         a_visc(i, j, k) = min(0d0, eff_vel_div) * density(i, j, k) * eff_length * &
                             (quad_visc_fac * eff_length * eff_vel_div &
                             -linear_visc_fac(i,j,k) * sqrt(sound_vel(i ,j, k)))
