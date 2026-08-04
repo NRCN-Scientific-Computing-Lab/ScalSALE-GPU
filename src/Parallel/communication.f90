@@ -89,35 +89,41 @@ contains
       end if
    end subroutine Send_nonblocking
 
-   subroutine Send_recv_neighbors (this, send_buf, recv_buf, comm_params)
+   subroutine Send_recv_neighbors (this, send_buf, recv_buf, comm_params, offload, exchange_pending)
       class (communication_t)             , intent(in)    :: this 
-      real(8), dimension(:,:,:), allocatable, intent(in)     :: send_buf
-      real(8), dimension(:,:,:), allocatable, intent(in out) :: recv_buf
+      real(8), dimension(:,:,:), pointer, contiguous, intent(in)     :: send_buf
+      real(8), dimension(:,:,:), pointer, contiguous, intent(in out) :: recv_buf
       type(communication_parameters_t) , pointer, intent(in out) :: comm_params
+      logical, intent(in) :: offload
+      logical, intent(in out) :: exchange_pending
       integer :: ierr
 
       if (this%is_parallel .eqv. .true.) then
+         if (exchange_pending) error stop "Blocking MPI exchange started while a nonblocking exchange is pending"
 
-         call MPI_neighbor_alltoallw(send_buf, &
-                                     comm_params%sizes_send, &
-                                     comm_params%start_send, &
-                                     comm_params%types_send, &
-                                     recv_buf, &
-                                     comm_params%sizes_recv, &
-                                     comm_params%start_recv, &
-                                     comm_params%types_recv, &
-                                     comm_params%comm, &
-                                     ierr &
-                                    )
+         if (offload) then
+            !$omp target data use_device_ptr(send_buf, recv_buf)
+            call MPI_neighbor_alltoallw(send_buf, comm_params%sizes_send, comm_params%start_send, &
+                                        comm_params%types_send, recv_buf, comm_params%sizes_recv, &
+                                        comm_params%start_recv, comm_params%types_recv, comm_params%comm, ierr)
+            !$omp end target data
+         else
+            call MPI_neighbor_alltoallw(send_buf, comm_params%sizes_send, comm_params%start_send, &
+                                        comm_params%types_send, recv_buf, comm_params%sizes_recv, &
+                                        comm_params%start_recv, comm_params%types_recv, comm_params%comm, ierr)
+         end if
+         if (ierr /= MPI_SUCCESS) error stop "MPI_neighbor_alltoallw failed"
 
       end if
    end subroutine Send_recv_neighbors
 
 
-   subroutine Send_recv_neighbors_diag (this, comm_params, send_buf, recv_buf)
+   subroutine Send_recv_neighbors_diag (this, comm_params, send_buf, recv_buf, offload, exchange_pending)
       class (communication_t)             , intent(in)       :: this 
-      real(8), dimension(:), allocatable, intent(in out) :: send_buf
-      real(8), dimension(:), allocatable, intent(in out) :: recv_buf
+      real(8), dimension(:), pointer, contiguous, intent(in out) :: send_buf
+      real(8), dimension(:), pointer, contiguous, intent(in out) :: recv_buf
+      logical, intent(in) :: offload
+      logical, intent(in out) :: exchange_pending
       integer, dimension(3) :: vals_shape
       integer  :: d1, d2, d3
       integer  :: x, y, z, i,j,k,c
@@ -130,19 +136,21 @@ contains
 
 
       if (this%is_parallel .eqv. .true.) then
+         if (exchange_pending) error stop "Blocking MPI exchange started while a nonblocking exchange is pending"
 
 
-         call MPI_neighbor_alltoallw(send_buf, &
-                                     comm_params%sizes_recv, &
-                                     comm_params%start_recv, &
-                                     comm_params%types_recv, &
-                                     recv_buf, &
-                                     comm_params%sizes_recv, &
-                                     comm_params%start_recv, &
-                                     comm_params%types_recv, &
-                                     comm_params%comm, &
-                                     ierr &
-                                    )
+         if (offload) then
+            !$omp target data use_device_ptr(send_buf, recv_buf)
+            call MPI_neighbor_alltoallw(send_buf, comm_params%sizes_recv, comm_params%start_recv, &
+                                        comm_params%types_recv, recv_buf, comm_params%sizes_recv, &
+                                        comm_params%start_recv, comm_params%types_recv, comm_params%comm, ierr)
+            !$omp end target data
+         else
+            call MPI_neighbor_alltoallw(send_buf, comm_params%sizes_recv, comm_params%start_recv, &
+                                        comm_params%types_recv, recv_buf, comm_params%sizes_recv, &
+                                        comm_params%start_recv, comm_params%types_recv, comm_params%comm, ierr)
+         end if
+         if (ierr /= MPI_SUCCESS) error stop "MPI_neighbor_alltoallw failed"
 
 
 
@@ -152,11 +160,13 @@ contains
    end subroutine Send_recv_neighbors_diag
 
 
-   subroutine Send_neighbors_diag (this, comm_params, send_buf, recv_buf, request)
+   subroutine Send_neighbors_diag (this, comm_params, send_buf, recv_buf, request, offload, exchange_pending)
       class (communication_t)             , intent(in)       :: this 
-      real(8), dimension(:), allocatable, intent(in out) :: send_buf
-      real(8), dimension(:), allocatable, intent(in out)     :: recv_buf
+      real(8), dimension(:), pointer, contiguous, intent(in out) :: send_buf
+      real(8), dimension(:), pointer, contiguous, intent(in out) :: recv_buf
       integer, intent(in out)                                :: request
+      logical, intent(in)                                    :: offload
+      logical, intent(in out)                                :: exchange_pending
 
       type(communication_parameters_t) , pointer, intent(in out) :: comm_params
       integer :: ierr
@@ -166,29 +176,32 @@ contains
 
 
       if (this%is_parallel .eqv. .true.) then
-
-         call MPI_Ineighbor_alltoallw(send_buf, &
-                                     comm_params%sizes_recv, &
-                                     comm_params%start_recv, &
-                                     comm_params%types_recv, &
-                                     recv_buf, &
-                                     comm_params%sizes_recv, &
-                                     comm_params%start_recv, &
-                                     comm_params%types_recv, &
-                                     comm_params%comm, &
-                                     request, &
-                                     ierr &
-                                    )
+         if (exchange_pending) error stop "MPI neighbor exchange started before the previous exchange was completed"
+         if (offload) then
+            !$omp target data use_device_ptr(send_buf, recv_buf)
+            call MPI_Ineighbor_alltoallw(send_buf, comm_params%sizes_recv, comm_params%start_recv, &
+                                         comm_params%types_recv, recv_buf, comm_params%sizes_recv, &
+                                         comm_params%start_recv, comm_params%types_recv, comm_params%comm, request, ierr)
+            !$omp end target data
+         else
+            call MPI_Ineighbor_alltoallw(send_buf, comm_params%sizes_recv, comm_params%start_recv, &
+                                         comm_params%types_recv, recv_buf, comm_params%sizes_recv, &
+                                         comm_params%start_recv, comm_params%types_recv, comm_params%comm, request, ierr)
+         end if
+         if (ierr /= MPI_SUCCESS) error stop "MPI_Ineighbor_alltoallw failed"
+         exchange_pending = .true.
       end if
 
    end subroutine Send_neighbors_diag
 
 
-   subroutine Wait_recv_neighbors_diag (this, comm_params, send_buf, recv_buf, request)
+   subroutine Wait_recv_neighbors_diag (this, comm_params, send_buf, recv_buf, request, offload, exchange_pending)
       class (communication_t)             , intent(in)    :: this 
-      real(8), dimension(:), allocatable, intent(in out) :: send_buf
-      real(8), dimension(:), allocatable, intent(in out)     :: recv_buf
+      real(8), dimension(:), pointer, contiguous, intent(in out) :: send_buf
+      real(8), dimension(:), pointer, contiguous, intent(in out) :: recv_buf
       integer, intent(in out)                                :: request
+      logical, intent(in)                                    :: offload
+      logical, intent(in out)                                :: exchange_pending
 
       type(communication_parameters_t) , pointer, intent(in out) :: comm_params
       integer :: ierr
@@ -198,10 +211,10 @@ contains
 
 
       if (this%is_parallel .eqv. .true.) then
-
+         if (.not. exchange_pending) error stop "MPI neighbor exchange wait called before an exchange was started"
          call MPI_wait(request, MPI_status_ignore, ierr)
-
-
+         if (ierr /= MPI_SUCCESS) error stop "MPI_wait failed for neighbor exchange"
+         exchange_pending = .false.
       end if
    end subroutine Wait_recv_neighbors_diag
 

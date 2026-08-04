@@ -140,7 +140,7 @@ contains
       real(8), dimension(:, :, :), pointer :: y            
       real(8), dimension(:, :, :), pointer :: z            
       real(8), dimension(:, :, :), pointer :: density      
-      integer, save :: cyc = 0
+      integer, save :: counter = 0
       integer, dimension(:), pointer :: i_virt, j_virt, k_virt
       integer, dimension(8, 3) :: i_tetr = reshape([-1, 1, 0, 1, 0, 0, 0, 1 , &
                                                      0, 0,-1, 0, 0, 0, 0, 0 , &
@@ -185,21 +185,18 @@ contains
 
       !vertex_mass(1:nxp, 1:nyp , 1:nzp) = 0d0
 
-      !TODO: map vertex_mass at the beginning (no need to copy)
-      !$omp target teams distribute parallel do collapse(3)
-      do k = 1, nzp
-        do j = 1, nyp
-          do i = 1, nxp
-            vertex_mass(i,j,k) = 0.0d0
-          end do
-        end do
-      end do
-      !$omp end target teams distribute parallel do
+      if (counter > 1) then
+         !$omp target teams distribute parallel do collapse(3)
+         do k = 1, nzp
+            do j = 1, nyp
+               do i = 1, nxp
+                  vertex_mass(i,j,k) = 0.0d0
+               end do
+            end do
+         end do
+         !$omp end target teams distribute parallel do
 
-      !!$omp target update to(density)
-      !!$omp target update to(x,y,z)
-
-      !$omp target teams distribute parallel do collapse(3) map(to: i_tetr, j_tetr, k_tetr, i_virt, j_virt, k_virt) private(i, j, k, t, kk, jj, ii, i1, i2, i3, j1, j2, j3, k1, k2, k3)
+         !$omp target teams distribute parallel do collapse(3) map(to: i_tetr, j_tetr, k_tetr, i_virt, j_virt, k_virt) private(i, j, k, t, kk, jj, ii, i1, i2, i3, j1, j2, j3, k1, k2, k3)
          do k = 1, nzp
             do j = 1, nyp
                do i = 1, nxp
@@ -218,20 +215,18 @@ contains
                         k2 = k + k_tetr(t, 2)
                         k3 = k + k_tetr(t, 3)
 
-                        if ( .false. .eqv. ( (i_virt(ii) == 0        .and. wall_x_bot .eqv. .true.) .or. &
-                             (i_virt(ii) == virt_nxp .and. wall_x_top .eqv. .true.) .or. &
-                             (j_virt(jj) == 0        .and. wall_y_bot .eqv. .true.) .or. &
-                             (j_virt(jj) == virt_nyp .and. wall_y_top .eqv. .true.) .or. &
-                             (k_virt(kk) == 0        .and. wall_z_bot .eqv. .true.) .or. &
-                             (k_virt(kk) == virt_nzp .and. wall_z_top .eqv. .true.) )       ) then
-                        	vertex_mass(i, j, k) = vertex_mass(i, j, k) + density(ii, jj, kk) * &
-                            	                   Tetrahederon_volume(x(i  , j  , k  ), y(i  , j  , k  ), z(i  , j  , k  ), &
-                            	                                       x(i1, j1, k1), y(i1, j1, k1), z(i1, j1, k1), &
-                            	                                       x(i2, j2, k2), y(i2, j2, k2), z(i2, j2, k2), &
-                            	                                       x(i3, j3, k3), y(i3, j3, k3), z(i3, j3, k3))
-						     else 
-								cycle
-                             end if
+                        if (.not. ((i_virt(ii) == 0 .and. wall_x_bot) .or. &
+                            (i_virt(ii) == virt_nxp .and. wall_x_top) .or. &
+                            (j_virt(jj) == 0 .and. wall_y_bot) .or. &
+                            (j_virt(jj) == virt_nyp .and. wall_y_top) .or. &
+                            (k_virt(kk) == 0 .and. wall_z_bot) .or. &
+                            (k_virt(kk) == virt_nzp .and. wall_z_top))) then
+                           vertex_mass(i, j, k) = vertex_mass(i, j, k) + density(ii, jj, kk) * &
+                              Tetrahederon_volume(x(i,j,k), y(i,j,k), z(i,j,k), &
+                                                  x(i1,j1,k1), y(i1,j1,k1), z(i1,j1,k1), &
+                                                  x(i2,j2,k2), y(i2,j2,k2), z(i2,j2,k2), &
+                                                  x(i3,j3,k3), y(i3,j3,k3), z(i3,j3,k3))
+                        end if
                      end if
                   end do
                   vertex_mass(i, j, k) = vertex_mass(i, j, k) / 8d0
@@ -239,8 +234,58 @@ contains
             end do
          end do
          !$omp end target teams distribute parallel do
+      else
+         !$omp parallel do collapse(3)
+         do k = 1, nzp
+            do j = 1, nyp
+               do i = 1, nxp
+                  vertex_mass(i,j,k) = 0.0d0
+               end do
+            end do
+         end do
+         !$omp end parallel do
 
-         cyc = cyc + 1
+         !$omp parallel do collapse(3) private(i, j, k, t, kk, jj, ii, i1, i2, i3, j1, j2, j3, k1, k2, k3)
+         do k = 1, nzp
+            do j = 1, nyp
+               do i = 1, nxp
+                  do t = 1, 8
+                     kk = k - (8 - t) / 4
+                     jj = j - mod(t + 1, 4) / 2
+                     ii = i - mod(t, 2)
+                     if (cell_mass(ii, jj, kk) /= 0d0) then
+                        i1 = i + i_tetr(t, 1)
+                        i2 = i + i_tetr(t, 2)
+                        i3 = i + i_tetr(t, 3)
+                        j1 = j + j_tetr(t, 1)
+                        j2 = j + j_tetr(t, 2)
+                        j3 = j + j_tetr(t, 3)
+                        k1 = k + k_tetr(t, 1)
+                        k2 = k + k_tetr(t, 2)
+                        k3 = k + k_tetr(t, 3)
+
+                        if (.not. ((i_virt(ii) == 0 .and. wall_x_bot) .or. &
+                            (i_virt(ii) == virt_nxp .and. wall_x_top) .or. &
+                            (j_virt(jj) == 0 .and. wall_y_bot) .or. &
+                            (j_virt(jj) == virt_nyp .and. wall_y_top) .or. &
+                            (k_virt(kk) == 0 .and. wall_z_bot) .or. &
+                            (k_virt(kk) == virt_nzp .and. wall_z_top))) then
+                           vertex_mass(i, j, k) = vertex_mass(i, j, k) + density(ii, jj, kk) * &
+                              Tetrahederon_volume(x(i,j,k), y(i,j,k), z(i,j,k), &
+                                                  x(i1,j1,k1), y(i1,j1,k1), z(i1,j1,k1), &
+                                                  x(i2,j2,k2), y(i2,j2,k2), z(i2,j2,k2), &
+                                                  x(i3,j3,k3), y(i3,j3,k3), z(i3,j3,k3))
+                        end if
+                     end if
+                  end do
+                  vertex_mass(i, j, k) = vertex_mass(i, j, k) / 8d0
+               end do
+            end do
+         end do
+         !$omp end parallel do
+      end if
+
+      counter = counter + 1
          
    end subroutine Calculate_vertex_mass_3d
 

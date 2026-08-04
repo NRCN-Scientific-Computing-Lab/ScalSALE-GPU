@@ -1,6 +1,9 @@
 
 module parallel_parameters_module
 
+    use mpi
+    use omp_lib
+
     implicit none
     private
     public :: parallel_parameters_t
@@ -45,6 +48,7 @@ module parallel_parameters_module
         logical, public               :: is_wall_z_bot    
 
         logical, public               :: is_parallel
+        integer, public               :: offload_counter = 0
     contains
         procedure, public :: get_virtual_array
         procedure, public :: get_physical_array
@@ -56,6 +60,7 @@ module parallel_parameters_module
         procedure, public :: get_virtual_from_to
         procedure, public :: Point_to_virtual_array
         procedure, public :: Inside_physical_world
+        procedure, public :: init_device_binding
     end type parallel_parameters_t
 
     interface parallel_parameters_t
@@ -78,6 +83,7 @@ contains
 
         Constructor%my_id = my_id
         Constructor%my_rank = my_id
+        Constructor%offload_counter = 0
 
         Constructor%np = np
         Constructor%npx = npx
@@ -341,4 +347,26 @@ contains
             inside = 1
         end if
     end function Inside_physical_world
+
+    subroutine init_device_binding(this)
+        class(parallel_parameters_t), intent(inout) :: this
+        integer :: local_comm, local_rank, num_devices, device_id, ierr
+
+        call MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, local_comm, ierr)
+        if (ierr /= MPI_SUCCESS) error stop "MPI_Comm_split_type failed while binding devices"
+
+        call MPI_Comm_rank(local_comm, local_rank, ierr)
+        if (ierr /= MPI_SUCCESS) error stop "MPI_Comm_rank failed while binding devices"
+
+        num_devices = omp_get_num_devices()
+        if (num_devices > 0) then
+            device_id = modulo(local_rank, num_devices)
+            call omp_set_default_device(device_id)
+        end if
+
+        call MPI_Comm_free(local_comm, ierr)
+        if (ierr /= MPI_SUCCESS) error stop "MPI_Comm_free failed while binding devices"
+
+        if (this%my_rank == 0) write(*,*) "Number of available devices: ", num_devices
+    end subroutine init_device_binding
 end module parallel_parameters_module

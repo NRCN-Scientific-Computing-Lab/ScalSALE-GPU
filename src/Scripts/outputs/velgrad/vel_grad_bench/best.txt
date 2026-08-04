@@ -1,2 +1,0 @@
-Best variant: 04_inv_denom_mul
-Average time: 0.000243725

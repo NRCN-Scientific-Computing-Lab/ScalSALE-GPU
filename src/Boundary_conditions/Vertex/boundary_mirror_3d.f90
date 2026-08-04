@@ -80,7 +80,8 @@ contains
         nyp = v_quantity%d2
         nzp = v_quantity%d3
         if (wall_x_bot .eqv. .true.) then
-            !$omp target teams distribute parallel do collapse(2) if(is_offload_local)
+            if (is_offload_local) then
+            !$omp target teams distribute parallel do collapse(2)
             do kk = 0, nzp + 1
                 do jj = 0, nyp + 1
                     call Mirror_image_3d(normal_i1(1), normal_i1(2)  , &
@@ -90,10 +91,23 @@ contains
                 end do
             end do
             !$omp end target teams distribute parallel do
+            else
+            !$omp parallel do collapse(2)
+            do kk = 0, nzp + 1
+                do jj = 0, nyp + 1
+                    call Mirror_image_3d(normal_i1(1), normal_i1(2)  , &
+                        normal_i1(3), pc_i1, &
+                        x(2, jj, kk), y(2, jj, kk), z(2, jj, kk), &
+                        x(0, jj, kk), y(0, jj, kk), z(0, jj, kk))
+                end do
+            end do
+            !$omp end parallel do
+            end if
         end if
 
         if (wall_x_top .eqv. .true.) then
-            !$omp target teams distribute parallel do collapse(2) if(is_offload_local)
+            if (is_offload_local) then
+            !$omp target teams distribute parallel do collapse(2)
             do kk = 0, nzp + 1
                 do jj = 0, nyp + 1
                     call Mirror_image_3d(normal_inxp(1), normal_inxp(2)  , &
@@ -103,10 +117,23 @@ contains
                 end do
             end do
             !$omp end target teams distribute parallel do
+            else
+            !$omp parallel do collapse(2)
+            do kk = 0, nzp + 1
+                do jj = 0, nyp + 1
+                    call Mirror_image_3d(normal_inxp(1), normal_inxp(2)  , &
+                        normal_inxp(3), pc_inxp, &
+                        x(nxp - 1, jj, kk), y(nxp-1, jj, kk), z(nxp-1, jj, kk), &
+                        x(nxp + 1, jj, kk), y(nxp+1, jj, kk), z(nxp+1, jj, kk))
+                end do
+            end do
+            !$omp end parallel do
+            end if
         end if
 
         if (wall_y_bot .eqv. .true.) then
-            !$omp target teams distribute parallel do collapse(2) if(is_offload_local)
+            if (is_offload_local) then
+            !$omp target teams distribute parallel do collapse(2)
             do kk = 0, nzp + 1
                 do ii = 0, nxp + 1
                     call Mirror_image_3d(normal_j1(1), normal_j1(2)  , &
@@ -116,9 +143,22 @@ contains
                 end do
             end do
             !$omp end target teams distribute parallel do
+            else
+            !$omp parallel do collapse(2)
+            do kk = 0, nzp + 1
+                do ii = 0, nxp + 1
+                    call Mirror_image_3d(normal_j1(1), normal_j1(2)  , &
+                        normal_j1(3), pc_j1, &
+                        x(ii, 2, kk), y(ii, 2, kk), z(ii, 2, kk), &
+                        x(ii, 0, kk), y(ii, 0, kk), z(ii, 0, kk))
+                end do
+            end do
+            !$omp end parallel do
+            end if
         end if
         if (wall_y_top .eqv. .true.) then
-            !$omp target teams distribute parallel do collapse(2) if(is_offload_local)
+            if (is_offload_local) then
+            !$omp target teams distribute parallel do collapse(2)
             do kk = 0, nzp + 1
                 do ii = 0, nxp + 1
                     call Mirror_image_3d(normal_jnyp(1), normal_jnyp(2)  , &
@@ -128,10 +168,23 @@ contains
                 end do
             end do
             !$omp end target teams distribute parallel do
+            else
+            !$omp parallel do collapse(2)
+            do kk = 0, nzp + 1
+                do ii = 0, nxp + 1
+                    call Mirror_image_3d(normal_jnyp(1), normal_jnyp(2)  , &
+                        normal_jnyp(3), pc_jnyp, &
+                        x(ii, nyp-1, kk), y(ii, nyp-1, kk), z(ii, nyp-1, kk), &
+                        x(ii, nyp+1, kk), y(ii, nyp+1, kk), z(ii, nyp+1, kk))
+                end do
+            end do
+            !$omp end parallel do
+            end if
         end if
 
         if (wall_z_bot .eqv. .true.) then
-            !$omp target teams distribute parallel do collapse(2) if(is_offload_local)
+            if (is_offload_local) then
+            !$omp target teams distribute parallel do collapse(2)
             do jj = 0, nyp + 1
                 do ii = 0, nxp + 1
                     call Mirror_image_3d(normal_k1(1), normal_k1(2)  , &
@@ -141,10 +194,23 @@ contains
                 end do
             end do
             !$omp end target teams distribute parallel do
+            else
+            !$omp parallel do collapse(2)
+            do jj = 0, nyp + 1
+                do ii = 0, nxp + 1
+                    call Mirror_image_3d(normal_k1(1), normal_k1(2)  , &
+                        normal_k1(3), pc_k1, &
+                        x(ii, jj, 2), y(ii, jj, 2), z(ii, jj, 2), &
+                        x(ii, jj, 0), y(ii, jj, 0), z(ii, jj, 0))
+                end do
+            end do
+            !$omp end parallel do
+            end if
         end if
 
         if (wall_z_top .eqv. .true.) then
-            !$omp target teams distribute parallel do collapse(2) if(is_offload_local)
+            if (is_offload_local) then
+            !$omp target teams distribute parallel do collapse(2)
             do jj = 0, nyp + 1
                 do ii = 0, nxp + 1
                     call Mirror_image_3d(normal_knzp(1), normal_knzp(2)  , &
@@ -154,6 +220,18 @@ contains
                 end do
             end do
             !$omp end target teams distribute parallel do
+            else
+            !$omp parallel do collapse(2)
+            do jj = 0, nyp + 1
+                do ii = 0, nxp + 1
+                    call Mirror_image_3d(normal_knzp(1), normal_knzp(2)  , &
+                        normal_knzp(3), pc_knzp, &
+                        x(ii, jj, nzp-1), y(ii, jj, nzp-1), z(ii, jj, nzp-1), &
+                        x(ii, jj, nzp+1), y(ii, jj, nzp+1), z(ii, jj, nzp+1))
+                end do
+            end do
+            !$omp end parallel do
+            end if
         end if
         cyc = cyc + 1
     end subroutine Boundary_mirror_3d_calculate

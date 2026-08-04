@@ -118,6 +118,7 @@ contains
       real(8) :: start_time  
 
       integer                                                        :: dimension
+      integer :: d1, d2, d3
 
 
       if (this%dimension == 2) then
@@ -147,11 +148,14 @@ contains
          end if
 
          start_time = omp_get_wtime()
+         d1 = this%d1
+         d2 = this%d2
+         d3 = this%d3
          !!$omp target update to(x_tag, y_tag, z_tag, velocity_x, velocity_y, velocity_z)
          !$omp target teams distribute parallel do collapse(3) 
-         do k = 1,this%d3
-            do j = 1, this%d2
-               do i = 1, this%d1
+         do k = 1, d3
+            do j = 1, d2
+               do i = 1, d1
                   x(i, j, k) = x_tag(i, j, k) + dt * velocity_x(i, j, k)
                   y(i, j, k) = y_tag(i, j, k) + dt * velocity_y(i, j, k)
                   z(i, j, k) = z_tag(i, j, k) + dt * velocity_z(i, j, k)

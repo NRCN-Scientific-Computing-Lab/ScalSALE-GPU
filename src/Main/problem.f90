@@ -248,6 +248,7 @@ contains
         if (df%dimension == 2) allocate(bc_c_wrap_arr(4))
         if (df%dimension == 3) allocate(bc_c_wrap_arr(6))
         allocate(bc_c_wrap)
+        call Constructor%parallel_params%init_device_binding()
 
 
 
@@ -905,11 +906,6 @@ contains
             call this%hydro%advect%adv_mats%Point_to_initial_layers(init_mat_layers_adv_target)
 
             start = omp_get_wtime()
-
-            if(this%parallel_params%my_rank == 0) then
-             write(*,*) "Number of Available devices: ", omp_get_num_devices()
-            endif
-            call omp_set_default_device(this%parallel_params%my_rank)
 
             !$omp target enter data map(to: x_target, y_target, z_target,&
             !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&

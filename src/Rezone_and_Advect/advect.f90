@@ -580,7 +580,7 @@ contains
             vol_top     = vol_center
         end if
 
-        if (this%shorter_advect .and. i /= 1) then
+        if ((this%shorter_advect) .and. (i /= 1)) then
             this%total_left_out = 0d0
             this%total_left_in  = 0d0
             do tmp_mat = 1, this%n_materials
@@ -601,7 +601,7 @@ contains
             this%total_left_in  = total_area_in_tmp
         end if
 
-        if (this%shorter_advect .and. j /= 1) then
+        if ((this%shorter_advect) .and. (j /= 1)) then
             this%total_bottom_out = 0d0
             this%total_bottom_in  = 0d0
             do tmp_mat = 1, this%n_materials
@@ -849,7 +849,7 @@ contains
         b = df_dy
 
 
-        if (abs(a) < 1d-20 .and. abs(b) < 1d-20) then
+        if ((abs(a) < 1d-20) .and. (abs(b) < 1d-20)) then
             a = 1d0
             b = 0d0
         end if
@@ -902,7 +902,7 @@ contains
         i_prev = ind(1) - 1
         if (i_prev == 0) i_prev = 4
 
-        if (ind(3) == i_next .or. ind(3) == i_prev) then
+        if ((ind(3) == i_next) .or. (ind(3) == i_prev)) then
             is_next_i_3 = 1
             x3 = x(i_vert(ind(3)), j_vert(ind(3)), 1)
             x4 = x(i_vert(ind(4)), j_vert(ind(4)), 1)
@@ -991,8 +991,8 @@ contains
                 yi1 =  y2
                 xi2 =  x13
                 yi2 =  y13
-                if ((is_next_i_3 == 1 .and. Quad_volume(xi1, yi1, xi2, yi2, x3 ,  y3, x24, y24, cyl) < 0d0) .or.  &
-                    (is_next_i_3 == 0 .and. Quad_volume(xi1, yi1, xi2, yi2, x24, y24,  x4,  y4, cyl) < 0d0)) then
+                if (((is_next_i_3 == 1) .and. (Quad_volume(xi1, yi1, xi2, yi2, x3, y3, x24, y24, cyl) < 0d0)) .or. &
+                    ((is_next_i_3 == 0) .and. (Quad_volume(xi1, yi1, xi2, yi2, x24, y24, x4, y4, cyl) < 0d0))) then
                     fx2 =  b13     / det13
                     gx2 = -c13 * b / det13
                     fy2 = -a13     / det13
@@ -1038,8 +1038,8 @@ contains
                 end if
                 xi2 = x24
                 yi2 = y24
-                if ((is_next_i_3 == 1 .and. Quad_volume(xi1, yi1, xi2, yi2, x4, y4, x4, y4, cyl) < 0d0) .or.  &
-                    (is_next_i_3 == 0 .and. Quad_volume(xi1, yi1, xi2, yi2, x3, y3, x3, y3, cyl) < 0d0)) then
+                if (((is_next_i_3 == 1) .and. (Quad_volume(xi1, yi1, xi2, yi2, x4, y4, x4, y4, cyl) < 0d0)) .or. &
+                    ((is_next_i_3 == 0) .and. (Quad_volume(xi1, yi1, xi2, yi2, x3, y3, x3, y3, cyl) < 0d0))) then
                     if (is_next_i_3 == 1) then
                         fx2 =  b24     / det24
                         gx2 = -c24 * b / det24
@@ -1079,8 +1079,9 @@ contains
         c_old = c_new
         vol_new = 100
 
-        do while (iter_count == 0 .or. ((abs((c_old - c_new) / (c_old + c_new + 1d-38)) > 1d-6 .or. &
-            abs((vol_new - dv) / (vol_new + dv + 1d-38)) > 1d-3) .and. iter_count < 99))
+        do while ((iter_count == 0) .or. &
+            (((abs((c_old-c_new)/(c_old+c_new+1d-38)) > 1d-6) .or. &
+              (abs((vol_new-dv)/(vol_new+dv+1d-38)) > 1d-3)) .and. (iter_count < 99)))
             c_old = c_new
             iter_count = iter_count + 1
             xi3 = gx1 + fx1 * c_new
@@ -1769,8 +1770,8 @@ contains
 
         ! ORIGINAL SECTION ^
 
-        if ((tot_vof(ita, jta, k_accept) > this%emf1).and. (tot_vof(itd, jtd, k_donner) > this%emf1).and. &
-            (mat_id(ita, jta, k_accept) == mat_id(itd, jtd, k_donner)).and. (num_mat_cell(itd, jtd, k_donner) == 1)) then
+        if ((tot_vof(ita, jta, k_accept) > this%emf1) .and. (tot_vof(itd, jtd, k_donner) > this%emf1) .and. &
+            (mat_id(ita, jta, k_accept) == mat_id(itd, jtd, k_donner)) .and. (num_mat_cell(itd, jtd, k_donner) == 1)) then
             
             ii = mat_id(itd, jtd, k_donner)
             
@@ -2390,11 +2391,11 @@ contains
 
         fac = (mat_vof(mat_fix,i, j, 1) * mat_vol(i, j, 1) + area_in) / abs(area_out)
 
-        if (i /= 1 .and. area_l_out < 0d0) then
+        if ((i /= 1) .and. (area_l_out < 0d0)) then
             call this%Fix_overflow_for_passed_cell(i, j, k, .true.  , &
                 this%adv_mats%area_left_out(mat_fix)  , this%adv_mats%area_left_out(mat_max)  , fac, mat_fix, mat_max)
         end if
-        if (j /= 0 .and. area_b_out < 0d0) then
+        if ((j /= 0) .and. (area_b_out < 0d0)) then
             call this%Fix_overflow_for_passed_cell(i, j, k, .false. , &
                 this%adv_mats%area_bottom_out(mat_fix), this%adv_mats%area_bottom_out(mat_max), fac, mat_fix, mat_max)
         end if
@@ -2901,12 +2902,12 @@ contains
             virt_k_1 = this%parallel_params%k_virt(1)
             virt_k_nzp = this%parallel_params%k_virt(this%nzp)
 
-            if (virt_i_1 /= 1 .or. wall_x_bot .eqv. .false.) i_start = 1
-            if (virt_j_1 /= 1 .or. wall_y_bot .eqv. .false.) j_start = 1
-            if (virt_k_1 /= 1 .or. wall_z_bot .eqv. .false.) k_start = 1
-            if (virt_i_nxp /= virt_nxp .or. wall_x_top .eqv. .false.) i_end = i_end - 1
-            if (virt_j_nyp /= virt_nyp .or. wall_y_top .eqv. .false.) j_end = j_end - 1
-            if (virt_k_nzp /= virt_nzp .or. wall_z_top .eqv. .false.) k_end = k_end - 1
+            if ((virt_i_1 /= 1) .or. (.not. wall_x_bot)) i_start = 1
+            if ((virt_j_1 /= 1) .or. (.not. wall_y_bot)) j_start = 1
+            if ((virt_k_1 /= 1) .or. (.not. wall_z_bot)) k_start = 1
+            if ((virt_i_nxp /= virt_nxp) .or. (.not. wall_x_top)) i_end = i_end - 1
+            if ((virt_j_nyp /= virt_nyp) .or. (.not. wall_y_top)) j_end = j_end - 1
+            if ((virt_k_nzp /= virt_nzp) .or. (.not. wall_z_top)) k_end = k_end - 1
         end if
 
         this%first_convergence_top = 0
@@ -3258,7 +3259,9 @@ contains
                     do face = 1, 6
 
                         if (shorter_advect) then
-                            if ((i > 1 .and. face == 1) .or. (j > 1 .and. face == 2) .or. (k > 1 .and. face == 3)) then
+                            if (((i > 1) .and. (face == 1)) .or. &
+                                ((j > 1) .and. (face == 2)) .or. &
+                                ((k > 1) .and. (face == 3))) then
                                 cycle
                             end if
                         end if
@@ -3323,10 +3326,10 @@ contains
                         tet_counter = 1
                         sign_tet_vol1 = 0d0
 
-                        do while(tet_counter < 4 .and. is_iregular == 0)
-                            if (abs(sign_tet_vol1) < 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                        do while ((tet_counter < 4) .and. (is_iregular == 0))
+                            if ((abs(sign_tet_vol1) < 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                 sign_tet_vol1  = sign(1d0, tet_vol(tet_counter))
-                            else if (abs(sign_tet_vol1) > 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                            else if ((abs(sign_tet_vol1) > 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                 sign_tet_vol2 = sign(1d0, tet_vol(tet_counter))
                                 if (sign_tet_vol2 / sign_tet_vol1 < 0d0) is_iregular = 1
                             end if
@@ -3339,10 +3342,10 @@ contains
                             tet_vol(3) = Tetrahederon_volume(x3, y3, z3, x1, y1, z1, x4, y4, z4, x_lag1, y_lag1, z_lag1)
                             sign_tet_vol1 = 0d0
                             tet_counter = 1
-                            do while(tet_counter < 4 .and. is_iregular == 0)
-                                if      (abs(sign_tet_vol1) < 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                            do while ((tet_counter < 4) .and. (is_iregular == 0))
+                                if      ((abs(sign_tet_vol1) < 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                     sign_tet_vol1  = sign(1d0, tet_vol(tet_counter))
-                                else if (abs(sign_tet_vol1) > 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                                else if ((abs(sign_tet_vol1) > 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                     sign_tet_vol2 = sign(1d0, tet_vol(tet_counter))
                                     if (sign_tet_vol2 / sign_tet_vol1 < 0d0) is_iregular = 1
                                 end if
@@ -3355,10 +3358,10 @@ contains
                             tet_vol(3) = Tetrahederon_volume(x4, y4, z4, x1, y1, z1, x2, y2, z2, x_lag1, y_lag1, z_lag1)
                             sign_tet_vol1 = 0d0
                             tet_counter = 1
-                            do while(tet_counter < 4 .and. is_iregular == 0)
-                                if      (abs(sign_tet_vol1) < 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                            do while ((tet_counter < 4) .and. (is_iregular == 0))
+                                if      ((abs(sign_tet_vol1) < 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                     sign_tet_vol1  = sign(1d0, tet_vol(tet_counter))
-                                else if (abs(sign_tet_vol1) > 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                                else if ((abs(sign_tet_vol1) > 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                     sign_tet_vol2 = sign(1d0, tet_vol(tet_counter))
                                     if(sign_tet_vol2 / sign_tet_vol1 < 0d0) is_iregular = 1
                                 end if
@@ -3371,10 +3374,10 @@ contains
                             tet_vol(3) = Tetrahederon_volume(x3, y3, z3, x4, y4, z4, x2, y2, z2, x_lag4, y_lag4, z_lag4)
                             sign_tet_vol1 = 0d0
                             tet_counter = 1
-                            do while(tet_counter < 4 .and. is_iregular == 0)
-                                if      (abs(sign_tet_vol1) < 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                            do while ((tet_counter < 4) .and. (is_iregular == 0))
+                                if      ((abs(sign_tet_vol1) < 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                     sign_tet_vol1  = sign(1d0, tet_vol(tet_counter))
-                                else if (abs(sign_tet_vol1) > 1d-10 .and. abs(tet_vol(tet_counter)) > 1d-10) then
+                                else if ((abs(sign_tet_vol1) > 1d-10) .and. (abs(tet_vol(tet_counter)) > 1d-10)) then
                                     sign_tet_vol2 = sign(1d0, tet_vol(tet_counter))
                                     if(sign_tet_vol2 / sign_tet_vol1 < 0d0) is_iregular = 1
                                 end if
@@ -3529,7 +3532,7 @@ contains
                                 donnor_sie  = sie_vof    (tmp_mat, id, jd, kd) * donnor_mass
 
                                 !PROBLEM IS HERE
-                                if (abs(dvof) > vol(i,j,k)*emf /100d0 .and. tmp_mat /= mat_id(i,j,k)) then
+                                if ((abs(dvof) > vol(i,j,k)*emf/100d0) .and. (tmp_mat /= mat_id(i,j,k))) then
                                     associated_mat_vof = .true.
                                     
                                     ! mix_counter = mix_counter + 1
@@ -3551,7 +3554,7 @@ contains
                                         mat_cell_mass_adv(tmp_mat, i, j, k) = mat_cell_mass_adv(tmp_mat, i, j, k) + donnor_mass
                                         ! !$OMP END ATOMIC
                                     else
-                                        if (n_materials_in_cell(i,j,k) > 1 .or. associated_mat_vof) then
+                                        if ((n_materials_in_cell(i,j,k) > 1) .or. (associated_mat_vof)) then
                                             ! !$OMP ATOMIC
                                             sie_vof_adv(tmp_mat, i, j, k) = sie_vof_adv(tmp_mat, i, j, k) + donnor_sie
                                             ! !$OMP END ATOMIC
@@ -3703,18 +3706,18 @@ contains
         !     end do
         ! end if
 
-        mix_counter = 0
-        !$OMP PARALLEL DO COLLAPSE(3) REDUCTION(+: mix_counter)
-        do k = 1, this%nz
-            do j = 1, this%ny 
-                do i = 1, this%nx
-                    if (abs(vof_adv(i, j, k)) > 0) then
-                        mix_counter = mix_counter + 1
-                    end if   
-                end do
-            end do
-        end do
-        !$OMP END PARALLEL DO
+        ! mix_counter = 0
+        ! !$OMP PARALLEL DO COLLAPSE(3) REDUCTION(+: mix_counter)
+        ! do k = 1, this%nz
+        !     do j = 1, this%ny 
+        !         do i = 1, this%nx
+        !             if (abs(vof_adv(i, j, k)) > 0) then
+        !                 mix_counter = mix_counter + 1
+        !             end if   
+        !         end do
+        !     end do
+        ! end do
+        ! !$OMP END PARALLEL DO
 
 
         ! Write mixing statistics to file with proper formatting
@@ -3738,17 +3741,17 @@ contains
             !     "-- TOP -- CONVERGENCE COUNT: ", this%convergence_top, &
             !     "-- BOTTOM -- CONVERGENCE COUNT: ", this%convergence_bottom
 
-            write(*,'(A,I0,A,F12.6,A,F12.6,A,A,F12.6,A,A,F12.6,A,A,I0,A,I0,A,I0,A,I0)') &
-                "Iteration: ", this%cyc_delete, &
-                " mixed cells [%]: ", real(mix_counter)/real(this%nx*this%ny*this%nz)*100.0, &
-                " KERNEL TIME: ", kernel_time, " seconds", &
-                " --TOP-- LINE_CALC_3D TIME", this%line_calc_top_time, " seconds", &
-                " --BOTTOM-- LINE_CALC_3D TIME", this%line_calc_bottom_time, " seconds", &
-                " TOP 1st CONVERGENCE: ", this%first_convergence_top, &
-                " TOP 2nd CONVERGENCE: ", this%second_convergence_top, &
-                " BOTTOM 1st CONVERGENCE: ", this%first_convergence_bottom, &
-                " BOTTOM 2nd CONVERGENCE: ", this%second_convergence_bottom!, &
-                !" KERNEL Vol_frac_count: ", vol_frac_counter
+            ! write(*,'(A,I0,A,F12.6,A,F12.6,A,A,F12.6,A,A,F12.6,A,A,I0,A,I0,A,I0,A,I0)') &
+            !     "Iteration: ", this%cyc_delete, &
+            !     " mixed cells [%]: ", real(mix_counter)/real(this%nx*this%ny*this%nz)*100.0, &
+            !     " KERNEL TIME: ", kernel_time, " seconds", &
+            !     " --TOP-- LINE_CALC_3D TIME", this%line_calc_top_time, " seconds", &
+            !     " --BOTTOM-- LINE_CALC_3D TIME", this%line_calc_bottom_time, " seconds", &
+            !     " TOP 1st CONVERGENCE: ", this%first_convergence_top, &
+            !     " TOP 2nd CONVERGENCE: ", this%second_convergence_top, &
+            !     " BOTTOM 1st CONVERGENCE: ", this%first_convergence_bottom, &
+            !     " BOTTOM 2nd CONVERGENCE: ", this%second_convergence_bottom!, &
+            !     !" KERNEL Vol_frac_count: ", vol_frac_counter
 
             !this%kernel_vol_frac_counter = 0
                 
@@ -3883,7 +3886,8 @@ contains
                         do tmp_mat=1, n_materials
 
                             mat_vof(tmp_mat,i, j, k) = (mat_vof(tmp_mat,i, j, k) * (vol(i, j, k) - vof_adv(i, j, k)) + mat_vof_adv(tmp_mat,i, j, k)) / vol(i, j, k)
-                            if (mat_vof(tmp_mat,i, j, k) > emf .and. mat_cell_mass_adv(tmp_mat, i, j, k) > emfm) then
+                            if ((mat_vof(tmp_mat,i,j,k) > emf) .and. &
+                                (mat_cell_mass_adv(tmp_mat,i,j,k) > emfm)) then
 
                                 sie_vof(tmp_mat,i, j, k) = max(0d0, sie_vof_adv(tmp_mat,i, j, k) / mat_cell_mass_adv(tmp_mat,i, j, k))
                                 init_mat_layers(tmp_mat,i, j, k) = init_mat_layers_adv(tmp_mat,i, j, k) / mat_cell_mass_adv(tmp_mat,i, j, k)
@@ -3896,7 +3900,7 @@ contains
                         end do
                         if (vof_correction(i,j,k) > 0d0) then
                             vof_factor = 1d0 / (1d0 - vof_correction(i,j,k))
-                            do tmp_mat = 1, this%n_materials
+                            do tmp_mat = 1, n_materials
                                 mat_vof(tmp_mat,i, j, k) = mat_vof(tmp_mat,i, j, k) * vof_factor
                             end do
                         end if
@@ -3987,12 +3991,13 @@ contains
 #else
     !$omp parallel do collapse(3) schedule(static) private(j, i, tmp_mat) 
 #endif
-            do k = 1, this%nz
-                do j = 1, this%ny
-                    do i = 1, this%nx
-                        do tmp_mat=1,this%n_materials
+            do k = 1, nz
+                do j = 1, ny
+                    do i = 1, nx
+                        do tmp_mat=1,n_materials
 
-                            if (mat_vof(tmp_mat,i, j, k) < emf .or. mat_cell_mass_adv(tmp_mat,i, j, k) < emfm) then
+                            if ((mat_vof(tmp_mat,i,j,k) < emf) .or. &
+                                (mat_cell_mass_adv(tmp_mat,i,j,k) < emfm)) then
                                 mat_cell_mass_adv(tmp_mat,i, j, k) = 0d0
                                 sie_vof(tmp_mat,i, j, k) = 0d0
                                 mat_vof(tmp_mat,i, j, k) = 0d0
@@ -4041,7 +4046,7 @@ contains
     !$omp target update from(cell_mass)
 #endif
        !$OMP TARGET UPDATE from(vertex_mass)
-        if (this%cyc_delete > -1 .and. this%cyc_delete < 2) then
+        if ((this%cyc_delete > -1) .and. (this%cyc_delete < 2)) then
             !write(142,'(A, 1I)') "CYCLE: ", this%cyc_delete
             do i=0,this%nxp+1
                 do j=0,this%nyp+1
@@ -4060,7 +4065,7 @@ contains
 
                 call this%materials%vof%Exchange_virtual_space_blocking()
                       !$OMP TARGET UPDATE from(vertex_mass)
-        if (this%cyc_delete > -1 .and. this%cyc_delete < 2) then
+        if ((this%cyc_delete > -1) .and. (this%cyc_delete < 2)) then
            ! write(142,'(A, 1I)') "CYCLE: ", this%cyc_delete
             do i=0,this%nxp+1
                 do j=0,this%nyp+1
@@ -4086,9 +4091,9 @@ contains
 #endif
 
 
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
                     !symmetry_factor = 1d0
                     vel_adv_weight(i, j, k) = (density(i  , j  , k  ) + density(i-1, j  , k  ) + &
                         density(i-1, j-1, k  ) + density(i  , j-1, k  ) + &
@@ -4136,9 +4141,9 @@ contains
     do k = 1, nzp
         do j = 1, nyp
             do i = 1, nxp
-                if (material_x(i,j,k) /= x(i,j,k) .or. &
-                    material_y(i,j,k) /= y(i,j,k) .or. &
-                    material_z(i,j,k) /= z(i,j,k)) then
+                if ((material_x(i,j,k) /= x(i,j,k)) .or. &
+                    (material_y(i,j,k) /= y(i,j,k)) .or. &
+                    (material_z(i,j,k) /= z(i,j,k))) then
                     !$omp atomic capture
                         capture_index = n_active
                         n_active = n_active + 1
@@ -4173,9 +4178,9 @@ contains
         do k = 1, nzp
             do j = 1, nyp
                 do i = 1, nxp
-                    if (material_x(i, j, k) == x(i, j, k) .and. &
-                        material_y(i, j, k) == y(i, j, k) .and. &
-                        material_z(i, j, k) == z(i, j, k)) cycle
+                    if ((material_x(i,j,k) == x(i,j,k)) .and. &
+                        (material_y(i,j,k) == y(i,j,k)) .and. &
+                        (material_z(i,j,k) == z(i,j,k))) cycle
 #endif
                     
                     tet_counter=0
@@ -4404,6 +4409,7 @@ contains
 
         ! IMPORTANT NOTE: WE ADDED THE IS BLOCKING AND IS OFFLOAD ARGUMENTS.
         call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.true.)
+        call this%velocity%Exchange_end()
 
 
         deallocate(vof_correction)
@@ -4820,7 +4826,7 @@ contains
                             active_cells(3,capture_index + 1) = k
                         end if
                     else
-                        if (vof(i, j, k) <= local_emf1 .and. vof(i, j, k) >= local_emf) then
+                        if ((vof(i,j,k) <= local_emf1) .and. (vof(i,j,k) >= local_emf)) then
                             !$omp atomic capture
                                 capture_index = n_active_cells
                                 n_active_cells = n_active_cells + 1
@@ -4951,12 +4957,12 @@ contains
                 volijk_storage(pair_idx) = volijk
 
                 ! Apply wall boundary conditions to neighbor indices
-                if (ip > nx .and. wall_x_top) ip = nx
-                if (im < 1  .and. wall_x_bot) im = 1
-                if (jp > ny .and. wall_y_top) jp = ny
-                if (jm < 1  .and. wall_y_bot) jm = 1
-                if (kp > nz .and. wall_z_top) kp = nz
-                if (km < 1  .and. wall_z_bot) km = 1
+                if ((ip > nx) .and. (wall_x_top)) ip = nx
+                if ((im < 1) .and. (wall_x_bot)) im = 1
+                if ((jp > ny) .and. (wall_y_top)) jp = ny
+                if ((jm < 1) .and. (wall_y_bot)) jm = 1
+                if ((kp > nz) .and. (wall_z_top)) kp = nz
+                if ((km < 1) .and. (wall_z_bot)) km = 1
 
                 ! Compute 8-point VOF stencil (averaged from surrounding cells)
                 if (nm == 0) then
@@ -5728,12 +5734,12 @@ contains
                         volijk = Hexahedron_volume(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, &
                             x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8)
 
-                        if (ip > this%nx .and. wall_x_top .eqv. .true.) ip = this%nx
-                        if (im < 1       .and. wall_x_bot .eqv. .true.) im = 1
-                        if (jp > this%ny .and. wall_y_top .eqv. .true.) jp = this%ny
-                        if (jm < 1       .and. wall_y_bot .eqv. .true.) jm = 1
-                        if (kp > this%nz .and. wall_z_top .eqv. .true.) kp = this%nz
-                        if (km < 1       .and. wall_z_bot .eqv. .true.) km = 1             
+                        if ((ip > this%nx) .and. (wall_x_top)) ip = this%nx
+                        if ((im < 1) .and. (wall_x_bot)) im = 1
+                        if ((jp > this%ny) .and. (wall_y_top)) jp = this%ny
+                        if ((jm < 1) .and. (wall_y_bot)) jm = 1
+                        if ((kp > this%nz) .and. (wall_z_top)) kp = this%nz
+                        if ((km < 1) .and. (wall_z_bot)) km = 1
 
                         if (nm == 0) then
                             vijk    =  (vof(i, j, k)   + vof(im, j, k)   + vof(i, j, km)+ &
@@ -6028,7 +6034,8 @@ contains
                                     x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8, &
                                     a1(tmp_mat, i, j, k), b1(tmp_mat, i, j, k), cn, side1(tmp_mat, i, j, k), volijk, &
                                     cut_plane_counter, square_pyramid_counter, physical_tetraeder_counter, tetrahedron_counter)
-                                if ((v1 < vend .and. vvmax > vvmin) .or.(v1 > vend .and. vvmax < vvmin)) then
+                                if (((v1 < vend) .and. (vvmax > vvmin)) .or. &
+                                    ((v1 > vend) .and. (vvmax < vvmin))) then
                                     cmin = cn
                                 else
                                     cmax = cn

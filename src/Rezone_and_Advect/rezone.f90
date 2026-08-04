@@ -214,6 +214,14 @@ contains
       real(8) :: velocity_sq 
       real(8) :: factor      
       integer :: i, j, k
+      integer :: nxp, nyp, nzp
+      real(8) :: mass_threshold, velocity_limit
+
+      nxp = this%nxp
+      nyp = this%nyp
+      nzp = this%nzp
+      mass_threshold = this%mass_threshold
+      velocity_limit = this%velocity_limit
 
       call this%velocity%Point_to_data(velocity_x, velocity_y, velocity_z)
       call this%mesh%Point_to_data(x, y, z)
@@ -253,9 +261,9 @@ contains
       ! end if
 
       !$omp target teams distribute parallel do collapse(3) 
-      do k = 0, this%nzp + 1
-         do j = 0, this%nyp + 1
-            do i = 0, this%nxp + 1
+      do k = 0, nzp + 1
+         do j = 0, nyp + 1
+            do i = 0, nxp + 1
                material_x(i, j, k) = x(i, j, k) + velocity_x(i, j, k) * dt
                material_y(i, j, k) = y(i, j, k) + velocity_y(i, j, k) * dt
                material_z(i, j, k) = z(i, j, k) + velocity_z(i, j, k) * dt
@@ -323,15 +331,15 @@ contains
       ! end if
 
       !$omp target teams distribute parallel do collapse(3) private(velocity_sq, factor)
-      do k = 1, this%nzp
-         do j = 1, this%nyp
-            do i = 1, this%nxp
+      do k = 1, nzp
+         do j = 1, nyp
+            do i = 1, nxp
                velocity_sq = velocity_z(i, j, k) * velocity_z(i, j, k) &
                   + velocity_y(i, j, k) * velocity_y(i, j, k) &
                   + velocity_x(i, j, k) * velocity_x(i, j, k)
 
-               if ((vertex_mass(i, j, k) < this%mass_threshold) .and. (velocity_sq > this%velocity_limit)) then
-                  factor = sqrt(this%velocity_limit / velocity_sq)
+               if ((vertex_mass(i, j, k) < mass_threshold) .and. (velocity_sq > velocity_limit)) then
+                  factor = sqrt(velocity_limit / velocity_sq)
                   velocity_x(i, j, k) = velocity_x(i, j, k) * factor
                   velocity_y(i, j, k) = velocity_y(i, j, k) * factor
                   velocity_z(i, j, k) = velocity_z(i, j, k) * factor
@@ -345,9 +353,9 @@ contains
       select case (this%rezone_type)
          case(0)
             !$omp target teams distribute parallel do collapse(3)
-            do k = 1, this%nzp
-               do j = 1, this%nyp
-                  do i = 1, this%nxp
+            do k = 1, nzp
+               do j = 1, nyp
+                  do i = 1, nxp
                      mesh_velocity_x(i, j, k) = velocity_x(i, j, k)
                      mesh_velocity_y(i, j, k) = velocity_y(i, j, k)
                      mesh_velocity_z(i, j, k) = velocity_z(i, j, k)
@@ -357,9 +365,9 @@ contains
             !$omp end target teams distribute parallel do
          case(1)
             !$omp target teams distribute parallel do collapse(3)
-            do k = 1, this%nzp
-               do j = 1, this%nyp
-                  do i = 1, this%nxp
+            do k = 1, nzp
+               do j = 1, nyp
+                  do i = 1, nxp
                      mesh_velocity_x(i, j, k) = 0
                      mesh_velocity_y(i, j, k) = 0
                      mesh_velocity_z(i, j, k) = 0

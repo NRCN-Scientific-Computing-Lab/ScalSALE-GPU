@@ -383,8 +383,8 @@ contains
 
 
         do n = 1, this%n_layers_t(1)
-            i1 = this%start_layer_index_t(n, 1) + (sw_is - 1)
-            i2 = this%start_layer_index_t(n + 1, 1) + (sw_is - 1)
+            i1 = 0
+            i2 = this%parallel_params%virt_nxp + 1
             theta1 = theta0(n, 1)
             theta2 = theta0(n + 1, 1)
             call Calculate_constant(virt_theta, theta1, theta2, i1, i2)
@@ -396,8 +396,8 @@ contains
 
 
         do n = 1, this%n_layers_p(1)
-            j1 = this%start_layer_index_p(n, 1) + (sw_js - 1)
-            j2 = this%start_layer_index_p(n + 1, 1) + (sw_js - 1)
+            j1 = 0
+            j2 = this%parallel_params%virt_nyp + 1
             phi1 = phi0(n, 1)
             phi2 = phi0(n + 1, 1)
 

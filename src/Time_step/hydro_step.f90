@@ -553,6 +553,12 @@ contains
         !write(*,*) CHAR(27)//'[34m'
 
         !call this%Fix_vof_3d(time%dt, 0)
+        call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
+            this%total_vof, this%total_volume, this%nx, this%ny, this%nz, this%emf)
+        call this%total_sie%Exchange_end()
+        call this%materials%sie%Exchange_end()
+        call this%total_vof%Apply_boundary(.false., is_offload=.false.)
+        call this%materials%vof%Apply_boundary(is_blocking=.false., is_offload=.false.)
         mesh_time = omp_get_wtime()
         call this%Calculate_mesh_3d(time)
         !write(*,'(A50, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
@@ -626,12 +632,16 @@ contains
         real(8) :: tmp
         integer :: tmp_mat  
         integer :: i, j, k     
-        integer :: nx_, ny_, nz_, nmats_, emf_
+        integer :: nx_, ny_, nz_, nxp_, nyp_, nzp_, nmats_
+        real(8) :: emf_
         nx_ = this%nx
         ny_ = this%ny
         nz_ = this%nz
         nmats_ = this%nmats
         emf_ = this%emf
+        nxp_ = this%nxp
+        nyp_ = this%nyp
+        nzp_ = this%nzp
 
         tmp = omp_get_wtime()
         call this%total_sie%Exchange_virtual_space_nonblocking()
@@ -765,7 +775,7 @@ contains
             do j = 1, ny_
                 do i = 1, nx_
                     do tmp_mat = 1, nmats_
-                        if (mat_vof(tmp_mat, i, j, k) <= this%emf) cycle
+                        if (mat_vof(tmp_mat, i, j, k) <= emf_) cycle
                         temperature(i, j, k) = temperature(i, j, k) + &
                             temperature_vof_old(tmp_mat, i, j, k) * cell_mass_vof(tmp_mat, i, j, k) / (dt_de_vof(tmp_mat, i, j, k) + 1d-30)
                         sound_vel  (i, j, k) = sound_vel  (i, j, k) + sound_vel_vof(tmp_mat, i, j, k) * mat_vof(tmp_mat, i, j, k)
@@ -797,7 +807,7 @@ contains
         do k = 1, nz_
             do j = 1, ny_
                 do i = 1, nx_
-                    if (vof(i, j, k) <= this%emf) cycle
+                    if (vof(i, j, k) <= emf_) cycle
                     temperature(i, j, k) = temperature(i, j, k) / dt_de_temp(i, j, k)
                     dp_drho    (i, j, k) = dp_drho    (i, j, k) / (vof      (i, j, k) + 1d-30)
                     dp_de      (i, j, k) = cell_mass  (i, j, k) / dp_de     (i, j, k)
@@ -815,9 +825,9 @@ contains
         !!$omp target update to(pressure) 
 
         !$omp target teams distribute parallel do collapse(3)
-        do k = 0, this%nzp
-            do j = 0, this%nyp
-                do i = 0, this%nxp
+        do k = 0, nzp_
+            do j = 0, nyp_
+                do i = 0, nxp_
                     pressure_sum(i,j,k) = pressure(i,j,k)
                 end do
             end do
@@ -921,6 +931,14 @@ contains
 
         integer :: i, j, k     
         integer :: tmp_mat  
+        integer :: nx, ny, nz, nmats
+        real(8) :: emf
+
+        nx = this%nx
+        ny = this%ny
+        nz = this%nz
+        nmats = this%nmats
+        emf = this%emf
 
         call this%total_density  %Point_to_data(density)
         call this%total_cell_mass%Point_to_data(cell_mass)
@@ -931,9 +949,9 @@ contains
         call volume%Point_to_data(vol)
 
         !$omp target teams distribute parallel do collapse(3) 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
+        do k = 1, nz
+            do j = 1, ny
+                do i = 1, nx
                     density(i, j, k) = cell_mass(i, j, k) / vol(i, j, k)
                 end do
             end do
@@ -941,12 +959,12 @@ contains
         !$omp end target teams distribute parallel do
              
         !$omp target teams distribute parallel do collapse(3) private(tmp_mat) 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat = 1, this%nmats
+        do k = 1, nz
+            do j = 1, ny
+                do i = 1, nx
+                    do tmp_mat = 1, nmats
                         density_vof(tmp_mat, i, j, k) = 0d0
-                        if (mat_vof(tmp_mat, i, j, k) > this%emf) then
+                        if (mat_vof(tmp_mat, i, j, k) > emf) then
                             density_vof(tmp_mat, i, j, k) = cell_mass_vof(tmp_mat, i, j, k) / (vol(i, j, k) * mat_vof(tmp_mat, i, j, k))
 !write(*,*) "Calculating", tmp_mat,i,j,density_vof(tmp_mat,i,j,k),cell_mass_vof(tmp_mat,i,j,k), mat_vof(tmp_mat,i,j,k)
                         end if
@@ -966,14 +984,21 @@ contains
         real(8), dimension(:, :, :), pointer :: vertex_mass          
 
         integer :: i, j, k     
+        integer :: nxp, nyp, nzp
+        real(8) :: emfm
+
+        nxp = this%nxp
+        nyp = this%nyp
+        nzp = this%nzp
+        emfm = this%emfm
 
         call this%inversed_vertex_mass%Point_to_data(inversed_vertex_mass)
         call this%vertex_mass   %Point_to_data(vertex_mass)
         !$omp target teams distribute parallel do collapse(3) 
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
-                    if (vertex_mass(i, j, k) > this%emfm) then
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
+                    if (vertex_mass(i, j, k) > emfm) then
                         inversed_vertex_mass(i, j, k) = 1d0 / vertex_mass(i, j, k)
                     else
                         inversed_vertex_mass(i, j, k) = 0
@@ -1064,6 +1089,7 @@ contains
 
         integer :: i, j, k            
         integer :: ip,im,jp,jm,kp,km            
+        integer :: nxp, nyp, nzp
         real(8) :: x1, x2, x3, x4, x5, x6  
         real(8) :: y1, y2, y3, y4, y5, y6  
         real(8) :: z1, z2, z3, z4, z5, z6  
@@ -1075,10 +1101,14 @@ contains
         call this%inversed_vertex_mass%Point_to_data(inversed_vertex_mass)
         call this%velocity       %Point_to_data(velocity_x, velocity_y, velocity_z)
 
+        nxp = this%nxp
+        nyp = this%nyp
+        nzp = this%nzp
+
         !$omp target teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, jm, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6 )
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
                     ip = i + 1
                     im = i - 1
                     jp = j + 1
@@ -1694,6 +1724,7 @@ contains
         real(8), dimension(:, :, :), pointer :: z                    
         integer :: i, j, k  
         integer :: ip,im,jp,jm,kp,km  
+        integer :: nxp, nyp, nzp
         real(8) :: x1, x2, x3, x4, x5, x6, x7, x8  
         real(8) :: y1, y2, y3, y4, y5, y6, y7, y8  
         real(8) :: z1, z2, z3, z4, z5, z6, z7, z8  
@@ -1710,6 +1741,10 @@ contains
 
         call this%a_visc%Exchange_end()
 
+        nxp = this%nxp
+        nyp = this%nyp
+        nzp = this%nzp
+
         loop_time = omp_get_wtime() 
 
 
@@ -1719,9 +1754,9 @@ contains
         !$omp target teams distribute parallel do collapse(3) &
         !$omp& private(ip, im, jp, jm, kp, km, x1, x2, x3, x4, x5, x6, &
         !$omp& y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6) 
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
                     ip = i + 1
                     im = i - 1
                     jp = j + 1
@@ -2103,6 +2138,14 @@ contains
         real(8) :: stress_fac                
 
         integer :: i, j, k, tmp_mat          
+        integer :: nx, ny, nz, nmats
+        real(8) :: emf
+
+        nx = this%nx
+        ny = this%ny
+        nz = this%nz
+        nmats = this%nmats
+        emf = this%emf
 
         call this%velocity         %Point_to_data(velocity_x, velocity_y, velocity_z)
         call this%mesh             %Point_to_data(x, y, z)
@@ -2136,12 +2179,12 @@ contains
         !$omp a_visc_temp, vol_diff_stress, vol_diff, sie_vof_temp, pressure_temp, &
         !$omp dp_de_temp, dp_drho_temp, mass_vof_temp, vol_diff_vof_temp, &
         !$omp vol_vof_temp, vol_diff_vof_stress_temp, stress_fac, sie_diff)
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat = 1, this%nmats
+        do k = 1, nz
+            do j = 1, ny
+                do i = 1, nx
+                    do tmp_mat = 1, nmats
 
-                        if (vof(i, j, k) < this%emf) then
+                        if (vof(i, j, k) < emf) then
                             sie(i, j, k) = 0d0
                             temperature(i, j, k) = teps
                             temperature_vof(tmp_mat, i, j, k) = 0d0
@@ -2157,7 +2200,7 @@ contains
                             a_visc_temp = 0d0
                         end if
 
-                        if (mat_vof(tmp_mat, i, j, k) < this%emf) then
+                        if (mat_vof(tmp_mat, i, j, k) < emf) then
                             sie_vof(tmp_mat, i, j, k) = 0d0
                             temperature_vof(tmp_mat, i, j, k) = 0d0
                         else
@@ -2468,19 +2511,11 @@ contains
 !                end do
 !            end do
 !        end do
-call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
-            this%total_vof, this%total_volume, this%nx, this%ny, this%nz, this%emf)
-call this%total_sie%exchange_end()
-call this%materials%sie%exchange_end()
-
         deallocate(vof_sum_arr)
         deallocate(vof_max_arr)
         deallocate(sie_vof_sum_arr)
         deallocate(cell_mass_vof_sum_arr)
         deallocate(mat_vof_max_arr)
-        call this%total_vof%Apply_boundarY(.false., is_offload=.False.)
-            call this%materials%vof%Apply_boundarY(is_blocking=.false., is_offload=.False.)
-
         return
     end subroutine Fix_vof_3d
 
@@ -3121,6 +3156,9 @@ call this%materials%sie%exchange_end()
         real(8), dimension(:, :, :), pointer :: mat_x_target     
         real(8), dimension(:, :, :), pointer :: mat_y_target              
         real(8), dimension(:, :, :), pointer :: mat_z_target
+        real(8), dimension(:, :, :), pointer :: volume_data, sie_data, density_data
+        real(8), dimension(:, :, :), pointer :: cell_mass_data, vertex_mass_data
+        real(8), dimension(:, :, :), pointer :: num_mat_cells_data, pressure_data
 
         integer :: i, j, k
 
@@ -3131,6 +3169,13 @@ call this%materials%sie%exchange_end()
 
         ! call this%hydro%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
         call this%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
+        call this%total_volume%Point_to_data(volume_data)
+        call this%total_sie%Point_to_data(sie_data)
+        call this%total_density%Point_to_data(density_data)
+        call this%total_cell_mass%Point_to_data(cell_mass_data)
+        call this%vertex_mass%Point_to_data(vertex_mass_data)
+        call this%num_mat_cells%Point_to_data(num_mat_cells_data)
+        call this%total_pressure%Point_to_data(pressure_data)
 
         ! Synchronize GPU data back to CPU before printing
         #ifdef GPU_BUILD
@@ -3149,13 +3194,8 @@ call this%materials%sie%exchange_end()
         !!$omp target update from(mat_y_target)
         !!$omp target update from(mat_z_target)
 
-        !$omp target update from(this%total_volume%data(1)%values)
-        !$omp target update from(this%total_sie%data(1)%values)
-        !$omp target update from(this%total_density%data(1)%values)
-        !$omp target update from(this%total_cell_mass%data(1)%values)
-        !$omp target update from(this%vertex_mass%data(1)%values)
-        !$omp target update from(this%num_mat_cells%data(1)%values)
-        !$omp target update from(this%total_pressure%data(1)%values)
+        !$omp target update from(volume_data, sie_data, density_data, cell_mass_data)
+        !$omp target update from(vertex_mass_data, num_mat_cells_data, pressure_data)
         #endif
 
         write(this%file_unit_lagrange, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete

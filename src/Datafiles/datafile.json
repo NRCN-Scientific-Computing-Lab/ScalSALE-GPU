@@ -117,15 +117,15 @@
     "layers_materials": {
         "number_layers_j": 1, 
         "number_cells_j": [
-           200
+           100
         ], 
         "number_layers_k":1,
         "number_cells_k": [
-           200
+           100
         ], 
         "number_layers_i": 1, 
         "number_cells_i": [
-	       200
+	   100
         ], 
         "materials": [
             "Be", 
@@ -146,16 +146,16 @@
         "dt": 1e-14, 
 	    "cyl": 0,
         "dt_max": 0.1,
-        "max_ncyc": 50
+        "max_ncyc": 5
     },
     "rezone_advect": {
-        "rezone_type": "lagrange",
+        "rezone_type": "euler",
         "shorter_advect": false
     },
     "parallel": {
-	"np": 1,
-	"npx":1,
-	"npy":1,
+	"np": 4,
+	"npx":2,
+	"npy":2,
 	"npz":1, 
     "threads":1
     }
