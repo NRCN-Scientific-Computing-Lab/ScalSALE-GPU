@@ -31,7 +31,6 @@ Options:
   --physics MODE              all, lagrange, or euler; default: all.
   --max-cycles N              Override the maximum cycle count.
   --clean-first               Clean-build the first configuration in each suite.
-  --dry-run                   Print commands without building or submitting.
   --gpu-request-mode MODE     none, gpus, gpus-per-node, or gres.
   --gpu-gres-name NAME        GRES name used with request mode gres.
   -h, --help                  Show this help message.

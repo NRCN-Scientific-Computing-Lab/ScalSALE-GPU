@@ -1,658 +1,159 @@
-# ScalSALE GPU Reproducibility Guide
+# ScalSALE GPU reproducibility guide
 
-This document explains how to build and run ScalSALE and how to reproduce the experiments reported in the accompanying paper. It covers manual execution, Slurm-based experiment submission, input configuration, expected outputs, and common troubleshooting steps.
+This guide contains only the steps needed to build ScalSALE, run it manually,
+and submit the paper's experiment suites. Commands assume the repository root as
+the working directory unless stated otherwise.
 
-> **Scope.** Unless stated otherwise, all commands assume that the current working directory is the repository root. Module names, partitions, accounts, compiler paths, and dependency paths are site-specific and may need to be adapted to the target cluster.
+## 1. Prepare the environment
 
-## Quick start
+Load the modules supplied by your cluster. No site-specific versions are assumed.
 
-For a clean NVIDIA GPU build and a dry run of the A100 reproducibility suite:
+- NVIDIA build: NVHPC Fortran, a compatible MPI implementation, and the NVIDIA
+  GPU runtime/driver.
+- Intel build: Intel oneAPI Fortran (`ifx`), a compatible MPI implementation,
+  and the Intel Level Zero runtime for GPU execution.
+- All builds: CMake, Make, Python 3, JSON-Fortran, and zlib.
+- Paper suites: Slurm commands such as `sbatch` and `squeue`.
+
+A typical site command has this general form:
+
+```bash
+module load <compiler> <mpi> <cmake> <python> <json-fortran> <zlib> <slurm>
+```
+
+The repository scripts intentionally do not load modules. Replace the commented
+`???` placeholders with your site's environment commands if jobs do not inherit
+the environment from the submission shell.
+
+Before building, edit `src/CMakeLists.txt`. Its NVHPC branch currently contains
+the site-specific JSON-Fortran path:
+
+```text
+/home/reemh/json-fortran/build_nvhpc
+```
+
+The Intel branch also contains a site-specific path. Replace the path in the
+branch you use with your JSON-Fortran build directory. That directory must contain
+the Fortran module files and a `lib` subdirectory.
+
+## 2. Build ScalSALE
+
+Run build commands from `src/Scripts`:
 
 ```bash
 cd src/Scripts
-./clean.sh NVHPC gpu
-cd ../..
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh \
-  WEAK_SCALING_A100 <NVIDIA_PARTITION> --dry-run
+./clean.sh <NVHPC|INTEL> [gpu] [cpu]
 ```
 
-After reviewing the generated commands, remove `--dry-run` to build and submit the jobs.
+The compiler is `NVHPC` or `INTEL`. Supply `gpu`, `cpu`, or both; omitting the
+targets builds both. A clean build recreates the corresponding build directory.
 
-## Repository layout
+For later incremental builds:
 
-The files most relevant to building and running the code are:
+```bash
+./make.sh [gpu] [cpu]
+```
+
+The executables are created as `src/exec/main_gpu` and `src/exec/main_cpu`.
+
+## 3. Run manually
+
+Edit `src/Datafiles/datafile.json` before running. Its process layout must satisfy:
 
 ```text
-src/CMakeLists.txt                         compiler and offload flags
-src/Datafiles/datafile.json               default problem definition
-src/Scripts/clean.sh                      clean CMake configuration and build
-src/Scripts/make.sh                       incremental rebuild
-src/Scripts/run.sh                        local/manual MPI launcher
-src/exec/main_cpu                         generated CPU executable
-src/exec/main_gpu                         generated GPU executable
-run_single_permutation_slurm.py           creates and submits one Slurm job
-ScalSLAE_P3HPC26_Reproducibility/
-  run_test.sh                             public test-suite dispatcher
-  run_custom                              build-and-submit wrapper
-  repro_common.py                         shared validation and submission logic
-  <TEST_NAME>/run_test.py                 test configuration table
-  <TEST_NAME>/run_single_permutation_slurm.py
-                                           test-specific submission policy
-  results/                                generated test outputs
+npx * npy * npz = np
 ```
 
-The spelling `ScalSLAE_P3HPC26_Reproducibility` is the directory name used by the
-repository and should be preserved in commands.
+The `np` value must also equal the MPI process count. Set `parallel.threads` to
+the OpenMP thread count. The paper layouts additionally require
+`NX % NPZ = 0`, `NY % NPY = 0`, and `NZ % NPX = 0`.
 
-## Software and system requirements
-
-The build requires:
-
-- Linux and Bash.
-- CMake 3.5.2 or newer and Make.
-- An MPI implementation and MPI Fortran compiler wrapper.
-- NVIDIA HPC SDK (`mpif90`) for NVIDIA builds, or Intel oneAPI/ifx MPI
-  (`mpiifx`) for Intel builds.
-- OpenMP support. GPU builds additionally require OpenMP target offload support.
-- JSON-Fortran, including its module files and `libjsonfortran` library.
-- zlib.
-- Python 3 for the reproducibility scripts.
-- Slurm commands (`sbatch` and `squeue`) for automated paper tests.
-- Lmod's `ml` command in submitted jobs, unless the generated module-loading lines
-  are adapted for the target cluster.
-
-NVIDIA GPU builds currently target A100 (`cc80`). Intel GPU builds target SPIR-V
-with `-fopenmp-targets=spir64` and require an Intel Level Zero runtime.
-
-### Site-specific settings that must be checked
-
-The current `src/CMakeLists.txt` contains site-specific JSON-Fortran paths for the
-NVHPC and Intel compiler branches. Before compiling on another system, change those
-paths to the location of the JSON-Fortran build for the selected compiler. The
-directory must contain the Fortran module/include files and a `lib` subdirectory.
-
-The generated Slurm jobs currently load these site-specific module sets:
-
-```text
-NVIDIA: ml pgi mlog nvhpc-hpcx
-Intel:  ml intel/18.0.1.163 openmpi/4.0.4_intel mpi/impi-intel2018
-```
-
-If the cluster uses different module names, update `module_lines()` in
-`run_single_permutation_slurm.py` before submitting tests.
-
-The NVIDIA compiler flags in `src/CMakeLists.txt` include `-gpu=cc80`. Change the
-compute capability when targeting a different NVIDIA GPU generation.
-
-## Compiling manually
-
-Run the build scripts from `src/Scripts` because their relative paths assume that
-working directory:
+From `src/Scripts`, run:
 
 ```bash
-cd src/Scripts
+./run.sh <np> [gpu|cpu|main_gpu|main_cpu]
 ```
 
-### Initial or clean build
+`np` is the MPI process count and the default mode is `gpu`. For a threaded CPU
+run, set `OMP_NUM_THREADS` to the same value as `parallel.threads`.
 
-`clean.sh` removes and recreates the selected build directories, configures CMake,
-and builds serially so that Fortran module dependencies are respected.
-
-Build both CPU and GPU executables with NVHPC:
+To use an explicit datafile instead of the default one, run directly from the
+repository root:
 
 ```bash
-./clean.sh NVHPC gpu cpu
+OMP_TARGET_OFFLOAD=DISABLED mpirun -np <np> src/exec/main_cpu <datafile.json>
+OMP_TARGET_OFFLOAD=MANDATORY mpirun -np <np> src/exec/main_gpu <datafile.json>
 ```
 
-Build only the A100 GPU executable:
+## 4. Reproduce the paper results
+
+Before submission, load the required environment, fix the JSON-Fortran path, and
+replace the `???` module placeholder in `run_single_permutation_slurm.py` if the
+batch job must load modules itself.
+
+Run one suite from the repository root:
 
 ```bash
-./clean.sh NVHPC gpu
+./ScalSALE_P3HPC26_Reproducibility/run_test.sh \
+  <TEST_NAME> <PARTITION> [-account <ACCOUNT>] [options]
 ```
 
-Build only the NVHPC CPU executable:
+Available suites are:
+
+| Test name | Target |
+|---|---|
+| `WEAK_SCALING_A100` | NVIDIA GPU |
+| `WEAK_SCALING_PVC_COMPOSITE` | Intel GPU, composite devices |
+| `WEAK_SCALING_PVC_FLAT` | Intel GPU, flat devices |
+| `WEAK_SCALING_MPI_X` | MPI + OpenMP CPU |
+| `WEAK_SCALING_CPU` | Full-MPI CPU |
+| `SERIAL_TIMES` | One-process reference times |
+
+Example:
 
 ```bash
-./clean.sh NVHPC cpu
-```
-
-Build Intel GPU and CPU executables:
-
-```bash
-./clean.sh INTEL gpu cpu
-```
-
-The compiler selection performed by the script is:
-
-| Argument | MPI Fortran wrapper | GPU target |
-|---|---|---|
-| `NVHPC` | `mpif90` | NVIDIA OpenMP offload, `cc80` |
-| `INTEL` | `mpiifx` | Intel OpenMP offload, `spir64` |
-
-The script treats `NVHPC` specially and uses `mpiifx` for the other compiler branch;
-therefore use the documented `INTEL` spelling rather than an arbitrary value.
-
-With no target after the compiler, `clean.sh` builds both `gpu` and `cpu`.
-
-> **Warning:** `clean.sh` deletes the corresponding `build_gpu` and/or `build_cpu`
-> directory before reconfiguring it.
-
-### Incremental rebuild
-
-Once the build directories exist, use `make.sh`:
-
-```bash
-./make.sh gpu
-./make.sh cpu
-./make.sh gpu cpu
-```
-
-With no arguments, the current script rebuilds both targets:
-
-```bash
-./make.sh
-```
-
-If `make.sh` reports that a build directory does not exist, run the corresponding
-`clean.sh` command first.
-
-### Build products
-
-Successful builds create:
-
-```text
-src/exec/main_gpu
-src/exec/main_cpu
-```
-
-The intermediate CMake builds are kept in:
-
-```text
-build_gpu/
-build_cpu/
-```
-
-Only one `main_gpu` filename is used. Building with Intel after NVHPC, or NVHPC
-after Intel, overwrites that path with the newly selected vendor's executable.
-
-## Understanding `datafile.json`
-
-The default input is `src/Datafiles/datafile.json`. The executable accepts an
-alternative JSON path as its first command-line argument. If no argument is given,
-it reads `../Datafiles/datafile.json`, which is correct when launched from
-`src/Scripts`.
-
-The principal sections are described below.
-
-### `cell_set`
-
-- `mesh_type` selects the mesh coordinate/type representation.
-- `boundary_conditions` contains the six face boundary-condition codes.
-
-The boundary values are internal numeric codes; retain the paper input values unless
-the boundary-condition mapping in the source has also been reviewed.
-
-### Material definitions and `layers_materials`
-
-Top-level objects such as `Be`, `Al`, and `Cu` define material and equation-of-state
-properties, including:
-
-- `index`
-- `eos_type`
-- `gamma_gas`
-- reference density `rho_0`
-- atomic quantities `A`, `Z`, and `Z_2`
-
-`layers_materials.materials` chooses which named material objects are used.
-`number_layers_i/j/k` and `number_cells_i/j/k` define the layer count and global
-problem dimensions.
-
-For the paper scripts, the first entries of the cell arrays are rewritten as:
-
-```text
-number_cells_i = NX
-number_cells_j = NY
-number_cells_k = NZ
-```
-
-### `data`
-
-- `name` selects the initialized problem; the paper input uses `sod_3d`.
-- `nxb`, `nyb`, and `nzb` control boundary/halo-related problem parameters.
-
-### `simulation_parameters`
-
-Important time-integration controls include:
-
-- `time_final`: requested final simulation time.
-- `dt`: initial time step.
-- `dt_max`: maximum permitted time step.
-- `max_ncyc`: maximum cycle count.
-- `init_temperature`: initial temperature.
-- `cyl`: geometry-related cylindrical switch/value.
-
-The reproducibility driver preserves these values except that `--max-cycles N`
-overrides `max_ncyc` in each generated job-local datafile.
-
-### `rezone_advect`
-
-- `rezone_type: "lagrange"` selects the Lagrangian path.
-- `rezone_type: "euler"` selects the Eulerian/rezone-and-advect path.
-- `shorter_advect` selects the shortened advection option when supported.
-
-The paper test drivers run both `lagrange` and `euler` unless `--physics` selects
-only one.
-
-### `parallel`
-
-```json
-"parallel": {
-  "np": 4,
-  "npx": 2,
-  "npy": 2,
-  "npz": 1,
-  "threads": 1
-}
-```
-
-- `np` must equal the MPI process count passed to `mpirun`.
-- `npx * npy * npz` must equal `np`.
-- `threads` should match `OMP_NUM_THREADS` and Slurm's CPUs per task.
-
-Because the implementation maps the global axes to the process layout with an x/z
-flip, paper configurations obey:
-
-```text
-NX % NPZ == 0
-NY % NPY == 0
-NZ % NPX == 0
-```
-
-The automated tests validate these relations before submission.
-
-### Other sections
-
-- `switches` controls algorithmic options such as vertex mass and symmetry.
-- `contours` and `zone` describe the mesh geometry and zoning.
-- `diagnostics` describes requested diagnostic types and variables. Actual output
-  availability depends on the diagnostics enabled in the current build.
-
-For paper reproduction, begin with the supplied datafile and change only the problem
-size, process layout, thread count, physics mode, or maximum cycles unless a new
-physical problem is intentionally being defined.
-
-## Running manually
-
-### Using `run.sh`
-
-The supplied default datafile requests 64 MPI processes with layout `(4,4,4)`.
-From `src/Scripts`, run that input on the GPU with:
-
-```bash
-./run.sh 64 gpu
-```
-
-Run the same input with the CPU executable:
-
-```bash
-./run.sh 64 cpu
-```
-
-The accepted aliases are `gpu`, `main_gpu`, `cpu`, and `main_cpu`. GPU is the default
-mode when the second argument is omitted.
-
-`run.sh` performs these important actions:
-
-- Selects `../exec/main_gpu` or `../exec/main_cpu`.
-- Sets `OMP_TARGET_OFFLOAD=MANDATORY` for GPU execution.
-- Sets `OMP_TARGET_OFFLOAD=DISABLED` for CPU execution.
-- Launches `mpirun -np N --map-by node --bind-to none`.
-- Uses the default `src/Datafiles/datafile.json` because it does not pass an input
-  path to the executable.
-- Removes the contents of `Silo_Diagnostics` relative to the script working
-  directory before running.
-
-Before launching, edit `parallel.np/npx/npy/npz/threads` so they match the command.
-For an OpenMP CPU run, also set the thread count:
-
-```bash
-export OMP_NUM_THREADS=7
-./run.sh 16 cpu
-```
-
-and set `parallel.threads` to `7` in the datafile.
-
-### Direct execution with an explicit datafile
-
-Passing the input path explicitly avoids dependence on the working directory:
-
-```bash
-OMP_TARGET_OFFLOAD=DISABLED \
-OMP_NUM_THREADS=1 \
-mpirun -np 4 src/exec/main_cpu /absolute/path/to/datafile.json
-```
-
-For NVIDIA GPU execution:
-
-```bash
-OMP_TARGET_OFFLOAD=MANDATORY \
-OMP_NUM_THREADS=1 \
-mpirun -np 4 src/exec/main_gpu /absolute/path/to/datafile.json
-```
-
-For Intel PVC, set the Level Zero hierarchy consistently with how ranks represent
-the hardware:
-
-```bash
-export ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE
-# or
-export ZE_FLAT_DEVICE_HIERARCHY=FLAT
-```
-
-In composite mode, one MPI rank represents one composite PVC device. In flat mode,
-two exposed flat devices represent the same physical-GPU workload used by one
-composite rank.
-
-## Running the paper test suites
-
-The entry point is:
-
-```text
-ScalSLAE_P3HPC26_Reproducibility/run_test.sh
-```
-
-Display its current interface with either:
-
-```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh -h
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh --help
-```
-
-### Run one suite
-
-The partition is required. The Slurm account is optional:
-
-```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh \
-  WEAK_SCALING_A100 <NVIDIA_PARTITION>
-```
-
-```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh \
+./ScalSALE_P3HPC26_Reproducibility/run_test.sh \
   WEAK_SCALING_A100 <NVIDIA_PARTITION> -account <ACCOUNT>
 ```
 
-Examples for the other hardware classes:
+Submit the complete paper matrix with:
 
 ```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh \
-  WEAK_SCALING_PVC_COMPOSITE <INTEL_GPU_PARTITION>
-
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh \
-  WEAK_SCALING_MPI_X <CPU_PARTITION>
-```
-
-### Run all suites
-
-`ALL` requires three partitions because the experiments target three hardware
-classes:
-
-```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh ALL \
-  -partition_cpu <CPU_PARTITION> \
-  -partition_gpu_nvidia <NVIDIA_GPU_PARTITION> \
-  -partition_gpu_intel <INTEL_GPU_PARTITION>
-```
-
-Add one shared account when necessary:
-
-```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh ALL \
+./ScalSALE_P3HPC26_Reproducibility/run_test.sh ALL \
   -partition_cpu <CPU_PARTITION> \
   -partition_gpu_nvidia <NVIDIA_GPU_PARTITION> \
   -partition_gpu_intel <INTEL_GPU_PARTITION> \
   -account <ACCOUNT>
 ```
 
-Partition routing is:
+Omit the final account line when the cluster does not require one.
 
-| Suites | Partition argument |
-|---|---|
-| `WEAK_SCALING_A100` | `-partition_gpu_nvidia` |
-| `WEAK_SCALING_PVC_COMPOSITE`, `WEAK_SCALING_PVC_FLAT` | `-partition_gpu_intel` |
-| `WEAK_SCALING_MPI_X`, `WEAK_SCALING_CPU`, `SERIAL_TIMES` | `-partition_cpu` |
-
-### Common suite options
-
-Options follow the partition arguments:
+The default runs both Lagrangian and Eulerian physics. Common options are:
 
 ```text
--account ACCOUNT
 --physics all|lagrange|euler
 --max-cycles N
 --clean-first
---dry-run
 ```
 
-Use `--dry-run` first to inspect every generated `run_custom` command without
-building or submitting:
-
-```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh \
-  WEAK_SCALING_A100 <NVIDIA_PARTITION> --dry-run
-```
-
-GPU suites additionally accept:
+GPU suites also accept:
 
 ```text
 --gpu-request-mode none|gpus|gpus-per-node|gres
 --gpu-gres-name NAME
 ```
 
-The default is `none`, which relies on the selected GPU partition and emits no
-explicit Slurm GPU resource directive. This is appropriate for clusters where the
-GPU partition itself assigns devices. If required by another site:
+Use the default GPU request mode `none` when the partition assigns GPUs
+automatically. CPU suites use the NVIDIA compiler branch by default; select Intel
+with `export SCALSALE_CPU_VENDOR=intel`.
 
-```bash
-... --gpu-request-mode gpus-per-node
-```
-
-or:
-
-```bash
-... --gpu-request-mode gres --gpu-gres-name gpu
-```
-
-GPU-specific options should be used with an individual GPU suite rather than `ALL`,
-because the CPU suite parsers do not accept GPU resource options.
-
-CPU suites use the NVHPC compiler branch by default. Override it for a CPU-only Intel
-environment with:
-
-```bash
-export SCALSALE_CPU_VENDOR=intel
-```
-
-## Paper experiment matrix
-
-All suites run both physics paths by default. Tuple order is `(NX, NY, NZ)` for the
-problem size and `(NPX, NPY, NPZ)` for the MPI layout.
-
-### NVIDIA A100 and Intel PVC composite
-
-Both use the same global sizes and layouts. Each A100/composite process receives a
-`300x300x300` workload.
-
-| Processes/devices | Layout | Problem size | Nodes | Tasks per node |
-|---:|---|---|---:|---:|
-| 1 | `(1,1,1)` | `(300,300,300)` | 1 | 1 |
-| 2 | `(2,1,1)` | `(300,300,600)` | 1 | 2 |
-| 4 | `(2,2,1)` | `(300,600,600)` | 1 | 4 |
-| 8 | `(2,4,1)` | `(300,1200,600)` | 2 | 4 |
-| 12 | `(2,6,1)` | `(300,1800,600)` | 3 | 4 |
-
-The A100 suite uses NVIDIA compilation. The PVC composite suite uses Intel
-compilation and exports `ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE`.
-
-### Intel PVC flat
-
-The flat layout doubles only the composite `NPX` dimension:
+The scripts validate the configured layouts, build the required executable,
+create a job-local datafile, generate `submit.sbatch`, and submit with `sbatch`.
+Results are written to:
 
 ```text
-FLAT = (2 * COMPOSITE_NPX, COMPOSITE_NPY, COMPOSITE_NPZ)
+ScalSALE_P3HPC26_Reproducibility/results/<TEST_NAME>/
 ```
 
-Two flat processes/devices together receive the same `300x300x300` physical-GPU
-workload as one composite process.
-
-| Flat processes | Layout | Problem size | Nodes | Tasks per node |
-|---:|---|---|---:|---:|
-| 2 | `(2,1,1)` | `(300,300,300)` | 1 | 2 |
-| 4 | `(4,1,1)` | `(300,300,600)` | 1 | 4 |
-| 8 | `(4,2,1)` | `(300,600,600)` | 1 | 8 |
-| 16 | `(4,4,1)` | `(300,1200,600)` | 2 | 8 |
-| 24 | `(4,6,1)` | `(300,1800,600)` | 3 | 8 |
-
-This suite exports `ZE_FLAT_DEVICE_HIERARCHY=FLAT`.
-
-### CPU MPI+X
-
-Each MPI process uses seven OpenMP threads. A full node has 16 processes and 112
-CPU cores.
-
-| Processes | Threads/process | Layout | Problem size | Nodes |
-|---:|---:|---|---|---:|
-| 16 | 7 | `(4,4,1)` | `(600,600,300)` | 1 |
-| 32 | 7 | `(4,8,1)` | `(600,1200,300)` | 2 |
-| 48 | 7 | `(4,12,1)` | `(600,1800,300)` | 3 |
-
-### CPU full MPI
-
-Each process uses one thread and a full node has 112 MPI processes.
-
-| Processes | Layout | Problem size | Nodes |
-|---:|---|---|---:|
-| 112 | `(7,4,4)` | `(596,600,301)` | 1 |
-| 224 | `(7,8,4)` | `(596,1200,301)` | 2 |
-| 336 | `(7,8,6)` | `(894,1200,301)` | 3 |
-
-The one-node size is close to `600x600x300` but adjusted so the grid is divisible by
-the selected process layout under the x/z mapping.
-
-### Serial reference times
-
-`SERIAL_TIMES` runs one process and one thread for every unique global problem size
-used above:
-
-```text
-(300,300,300)
-(300,300,600)
-(300,600,600)
-(300,1200,600)
-(300,1800,600)
-(596,600,301)
-(600,600,300)
-(596,1200,301)
-(600,1200,300)
-(894,1200,301)
-(600,1800,300)
-```
-
-There are 5 A100, 5 PVC composite, 5 PVC flat, 3 MPI+X, 3 full-MPI CPU, and 11
-serial configuration points. With both physics paths, the complete matrix contains
-64 Slurm jobs.
-
-## What the automated workflow does
-
-For each selected configuration, the scripts perform the following sequence:
-
-1. `run_test.sh` selects a test driver and supplies the correct partition.
-2. The test's `run_test.py` loops over physics modes and configuration entries.
-3. `repro_common.py` validates process counts, per-node limits, GPU counts, and grid
-   divisibility.
-4. The test invokes `run_custom` once for that configuration.
-5. `run_custom` selects NVHPC or Intel and CPU or GPU, then performs a clean or
-   incremental build according to `.run_custom_build_state.json`.
-6. A unique output directory is created.
-7. `run_single_permutation_slurm.py` copies the base JSON into that directory and
-   changes only the grid, process layout, thread count, physics path, and optional
-   maximum cycles.
-8. A `submit.sbatch` file is generated with the requested nodes, total tasks, tasks
-   per node, CPUs per task, partition, and optional account/GPU resources.
-9. The job is submitted with `sbatch`.
-
-GPU jobs set `OMP_TARGET_OFFLOAD=MANDATORY`; CPU jobs use the CPU executable and the
-requested `OMP_NUM_THREADS`. PVC test helpers inject `COMPOSITE` or `FLAT`
-automatically.
-
-Before submitting a GPU job, `run_custom` queries the current user's active jobs and
-may add an `afterany` dependency on the latest active job. This can serialize GPU
-submissions when jobs are already queued.
-
-The original `src/Datafiles/datafile.json` is not edited by the automated workflow.
-
-## Results and troubleshooting
-
-Results are written below:
-
-```text
-ScalSLAE_P3HPC26_Reproducibility/results/<TEST_NAME>/
-```
-
-Each configuration directory normally contains:
-
-```text
-build.log          build commands and compiler output
-datafile.json      job-local, patched input
-manifest.json      requested configuration and build action
-submit.sbatch      generated Slurm script
-submission.json    sbatch command, response, and job ID
-solver.log         solver metadata and combined solver output
-slurm-<job>.out    Slurm standard output
-slurm-<job>.err    Slurm standard error
-```
-
-Common problems:
-
-- **`sbatch` not found:** load the site's Slurm environment.
-- **Requested node configuration is unavailable:** the partition or GPU resource
-  syntax does not match the cluster. The default `--gpu-request-mode none` avoids
-  explicit GPU resource directives; otherwise select the site's required mode.
-- **Invalid account/partition combination:** omit `-account` to use the user default,
-  or provide the correct account for that partition.
-- **Missing `mpif90` or `mpiifx`:** load the matching compiler and MPI modules before
-  building.
-- **JSON-Fortran module/library not found:** correct the site-specific paths in
-  `src/CMakeLists.txt` and clean-build again.
-- **GPU code runs on the host:** verify the offload runtime, device visibility,
-  compiler target, and `OMP_TARGET_OFFLOAD=MANDATORY`.
-- **Process-layout error:** verify `NP = NPX*NPY*NPZ` and the three grid divisibility
-  rules.
-- **Thread mismatch warning:** make `parallel.threads`, `OMP_NUM_THREADS`, and
-  `--cpus-per-task` agree.
-
-### Important mixed-vendor executable caveat
-
-Both NVIDIA and Intel GPU builds write to the shared path `src/exec/main_gpu`, and
-generated jobs currently execute that shared path. A later vendor build can therefore
-replace the executable while an earlier job is still pending. On systems where jobs
-do not start immediately, the safest procedure is to submit and complete NVIDIA and
-Intel GPU suites separately, or stage vendor-specific executable copies before
-running a mixed-vendor `ALL` submission.
-
-For the same reason, preserve the exact source revision, compiler/module versions,
-datafile, and generated manifests alongside reported results.
-## Reproducibility checklist
-
-Before reporting or comparing results, record the following information:
-
-- Git commit or release tag.
-- Compiler, MPI, CMake, and module versions.
-- GPU driver and runtime versions.
-- Hardware model, node count, task layout, and thread count.
-- Exact input `datafile.json`.
-- Generated `manifest.json` and `submit.sbatch`.
-- Relevant environment variables, including `OMP_TARGET_OFFLOAD`, `OMP_NUM_THREADS`, and `ZE_FLAT_DEVICE_HIERARCHY`.
-- Complete standard output, standard error, and solver logs.
-
-These records are necessary because executable paths, module sets, and cluster resource policies can affect the reproduced configuration.
+Each run directory contains the patched datafile, build and solver logs, a
+manifest, the generated Slurm script, and submission metadata.

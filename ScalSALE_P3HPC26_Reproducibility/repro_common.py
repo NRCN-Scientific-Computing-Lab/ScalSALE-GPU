@@ -90,11 +90,6 @@ def parse_suite_args(
         action="store_true",
         help="force a clean build for only the first submitted configuration",
     )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="print run_custom commands without building or submitting",
-    )
     if gpu:
         parser.add_argument(
             "--gpu-request-mode",
@@ -209,8 +204,7 @@ def run_suite(
                 ),
                 flush=True,
             )
-            if not args.dry_run:
-                subprocess.run(command, cwd=args.main_dir.resolve(), check=True)
+            subprocess.run(command, cwd=args.main_dir.resolve(), check=True)
             first = False
 
 

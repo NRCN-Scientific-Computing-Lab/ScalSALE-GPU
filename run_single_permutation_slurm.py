@@ -42,16 +42,9 @@ def parse_triplet(text: str, label: str) -> Tuple[int, int, int]:
 
 
 def module_lines(vendor: str) -> List[str]:
-    if vendor == "nvidia":
-        return [
-            "source /etc/profile.d/lmod.sh >/dev/null 2>&1 || true",
-            "ml purge",
-            "ml pgi mlog nvhpc-hpcx",
-        ]
     return [
-        "source /etc/profile.d/lmod.sh >/dev/null 2>&1 || true",
-        "ml purge",
-        "ml intel/18.0.1.163 openmpi/4.0.4_intel mpi/impi-intel2018",
+        "# ??? Add the site-specific environment/module commands required for "
+        "{0}.".format(vendor),
     ]
 
 

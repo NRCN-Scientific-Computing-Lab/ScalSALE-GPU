@@ -3,20 +3,20 @@
 Submit one suite from the repository root:
 
 ```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh WEAK_SCALING_A100 gpua100
+./ScalSALE_P3HPC26_Reproducibility/run_test.sh WEAK_SCALING_A100 gpua100
 ```
 
 The partition is a required positional argument. Supply an account only when the
 cluster requires one:
 
 ```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh WEAK_SCALING_A100 gpua100 -account rcl
+./ScalSALE_P3HPC26_Reproducibility/run_test.sh WEAK_SCALING_A100 gpua100 -account rcl
 ```
 
 Submit all suites:
 
 ```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh ALL \
+./ScalSALE_P3HPC26_Reproducibility/run_test.sh ALL \
   -partition_cpu cpu_partition \
   -partition_gpu_nvidia nvidia_partition \
   -partition_gpu_intel intel_partition \
@@ -30,11 +30,11 @@ For `ALL`, A100 uses `-partition_gpu_nvidia`, both PVC suites use
 Show the complete command help with:
 
 ```bash
-./ScalSLAE_P3HPC26_Reproducibility/run_test.sh --help
+./ScalSALE_P3HPC26_Reproducibility/run_test.sh --help
 ```
 
-Every suite accepts `--physics all|lagrange|euler`, `--max-cycles N`,
-`--clean-first`, and `--dry-run` after the partition and optional account.
+Every suite accepts `--physics all|lagrange|euler`, `--max-cycles N`, and
+`--clean-first` after the partition and optional account.
 GPU suites also accept `--gpu-request-mode` and `--gpu-gres-name`.
 
 The default physics array is `("lagrange", "euler")`. The CPU compiler vendor can
