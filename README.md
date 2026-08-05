@@ -13,7 +13,7 @@ ScalSALE is implemented in Modern Fortran with simple object-oriented design pat
 
 ## Reproducibility
 
-See the [full reproducibility guide](docs/REPRODUCIBILITY.md) for build instructions,
+See the [full reproducibility guide](./REPRODUCIBILITY.md) for build instructions,
 execution commands, experiment configurations, and troubleshooting.
 
 ## Running ScalSALE Demo on Intel DevCloud
