@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import List, Optional, Tuple
 
 
-SERIAL_FIXED_THREADS = 1
 GPU_FIXED_THREADS = 1
 
 
@@ -125,27 +124,30 @@ def build_job_script(args: argparse.Namespace, job_dir: Path, datafile_path: Pat
     sbatch_lines = [
         "#!/bin/bash",
         "#SBATCH -J {0}".format(args.job_name),
-        "#SBATCH -N {0}".format(total_processes),
-        "#SBATCH -n {0}".format(total_processes),
-        "#SBATCH --cpus-per-task={0}".format(effective_cpus),
-        "#SBATCH --output=slurm-%j.out",
-        "#SBATCH --error=slurm-%j.err",
     ]
-
     if args.partition:
-        sbatch_lines.insert(2, "#SBATCH -p {0}".format(args.partition))
+        sbatch_lines.append("#SBATCH -p {0}".format(args.partition))
     if args.account:
-        insert_index = 3 if args.partition else 2
-        sbatch_lines.insert(insert_index, "#SBATCH -A {0}".format(args.account))
+        sbatch_lines.append("#SBATCH -A {0}".format(args.account))
+    sbatch_lines.extend(
+        [
+            "#SBATCH -N {0}".format(args.nodes),
+            "#SBATCH -n {0}".format(total_processes),
+            "#SBATCH --ntasks-per-node={0}".format(args.tasks_per_node),
+            "#SBATCH --cpus-per-task={0}".format(effective_cpus),
+            "#SBATCH --output=slurm-%j.out",
+            "#SBATCH --error=slurm-%j.err",
+        ]
+    )
 
     if args.mode == "gpu":
         if args.gpu_request_mode == "gpus":
             sbatch_lines.append("#SBATCH --gpus={0}".format(requested_gpus))
         elif args.gpu_request_mode == "gpus-per-node":
-            sbatch_lines.append("#SBATCH --gpus-per-node={0}".format(requested_gpus))
+            sbatch_lines.append("#SBATCH --gpus-per-node={0}".format(args.gpus_per_node))
         elif args.gpu_request_mode == "gres":
             sbatch_lines.append(
-                "#SBATCH --gres={0}:{1}".format(args.gpu_gres_name, requested_gpus)
+                "#SBATCH --gres={0}:{1}".format(args.gpu_gres_name, args.gpus_per_node)
             )
 
     sbatch_lines.extend(
@@ -162,6 +164,10 @@ def build_job_script(args: argparse.Namespace, job_dir: Path, datafile_path: Pat
 
     if args.mode == "gpu":
         sbatch_lines.append("export OMP_TARGET_OFFLOAD=MANDATORY")
+        if args.ze_flat_hierarchy:
+            sbatch_lines.append(
+                "export ZE_FLAT_DEVICE_HIERARCHY={0}".format(args.ze_flat_hierarchy)
+            )
         if args.acc_notify:
             sbatch_lines.append("export NVCOMPILER_ACC_NOTIFY=3")
 
@@ -177,11 +183,16 @@ def build_job_script(args: argparse.Namespace, job_dir: Path, datafile_path: Pat
             "  echo 'Partition: {0}'".format(args.partition if args.partition else "cluster-default"),
             "  echo 'Account: {0}'".format(args.account if args.account else "cluster-default"),
             "  echo 'Processes: {0}'".format(total_processes),
-            "  echo 'Nodes: {0}'".format(total_processes),
+            "  echo 'Nodes: {0}'".format(args.nodes),
+            "  echo 'Tasks per node: {0}'".format(args.tasks_per_node),
             "  echo 'MPI Layout: {0}x{1}x{2}'".format(*args.process_layout),
             "  echo 'Threads: {0}'".format(args.threads),
             "  echo 'effective_cpus_per_task: {0}'".format(effective_cpus),
             "  echo 'num_gpus: {0}'".format(requested_gpus),
+            "  echo 'gpus_per_node: {0}'".format(args.gpus_per_node if args.mode == "gpu" else 0),
+            "  echo 'ZE_FLAT_DEVICE_HIERARCHY: {0}'".format(
+                args.ze_flat_hierarchy if args.ze_flat_hierarchy else "unset"
+            ),
             "  echo 'gpu_request_mode: {0}'".format(args.gpu_request_mode if args.mode == "gpu" else "n/a"),
             "  echo 'max_cycles: {0}'".format(
                 args.max_cycles if args.max_cycles is not None else "keep"
@@ -201,12 +212,12 @@ def build_job_script(args: argparse.Namespace, job_dir: Path, datafile_path: Pat
 def parse_args() -> argparse.Namespace:
     description = """Submit one ScalSALE permutation to Slurm.
 
-This helper is intentionally scalar: one mode, one fixed thread count, one MPI layout,
-and one grid size. The main ./run_custom script calls it once per permutation.
+This helper is intentionally scalar: one mode, one thread count, one MPI layout,
+and one grid size. The reproducibility run_custom script calls it once per permutation.
 
 Default GPU request mode is 'none', which emits no Slurm GPU resource line and relies on
 the selected GPU partition instead.
-GPU jobs also force threads=1 regardless of the passed -threads value.
+GPU jobs force threads=1. CPU jobs preserve the passed -threads value.
 """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -222,6 +233,27 @@ GPU jobs also force threads=1 regardless of the passed -threads value.
         type=lambda text: parse_triplet(text, "process layout"),
         required=True,
         help="MPI layout written as '(npx npy npz)'",
+    )
+    parser.add_argument(
+        "-nodes",
+        type=positive_int,
+        default=1,
+        help="number of Slurm nodes; default 1",
+    )
+    parser.add_argument(
+        "-tasks_per_node",
+        type=positive_int,
+        help="MPI ranks on each node; defaults to total ranks divided by nodes",
+    )
+    parser.add_argument(
+        "-gpus_per_node",
+        type=positive_int,
+        help="GPUs on each node; required implicitly for multi-node GPU jobs",
+    )
+    parser.add_argument(
+        "-ze_flat_hierarchy",
+        choices=["FLAT", "COMPOSITE"],
+        help="Intel Level Zero device hierarchy exported inside the Slurm job",
     )
     parser.add_argument("-max_cycles", type=positive_int)
     parser.add_argument("-partition", help="Slurm partition name; if omitted, sbatch uses the cluster default")
@@ -265,6 +297,46 @@ def validate_args(args: argparse.Namespace) -> None:
             "-profile_ncu, -profile_nsys, and -acc_notify are supported only with -vendor nvidia"
         )
 
+    total_processes = args.process_layout[0] * args.process_layout[1] * args.process_layout[2]
+    if total_processes % args.nodes != 0:
+        raise SystemExit(
+            "MPI process count ({0}) must be divisible by node count ({1})".format(
+                total_processes, args.nodes
+            )
+        )
+
+    expected_tasks_per_node = total_processes // args.nodes
+    if args.tasks_per_node is None:
+        args.tasks_per_node = expected_tasks_per_node
+    elif args.tasks_per_node != expected_tasks_per_node:
+        raise SystemExit(
+            "-tasks_per_node must be {0} for {1} processes on {2} nodes".format(
+                expected_tasks_per_node, total_processes, args.nodes
+            )
+        )
+
+    if args.mode == "gpu":
+        if args.gpus_per_node is None:
+            args.gpus_per_node = expected_tasks_per_node
+        if args.gpus_per_node * args.nodes != total_processes:
+            raise SystemExit(
+                "GPU jobs require one GPU per MPI rank: nodes*gpus_per_node must equal {0}".format(
+                    total_processes
+                )
+            )
+    elif args.gpus_per_node is not None:
+        raise SystemExit("-gpus_per_node is valid only with -mode gpu")
+
+    if args.ze_flat_hierarchy and not (args.mode == "gpu" and args.vendor == "intel"):
+        raise SystemExit("-ze_flat_hierarchy requires -mode gpu -vendor intel")
+
+    npx, npy, npz = args.process_layout
+    nx, ny, nz = args.grid
+    if nx % npz != 0 or ny % npy != 0 or nz % npx != 0:
+        raise SystemExit(
+            "grid/process mismatch: NX must divide by NPZ, NY by NPY, and NZ by NPX"
+        )
+
 
 def extract_job_id(stdout_text: str) -> Optional[str]:
     match = re.search(r"Submitted batch job (\d+)", stdout_text)
@@ -278,8 +350,6 @@ def main() -> int:
     args.grid = args.grid_size
     if args.mode == "gpu":
         args.threads = GPU_FIXED_THREADS
-    else:
-        args.threads = SERIAL_FIXED_THREADS
     validate_args(args)
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -330,6 +400,8 @@ def main() -> int:
         "grid": list(args.grid),
         "process_layout": list(args.process_layout),
         "processes": args.process_layout[0] * args.process_layout[1] * args.process_layout[2],
+        "nodes": args.nodes,
+        "tasks_per_node": args.tasks_per_node,
         "npx": args.process_layout[0],
         "npy": args.process_layout[1],
         "npz": args.process_layout[2],
@@ -338,6 +410,8 @@ def main() -> int:
         "num_gpus": args.process_layout[0] * args.process_layout[1] * args.process_layout[2]
         if args.mode == "gpu"
         else 0,
+        "gpus_per_node": args.gpus_per_node if args.mode == "gpu" else 0,
+        "ze_flat_hierarchy": args.ze_flat_hierarchy,
         "max_cycles": args.max_cycles,
         "dependency": args.dependency,
         "sbatch_command": sbatch_command,
