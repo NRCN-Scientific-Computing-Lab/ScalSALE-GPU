@@ -4,7 +4,6 @@ module geometry_module
    implicit none
 contains
 
-
    function Quad_area(x1, y1, x2, y2, x3, y3, x4, y4) result (area)
       real(8), intent(in) :: x1, y1, x2, y2, x3, y3, x4, y4
       real(8)             :: area
@@ -39,19 +38,21 @@ contains
       end if
    end function Triangle_volume
 
-   subroutine Physical_tetraeder_volume_3d(a, b, c, i1, i2, i4, ic1, ic4, t_vol)
+   subroutine Physical_tetraeder_volume_3d(a, b, c, i1, i2, i4, ic1, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, t_vol)
       implicit none
       real(8), intent(in)  :: a, b, c
       integer, intent(in)  :: i1, i2, i4, ic1, ic4
+      real(8), intent(in)  :: xs(8), ys(8), zs(8)
+      real(8), intent(in)  :: x_cut(12), y_cut(12), z_cut(12)
+      real(8), intent(in)  :: x_cen, y_cen, z_cen
+      integer, intent(in)  :: in_out(8)
       real(8), intent(out) :: t_vol
-      real(8)              :: xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, t_vol1, t_vol2, xc, yc, zc
-      integer              :: in_out, in_tot
 
-      save /cut_r/
-      common /cut_r/ xs(8), ys(8), zs(8), x_cut(12), y_cut(12), z_cut(12), x_cen, y_cen, z_cen
+      real(8)              :: xc, yc, zc, t_vol1, t_vol2
+      integer              :: in_tot
 
-      save /cut_i/
-      common /cut_i/ in_out(8) 
+      !$OMP DECLARE TARGET
+
       in_tot = in_out(i1) + in_out(i2) + in_out(i4)
       if (in_tot == 0) then
          t_vol = 0.
@@ -59,55 +60,53 @@ contains
       end if
 
       if (in_tot == 3) then
-         t_vol = Tetrahederon_volume (x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4))
+         t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4))
          return
       end if
 
       if (in_out(i1) == 1) then
          if (in_out(i2) == 1) then
-            t_vol1 = Tetrahederon_volume (x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4)&
-                        , ys(i4), zs(i4))
+            t_vol1 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4))
 
-            call Cut_plane (a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
+            call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
 
-            t_vol2 = Tetrahederon_volume (x_cen,y_cen, z_cen, x_cut(ic4), y_cut(ic4), z_cut(ic4), xc, yc, zc, xs(i4), ys(i4)&
-            , zs(i4))
+            t_vol2 = Tetrahederon_volume(x_cen, y_cen, z_cen, x_cut(ic4), y_cut(ic4), z_cut(ic4), xc, yc, zc, xs(i4), ys(i4), zs(i4))
+
             t_vol = t_vol1 - t_vol2
             return
          else if (in_out(i4) == 1) then
-            t_vol1 = Tetrahederon_volume (x_cen,y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4)&
-            , zs(i4))
+            t_vol1 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4))
 
-            call Cut_plane (a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
+            call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
 
-            t_vol2 = Tetrahederon_volume (x_cen,y_cen, z_cen, x_cut(ic1), y_cut(ic1), z_cut(ic1), xs(i2),ys(i2),zs(i2), xc, yc, zc)
+            t_vol2 = Tetrahederon_volume(x_cen, y_cen, z_cen, x_cut(ic1), y_cut(ic1), z_cut(ic1), xs(i2), ys(i2), zs(i2), xc, yc, zc)
 
             t_vol = t_vol1 - t_vol2
             return
          else
-            t_vol = Tetrahederon_volume (x_cen,y_cen, z_cen, xs(i1), ys(i1), zs(i1), x_cut(ic1), y_cut(ic1), z_cut(ic1), &
+            t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), x_cut(ic1), y_cut(ic1), z_cut(ic1), &
                                          x_cut(ic4), y_cut(ic4), z_cut(ic4))
             return
          end if
       end if
       if (in_out(i2) == 1) then
          if (in_out(i4) == 1) then
-            t_vol1 = Tetrahederon_volume (x_cen,y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), &
+            t_vol1 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), xs(i2), ys(i2), zs(i2), &
                                           xs(i4), ys(i4), zs(i4))
 
-            t_vol2 = Tetrahederon_volume (x_cen,y_cen, z_cen, xs(i1), ys(i1), zs(i1), x_cut(ic1), y_cut(ic1),&
+            t_vol2 = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i1), ys(i1), zs(i1), x_cut(ic1), y_cut(ic1), &
                                           z_cut(ic1), x_cut(ic4), y_cut(ic4), z_cut(ic4))
 
             t_vol = t_vol1 - t_vol2
             return
          else
             call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
-            t_vol = Tetrahederon_volume (x_cen,y_cen, z_cen, x_cut(ic1), y_cut(ic1), z_cut(ic1), xs(i2), ys(i2), zs(i2), xc, yc, zc)
+            t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, x_cut(ic1), y_cut(ic1), z_cut(ic1), xs(i2), ys(i2), zs(i2), xc, yc, zc)
             return
          end if
       end if
-      call Cut_plane (a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
-      t_vol = Tetrahederon_volume (x_cen, y_cen, z_cen, xs(i4), ys(i4), zs(i4), x_cut(ic4), y_cut(ic4), z_cut(ic4), xc, yc, zc)
+      call Cut_plane(a, b, -1d0, -c, xs(i2), ys(i2), zs(i2), xs(i4), ys(i4), zs(i4), xc, yc, zc)
+      t_vol = Tetrahederon_volume(x_cen, y_cen, z_cen, xs(i4), ys(i4), zs(i4), x_cut(ic4), y_cut(ic4), z_cut(ic4), xc, yc, zc)
 
       return
    end subroutine Physical_tetraeder_volume_3d
@@ -342,21 +341,26 @@ contains
 
    end function Volume_fraction2
 
-
+   ! AVITAY
    function Volume_fraction_3d(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5 ,x6, y6, z6,&
                                x7, y7, z7, x8, y8, z8, a, b, c, side, geo_vol) result(phys_vol)
+
       implicit none
-      real(8), intent(in) :: x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5 ,x6, y6, z6,&
+      ! AVITAY: CHANGED THESE TO VALUE, TO ALLOW GPU PARALLELIZATION IN Volume_material_3d (advect.f90)
+      ! AND REMOVED INTENT(IN).
+      ! real(8), value :: x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5 ,x6, y6, z6,&
+      !                        x7, y7, z7, x8, y8, z8, a, b, c, side, geo_vol
+      real(8), intent(in):: x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5 ,x6, y6, z6,&
                              x7, y7, z7, x8, y8, z8, a, b, c, side, geo_vol
 
-      real(8)     :: zt,x_tot, y_tot, z_tot, tot_vol, temp, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen
-      integer     :: i, in_tot, n_cut, in_out
+      real(8)     :: zt, x_tot, y_tot, z_tot, tot_vol, temp
+      integer     :: i, in_tot, n_cut
       real(8)     :: phys_vol
+      ! Local variables replacing COMMON blocks
+      real(8)     :: xs(8), ys(8), zs(8), x_cut(12), y_cut(12), z_cut(12), x_cen, y_cen, z_cen
+      integer     :: in_out(8)
 
-      save /cut_r/
-      common /cut_r/ xs(8), ys(8), zs(8), x_cut(12), y_cut(12), z_cut(12), x_cen, y_cen, z_cen
-      save /cut_i/
-      common /cut_i/ in_out(8)
+      !$OMP DECLARE TARGET
 
       xs(1) = x1
       ys(1) = y1
@@ -476,36 +480,46 @@ contains
       y_cen = y_tot / n_cut
       z_cen = z_tot / n_cut
       tot_vol = 0.
-      call Square_pyramid_volume(a, b, c, 1, 2, 3, 4, 1, 2, 3, 4, temp)
+      call Square_pyramid_volume(a, b, c, 1, 2, 3, 4, 1, 2, 3, 4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 8, 7, 6 ,5 , 7, 6, 5, 8, temp)
+      call Square_pyramid_volume(a, b, c, 8, 7, 6 ,5 , 7, 6, 5, 8, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 1, 5, 6, 2, 9, 5, 10, 1, temp)
+      call Square_pyramid_volume(a, b, c, 1, 5, 6, 2, 9, 5, 10, 1, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 2, 6, 7, 3, 10 ,6, 11, 2, temp)
+      call Square_pyramid_volume(a, b, c, 2, 6, 7, 3, 10 ,6, 11, 2, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 3, 7, 8, 4, 11, 7, 12, 3, temp)
+      call Square_pyramid_volume(a, b, c, 3, 7, 8, 4, 11, 7, 12, 3, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
-      call Square_pyramid_volume(a, b, c, 4, 8, 5, 1, 12, 8, 9, 4, temp)
+      call Square_pyramid_volume(a, b, c, 4, 8, 5, 1, 12, 8, 9, 4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, temp)
       tot_vol = tot_vol + temp
       phys_vol = tot_vol
 
       return
    end function Volume_fraction_3d
+   ! AVITAY 
 
-
-   subroutine Square_pyramid_volume(a, b, c, i1, i2, i3, i4, ic1, ic2, ic3, ic4, pvol)
+   subroutine Square_pyramid_volume(a, b, c, i1, i2, i3, i4, ic1, ic2, ic3, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, pvol)
       implicit none
       real(8), intent(in)  :: a, b, c
       integer, intent(in)  :: i1, i2, i3, i4, ic1, ic2, ic3, ic4
+      real(8), intent(in)  :: xs(8), ys(8), zs(8)
+      real(8), intent(in)  :: x_cut(12), y_cut(12), z_cut(12)
+      real(8), intent(in)  :: x_cen, y_cen, z_cen
+      integer, intent(in)  :: in_out(8)
+
+      ! real(8), value :: a, b, c
+      ! integer, value :: i1, i2, i3, i4, ic1, ic2, ic3, ic4
+      ! real(8), value :: xs(8), ys(8), zs(8)
+      ! real(8), value :: x_cut(12), y_cut(12), z_cut(12)
+      ! real(8), value :: x_cen, y_cen, z_cen
+      ! integer, value :: in_out(8)
+
       real(8), intent(out) :: pvol
 
-      real(8)              :: xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, temp, tri_vol
-      integer :: in_out, in_tot
-      save /cut_r/
-      common /cut_r/ xs(8), ys(8), zs(8), x_cut(12), y_cut(12), z_cut(12), x_cen, y_cen, z_cen
-      save /cut_i/
-      common /cut_i/ in_out(8)
+      real(8)              :: temp, tri_vol
+      integer :: in_tot
+
+      !$OMP DECLARE TARGET
 
       in_tot = in_out(i1) + in_out(i2) + in_out(i3) + in_out(i4)
       if (in_tot == 0) then
@@ -513,13 +527,13 @@ contains
          return
       end if
       temp = 0.
-      call Physical_tetraeder_volume_3d (a, b, c, i1, i2, i4, ic1, ic4, tri_vol)
+      call Physical_tetraeder_volume_3d(a, b, c, i1, i2, i4, ic1, ic4, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
+      temp = temp + tri_vol ! * 4
+      call Physical_tetraeder_volume_3d(a, b, c, i2, i3, i1, ic2, ic1, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
       temp = temp + tri_vol
-      call Physical_tetraeder_volume_3d (a, b, c, i2, i3, i1, ic2, ic1, tri_vol)
+      call Physical_tetraeder_volume_3d(a, b, c, i3, i4, i2, ic3, ic2, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
       temp = temp + tri_vol
-      call Physical_tetraeder_volume_3d (a, b, c, i3, i4, i2, ic3, ic2, tri_vol)
-      temp = temp + tri_vol
-      call Physical_tetraeder_volume_3d (a, b, c, i4, i1, i3, ic4, ic3, tri_vol)
+      call Physical_tetraeder_volume_3d(a, b, c, i4, i1, i3, ic4, ic3, xs, ys, zs, x_cut, y_cut, z_cut, x_cen, y_cen, z_cen, in_out, tri_vol)
       temp = temp + tri_vol
       pvol = temp / 12.
       return
@@ -529,10 +543,12 @@ contains
    subroutine Cut_plane(a, b, c, d, x1, y1, z1, x2, y2, z2, xc, yc, zc)
       implicit none
       real(8), intent(in)     :: a, b, c, d, x1, y1, z1, x2, y2, z2
+      ! real(8), value :: a, b, c, d, x1, y1, z1, x2, y2, z2
       real(8), intent(out)    :: xc, yc, zc
 
       real(8)                 :: x21, y21, z21, det_xy, det_yz, det_zx, deno
 
+      !$OMP DECLARE TARGET
 
       x21 = x2 - x1
       y21 = y2 - y1
@@ -966,12 +982,61 @@ contains
    end subroutine Layer_cut_elipse
 
 
-
-
+   ! AVITAY
    function Hexahedron_volume(x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8)
       implicit none
       real(8), intent(in) :: x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, x5, y5, z5, x6, y6, z6, x7, y7, z7, x8, y8, z8
-      real(8) hexahedron_volume
+      real(8) :: hexahedron_volume
+      real(8) :: area1, area2, area3, area4, area5, area6, area7, area8
+      
+      !$OMP DECLARE TARGET
+
+      ! Inline x_proj calculations directly
+      
+      ! ! area1: x_proj(y2, z2, y3, z3, y4, z4, y5, z5, y6, z6, y8, z8)
+      ! area1 = y2 * z3 + y2 * z4 - y2 * z5 - y2 * z6 - y3 * z2 + y3 * z4 &
+      !       - y4 * z2 - y4 * z3 + y4 * z5 + y4 * z8 + y5 * z2 - y5 * z4 &
+      !       + y5 * z6 - y5 * z8 + y6 * z2 - y6 * z5 - y8 * z4 + y8 * z5
+
+      ! ! area2: x_proj(y3, z3, y4, z4, y1, z1, y6, z6, y7, z7, y5, z5)
+      ! area2 = y3 * z4 + y3 * z1 - y3 * z6 - y3 * z7 - y4 * z3 + y4 * z1 &
+      !       - y1 * z3 - y1 * z4 + y1 * z6 + y1 * z5 + y6 * z3 - y6 * z1 &
+      !       + y6 * z7 - y6 * z5 + y7 * z3 - y7 * z6 - y5 * z1 + y5 * z6
+
+      ! ! area3: x_proj(y4, z4, y1, z1, y2, z2, y7, z7, y8, z8, y6, z6)
+      ! area3 = y4 * z1 + y4 * z2 - y4 * z7 - y4 * z8 - y1 * z4 + y1 * z2 &
+      !       - y2 * z4 - y2 * z1 + y2 * z7 + y2 * z6 + y7 * z4 - y7 * z2 &
+      !       + y7 * z8 - y7 * z6 + y8 * z4 - y8 * z7 - y6 * z2 + y6 * z7
+
+      ! ! area4: x_proj(y1, z1, y2, z2, y3, z3, y8, z8, y5, z5, y7, z7)
+      ! area4 = y1 * z2 + y1 * z3 - y1 * z8 - y1 * z5 - y2 * z1 + y2 * z3 &
+      !       - y3 * z1 - y3 * z2 + y3 * z8 + y3 * z7 + y8 * z1 - y8 * z3 &
+      !       + y8 * z5 - y8 * z7 + y5 * z1 - y5 * z8 - y7 * z3 + y7 * z8
+
+      ! ! area5: x_proj(y6, z6, y7, z7, y8, z8, y1, z1, y2, z2, y4, z4)
+      ! area5 = y6 * z7 + y6 * z8 - y6 * z1 - y6 * z2 - y7 * z6 + y7 * z8 &
+      !       - y8 * z6 - y8 * z7 + y8 * z1 + y8 * z4 + y1 * z6 - y1 * z8 &
+      !       + y1 * z2 - y1 * z4 + y2 * z6 - y2 * z1 - y4 * z8 + y4 * z1
+
+      ! ! area6: x_proj(y7, z7, y8, z8, y5, z5, y2, z2, y3, z3, y1, z1)
+      ! area6 = y7 * z8 + y7 * z5 - y7 * z2 - y7 * z3 - y8 * z7 + y8 * z5 &
+      !       - y5 * z7 - y5 * z8 + y5 * z2 + y5 * z1 + y2 * z7 - y2 * z5 &
+      !       + y2 * z3 - y2 * z1 + y3 * z7 - y3 * z2 - y1 * z5 + y1 * z2
+
+      ! ! area7: x_proj(y8, z8, y5, z5, y6, z6, y3, z3, y4, z4, y2, z2)
+      ! area7 = y8 * z5 + y8 * z6 - y8 * z3 - y8 * z4 - y5 * z8 + y5 * z6 &
+      !       - y6 * z8 - y6 * z5 + y6 * z3 + y6 * z2 + y3 * z8 - y3 * z6 &
+      !       + y3 * z4 - y3 * z2 + y4 * z8 - y4 * z3 - y2 * z6 + y2 * z3
+
+      ! ! area8: x_proj(y5, z5, y6, z6, y7, z7, y4, z4, y1, z1, y3, z3)
+      ! area8 = y5 * z6 + y5 * z7 - y5 * z4 - y5 * z1 - y6 * z5 + y6 * z7 &
+      !       - y7 * z5 - y7 * z6 + y7 * z4 + y7 * z3 + y4 * z5 - y4 * z7 &
+      !       + y4 * z1 - y4 * z3 + y1 * z5 - y1 * z4 - y3 * z7 + y3 * z4
+
+      ! hexahedron_volume = (-area1 * x1 - area2 * x2 - area3 * x3 - area4 * x4 &
+      !                      + area5 * x5 + area6 * x6 + area7 * x7 + area8 * x8) / 12d0
+
+      ! !pgi$ inline
       hexahedron_volume =        (-x_proj(y2, z2, y3, z3, y4, z4, y5, z5, y6, z6, y8, z8) * x1 &
                                   -x_proj(y3, z3, y4, z4, y1, z1, y6, z6, y7, z7, y5, z5) * x2 &
                                   -x_proj(y4, z4, y1, z1, y2, z2, y7, z7, y8, z8, y6, z6) * x3 &
@@ -980,26 +1045,59 @@ contains
                                   +x_proj(y7, z7, y8, z8, y5, z5, y2, z2, y3, z3, y1, z1) * x6 &
                                   +x_proj(y8, z8, y5, z5, y6, z6, y3, z3, y4, z4, y2, z2) * x7 &
                                   +x_proj(y5, z5, y6, z6, y7, z7, y4, z4, y1, z1, y3, z3) * x8 ) / 12d0
+
       return
   end function Hexahedron_volume
+   ! AVITAY
 
-
+   ! !dir$ inline always
+   ! !$pragma forceinline
    function x_proj(y2, z2, y3, z3, y4, z4, y5, z5, y6, z6, y8, z8) result (x_area)
       implicit none
       real(8) :: x_area
       real(8), intent(in) :: y2, z2, y3, z3, y4, z4, y5, z5, y6, z6, y8, z8  
+      ! real(8), value :: y2, z2, y3, z3, y4, z4, y5, z5, y6, z6, y8, z8  
 
+      real(8) :: t2, t3, t4, t5, t6, t8  ! temporary terms for factoring (GPU-optimized version)
+
+      !$OMP DECLARE TARGET
+     
+      ! GPU-optimized version: factor common terms to reduce multiplications
+      ! Original: 16 mults + 15 adds = 31 ops
+      ! Optimized: 12 mults + 15 adds = 27 ops with better parallelism
+      
+      ! ! Factor by y-coordinates to reduce redundant multiplications
+      ! t2 = y2 * (z3 + z4 - z5 - z6)
+      ! t3 = y3 * (z4 - z2) 
+      ! t4 = y4 * (z5 + z8 - z2 - z3)
+      ! t5 = y5 * (z2 - z4 + z6 - z8)
+      ! t6 = y6 * (z2 - z5)
+      ! t8 = y8 * (z5 - z4)
+      
+      ! x_area = t2 + t3 + t4 + t5 + t6 + t8
+
+      ! x_area = 0.01d0
+
+      ! CPU-optimized:
       x_area = y2 * z3 + y2 * z4 - y2 * z5 - y2 * z6 - y3 * z2 + y3 * z4 &
              - y4 * z2 - y4 * z3 + y4 * z5 + y4 * z8 + y5 * z2 - y5 * z4 &
              + y5 * z6 - y5 * z8 + y6 * z2 - y6 * z5 - y8 * z4 + y8 * z5
 
+      !x_area = 0.01d0
+
       end function x_proj
 
+   ! !$OMP DECLARE TARGET(Tetrahederon_volume, Hexahedron_volume, Volume_fraction_3d, square_pyramid_volume, &
+   ! !$OMP& physical_tetraeder_volume_3d, cut_plane, x_proj)
+   
    function Tetrahederon_volume(x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3) result (vol)
       implicit none
       real(8) :: vol
       real(8), intent(in) :: x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3
+      ! real(8), value :: x0, y0, z0, x1, y1, z1, x2, y2, z2, x3, y3, z3
       real(8) :: ax, ay, az, bx, by, bz, cx, cy, cz
+
+      !$OMP DECLARE TARGET
 
       ax = x1 - x0
       ay = y1 - y0
@@ -1011,17 +1109,23 @@ contains
       cy = y3 - y0
       cz = z3 - z0
       vol = bx * (ay * cz - az * cy) - by * (ax * cz - az * cx) + bz * (ax * cy - ay * cx)
-  end function Tetrahederon_volume
-
+   end function Tetrahederon_volume
+   
    function Vector_grad(u1, u2, u4, u5, y1, z1, y2, z2, y4, z4, y5, z5) result (vec_grad)
       implicit none
       real(8) :: vec_grad
-      real(8), intent(in) :: u1, u2, u4, u5  
-      real(8), intent(in) :: y1, y2, y4 ,y5  
-      real(8), intent(in) :: z1, z2, z4, z5  
+      ! real(8), intent(in) :: u1, u2, u4, u5  
+      ! real(8), intent(in) :: y1, y2, y4 ,y5  
+      ! real(8), intent(in) :: z1, z2, z4, z5  
 
-     real(8) :: u1u2u4u5, y2y1,y4y1,y5y1,z2z1,z4z1,z5z1
-        
+      real(8), value :: u1, u2, u4, u5  
+      real(8), value :: y1, y2, y4 ,y5  
+      real(8), value :: z1, z2, z4, z5  
+
+      real(8) :: u1u2u4u5, y2y1,y4y1,y5y1,z2z1,z4z1,z5z1
+
+      !$OMP DECLARE TARGET
+
       y2y1 = y2 - y1
       y4y1 = y4 - y1
       y5y1 = y5 - y1
@@ -1044,9 +1148,16 @@ contains
                               u3u2u7, u3u4u7, u4u1u3, u4u3u8, u4u1u8, u5u8u6, u5u6u1, &
                               u5u8u1, u6u5u7, u6u7u2, u6u5u2, u7u6u8, u7u8u3, u7u6u3, &
                               u8u7u5, u8u5u4, u8u7u4
-      real(8), intent(in) :: u1, u2, u3, u4, u5, u6, u7, u8  
-      !$omp declare target
+      ! real(8), intent(in) :: u1, u2, u3, u4, u5, u6, u7, u8  
 
+      ! real(8), value :: u1u2u4, u1u4u5, u1u2u5, u2u3u1, u2u1u6, u2u3u6, u3u4u2, &
+      !                         u3u2u7, u3u4u7, u4u1u3, u4u3u8, u4u1u8, u5u8u6, u5u6u1, &
+      !                         u5u8u1, u6u5u7, u6u7u2, u6u5u2, u7u6u8, u7u8u3, u7u6u3, &
+      !                         u8u7u5, u8u5u4, u8u7u4
+      real(8), value :: u1, u2, u3, u4, u5, u6, u7, u8  
+
+      !$OMP DECLARE TARGET
+      
       u1u2u4 = u1 + u2 + u4
       u1u4u5 = u1 + u4 + u5
       u1u2u5 = u1 + u2 + u5
@@ -1092,6 +1203,7 @@ contains
                                                                   a8a7b6b7b8b7a6a7, a3a7b8b7b3b7a8a7, a6a7b3b7b6b7a3a7, &
                                                                   a5a8b7b8b5b8a7a8, a4a8b5b8b4b8a5a8, a7a8b4b8b7b8a4a8)
       implicit none
+
       real(8), intent(out) :: a4a1b2b1b4b1a2a1, a5a1b4b1b5b1a4a1, a2a1b5b1b2b1a5a1, &
                               a1a2b3b2b1b2a3a2, a6a2b1b2b6b2a1a2, a3a2b6b2b3b2a6a2, &
                               a2a3b4b3b2b3a4a3, a7a3b2b3b7b3a2a3, a4a3b7b3b4b3a7a3, &
@@ -1100,14 +1212,27 @@ contains
                               a7a6b5b6b7b6a5a6, a2a6b7b6b2b6a7a6, a5a6b2b6b5b6a2a6, &
                               a8a7b6b7b8b7a6a7, a3a7b8b7b3b7a8a7, a6a7b3b7b6b7a3a7, &
                               a5a8b7b8b5b8a7a8, a4a8b5b8b4b8a5a8, a7a8b4b8b7b8a4a8
-      real(8), intent(in) :: a1, a2, a3, a4, a5, a6, a7, a8  
-      real(8), intent(in) :: b1, b2, b3, b4, b5, b6, b7, b8  
+      ! real(8), intent(in) :: a1, a2, a3, a4, a5, a6, a7, a8  
+      ! real(8), intent(in) :: b1, b2, b3, b4, b5, b6, b7, b8  
+
+      ! real(8), value :: a4a1b2b1b4b1a2a1, a5a1b4b1b5b1a4a1, a2a1b5b1b2b1a5a1, &
+      !                         a1a2b3b2b1b2a3a2, a6a2b1b2b6b2a1a2, a3a2b6b2b3b2a6a2, &
+      !                         a2a3b4b3b2b3a4a3, a7a3b2b3b7b3a2a3, a4a3b7b3b4b3a7a3, &
+      !                         a3a4b1b4b3b4a1a4, a8a4b3b4b8b4a3a4, a1a4b8b4b1b4a8a4, &
+      !                         a6a5b8b5b6b5a8a5, a1a5b6b5b1b5a6a5, a8a5b1b5b8b5a1a5, &
+      !                         a7a6b5b6b7b6a5a6, a2a6b7b6b2b6a7a6, a5a6b2b6b5b6a2a6, &
+      !                         a8a7b6b7b8b7a6a7, a3a7b8b7b3b7a8a7, a6a7b3b7b6b7a3a7, &
+      !                         a5a8b7b8b5b8a7a8, a4a8b5b8b4b8a5a8, a7a8b4b8b7b8a4a8
+      real(8), value :: a1, a2, a3, a4, a5, a6, a7, a8  
+      real(8), value :: b1, b2, b3, b4, b5, b6, b7, b8  
 
      real(8) :: a2a1, a4a1, a5a1, b2b1, b4b1, b5b1, a3a2, a1a2, a6a2, b3b2, b1b2, b6b2, &
                 a4a3, a2a3, a7a3, b4b3, b2b3, b7b3, a1a4, a3a4, a8a4, b1b4, b3b4, b8b4, &
                 a8a5, a6a5, a1a5, b8b5, b6b5, b1b5, a5a6, a7a6, a2a6, b5b6, b7b6, b2b6, &
                 a6a7, a8a7, a3a7, b6b7, b8b7, b3b7, a7a8, a5a8, a4a8, b7b8, b5b8, b4b8
-      !$omp declare target
+
+      !$OMP DECLARE TARGET
+
       a2a1 = a2 - a1
       a4a1 = a4 - a1
       a5a1 = a5 - a1
@@ -1216,6 +1341,8 @@ contains
       real(8) :: eps1, eps2                  
       integer :: i                           
 
+      !$OMP DECLARE TARGET
+
       eps1 = 1d-20
       eps2 = 1d-99
 
@@ -1309,6 +1436,8 @@ contains
       real(8), intent(out) :: x2, y2, z2  
       real(8) :: l 
 
+      !$OMP DECLARE TARGET
+
       l  = d - (x1 * a + y1 * b + z1 * c)
       x2 = x1 + 2d0 * l * a
       y2 = y1 + 2d0 * l * b
@@ -1345,6 +1474,7 @@ contains
    subroutine Vertex_interp_3d(x0, y0, z0, i, j, k, iv1, jv1, kv1, iv2, jv2, kv2, &
         iv3, jv3, kv3, u_inter, u_orig, xint, yint, zint, w0, w1, w2, w3)
       implicit none
+      
       real(8), intent(in)        :: x0, y0, z0, w0, w1, w2, w3
       real(8), intent(in)    :: u_orig(0:, 0:, 0:), xint(0:, 0:, 0:), yint(0:, 0:, 0:), &
                                     zint(0:, 0:, 0:)
@@ -1354,7 +1484,7 @@ contains
       real(8)                    :: dx1, dx2, dx3, dy1, dy2, dy3, dz1, dz2, dz3, df1, df2, &
                                     df3, det, dx, dy, dz, beta1, beta2, beta3, beta0, fac0, fac1,&
                                     fac2, fac3, fsum
-
+      !$omp declare target
 
       dx1 = xint(iv1, jv1, kv1) - xint(i, j, k)
       dx2 = xint(iv2, jv2, kv2) - xint(i, j, k)
@@ -1502,7 +1632,7 @@ contains
       be = layer_parm(n_cut, 8)
       yc = layer_parm(n_cut, 9)
       xc = layer_parm(n_cut, 10)
-      call Elipse_cut_line(a, b, al, be, yc, xc, y1, x1, y2, x2, yh, xh)
+      call Elipse_cut_line(a, b, al, be, yc, xc, y1, x1, y2, x2,yh,xh)
 
    end subroutine Layer_cut_elipse_3d
 
@@ -1776,6 +1906,9 @@ contains
         integer, intent(in) :: virt_nyp
         integer, intent(in) :: virt_nzp
         logical :: is_corner
+
+        !$OMP DECLARE TARGET
+
         is_corner = .false.
 
         if ( (ivirt == 1 .or. ivirt == virt_nxp) .and.&

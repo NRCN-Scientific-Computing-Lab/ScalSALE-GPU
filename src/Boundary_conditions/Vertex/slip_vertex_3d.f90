@@ -14,7 +14,7 @@ module slip_vertex_3d_module
 
 
         procedure, private  :: Slip_vertex_calculate_3d
-        procedure, private :: Calculate_on_edge
+        !YTONI hiding: procedure, private :: Calculate_on_edge
         procedure, private :: Calculate_egde
 
         procedure, public :: Calculate_face
@@ -25,7 +25,7 @@ module slip_vertex_3d_module
 contains
 
 
-    subroutine Slip_vertex_calculate_3d (this, v_quantity, coordinates, angle, edge_num)
+    subroutine Slip_vertex_calculate_3d (this, v_quantity, coordinates, angle, edge_num, is_offload)
         implicit none
         class (slip_vertex_3d_t)              , intent (in out) :: this      
 
@@ -33,6 +33,7 @@ contains
         type(data_t), dimension(:), pointer,intent(inout)    :: coordinates
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
         real(8) :: normal_vel      
 
@@ -53,7 +54,19 @@ contains
         real(8), dimension (:), pointer :: edge_vector_y
         real(8), dimension (:), pointer :: edge_vector_z
         integer :: i, j, k
+        logical :: is_offload_local
+        real(8) :: normal_vec(3)
 
+        if (.not. present(is_offload)) then
+        
+            !write(*,*) "Slip_vertex_3d_calculate is_offload_local NOT PRESENT!"
+            is_offload_local = .False.  
+        
+        else
+            is_offload_local = is_offload  
+        end if
+
+        !write(*,*) "Slip_vertex_calculate_3d"
         call v_quantity%Point_to_data(values_dim1, values_dim2, values_dim3)
         call v_quantity%boundary_params%Point_to_edge_vectors(edge_vector_x, edge_vector_y, edge_vector_z)
 
@@ -70,81 +83,190 @@ contains
 
         select case (edge_num)
             case(1) 
-                i = 1
+                i = 1         
+                normal_vec = v_quantity%boundary_params%normal_i1
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(i) private(normal_vel)
                 do k = 1, nzp
                     do j = 1, nyp
-                        normal_vel = values_dim1(i, j, k) * v_quantity%boundary_params%normal_i1(1)&
-                            + values_dim2(i, j, k) * v_quantity%boundary_params%normal_i1(2)&
-                            + values_dim3(i, j, k) * v_quantity%boundary_params%normal_i1(3)
-                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*v_quantity%boundary_params%normal_i1(1)
-                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*v_quantity%boundary_params%normal_i1(2)
-                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*v_quantity%boundary_params%normal_i1(3)
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(i) private(normal_vel)
+                do k = 1, nzp
+                    do j = 1, nyp
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
+                    end do
+                end do
+                !$omp end parallel do
+                end if
 
             case(2) 
                 i = nxp
+                normal_vec = v_quantity%boundary_params%normal_inxp
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(i) private(normal_vel)
                 do k = 1, nzp
                     do j = 1, nyp
-                        normal_vel = values_dim1(i, j, k)*v_quantity%boundary_params%normal_inxp(1)&
-                            + values_dim2(i, j, k)*v_quantity%boundary_params%normal_inxp(2)&
-                            + values_dim3(i, j, k)*v_quantity%boundary_params%normal_inxp(3)
-                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*v_quantity%boundary_params%normal_inxp(1)
-                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*v_quantity%boundary_params%normal_inxp(2)
-                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*v_quantity%boundary_params%normal_inxp(3)
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(i) private(normal_vel)
+                do k = 1, nzp
+                    do j = 1, nyp
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
+                    end do
+                end do
+                !$omp end parallel do
+                end if
 
             case(3) 
                 j = 1
+                normal_vec = v_quantity%boundary_params%normal_j1
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(j) private(normal_vel)
                 do k = 1, nzp
                     do i = 1, nxp
-                        normal_vel = values_dim1(i, j, k)*v_quantity%boundary_params%normal_j1(1) &
-                            + values_dim2(i, j, k)*v_quantity%boundary_params%normal_j1(2) &
-                            + values_dim3(i, j, k)*v_quantity%boundary_params%normal_j1(3)
-                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*v_quantity%boundary_params%normal_j1(1)
-                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*v_quantity%boundary_params%normal_j1(2)
-                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*v_quantity%boundary_params%normal_j1(3)
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(j) private(normal_vel)
+                do k = 1, nzp
+                    do i = 1, nxp
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
+                    end do
+                end do
+                !$omp end parallel do
+                end if
 
             case(4) 
                 j = nyp
+                normal_vec = v_quantity%boundary_params%normal_jnyp
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(j) private(normal_vel)
                 do k = 1, nzp
                     do i = 1, nxp
-                        normal_vel = values_dim1(i, j, k) * v_quantity%boundary_params%normal_jnyp(1)&
-                            + values_dim2(i, j, k) * v_quantity%boundary_params%normal_jnyp(2)&
-                            + values_dim3(i, j, k) * v_quantity%boundary_params%normal_jnyp(3)
-                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel * v_quantity%boundary_params%normal_jnyp(1)
-                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel * v_quantity%boundary_params%normal_jnyp(2)
-                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel * v_quantity%boundary_params%normal_jnyp(3)
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(j) private(normal_vel)
+                do k = 1, nzp
+                    do i = 1, nxp
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
+                    end do
+                end do
+                !$omp end parallel do
+                end if
 
             case(5) 
                 k = 1
+                normal_vec = v_quantity%boundary_params%normal_k1
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(k) private(normal_vel)
                 do j = 1, nyp
                     do i = 1, nxp
-                        normal_vel = values_dim1(i, j, k)*v_quantity%boundary_params%normal_k1(1)&
-                            + values_dim2(i, j, k)*v_quantity%boundary_params%normal_k1(2)&
-                            + values_dim3(i, j, k)*v_quantity%boundary_params%normal_k1(3)
-                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*v_quantity%boundary_params%normal_k1(1)
-                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*v_quantity%boundary_params%normal_k1(2)
-                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*v_quantity%boundary_params%normal_k1(3)
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(k) private(normal_vel)
+                do j = 1, nyp
+                    do i = 1, nxp
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
+                    end do
+                end do
+                !$omp end parallel do
+                end if
             case(6) 
                 k = nzp
+                normal_vec = v_quantity%boundary_params%normal_knzp
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(k) private(normal_vel)
                 do j = 1, nyp
                     do i = 1, nxp
-                        normal_vel = values_dim1(i, j, k)*v_quantity%boundary_params%normal_knzp(1)&
-                            + values_dim2(i, j, k)*v_quantity%boundary_params%normal_knzp(2)&
-                            + values_dim3(i, j, k)*v_quantity%boundary_params%normal_knzp(3)
-                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*v_quantity%boundary_params%normal_knzp(1)
-                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*v_quantity%boundary_params%normal_knzp(2)
-                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*v_quantity%boundary_params%normal_knzp(3)
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(k) private(normal_vel)
+                do j = 1, nyp
+                    do i = 1, nxp
+                        normal_vel = values_dim1(i, j, k) * normal_vec(1)&
+                            + values_dim2(i, j, k) * normal_vec(2)&
+                            + values_dim3(i, j, k) * normal_vec(3)
+                        values_dim1(i, j, k) = values_dim1(i, j, k) - normal_vel*normal_vec(1)
+                        values_dim2(i, j, k) = values_dim2(i, j, k) - normal_vel*normal_vec(2)
+                        values_dim3(i, j, k) = values_dim3(i, j, k) - normal_vel*normal_vec(3)
+                    end do
+                end do
+                !$omp end parallel do
+                end if
+           
         end select
 
 
@@ -152,10 +274,13 @@ contains
 
     end subroutine Slip_vertex_calculate_3d
 
-    subroutine Calculate_on_edge (this, values_dim1, values_dim2, values_dim3, edge_vector_x,edge_vector_y,edge_vector_z)
-        implicit none
-        class (slip_vertex_3d_t)              , intent (in out) :: this      
+    !subroutine Calculate_on_edge (this, values_dim1, values_dim2, values_dim3, edge_vector_x,edge_vector_y,edge_vector_z)
+    !    implicit none
+    !    class (slip_vertex_3d_t)              , intent (in out) :: this      
 
+    !YONI: cannot use this% functions on GPU!
+    subroutine Calculate_on_edge (values_dim1, values_dim2, values_dim3, edge_vector_x,edge_vector_y,edge_vector_z)
+        implicit none   
         real(8), intent (in out) :: values_dim1
 
         real(8), intent (in out) :: values_dim2
@@ -164,7 +289,8 @@ contains
         real(8), intent (in out) :: edge_vector_x
         real(8), intent (in out) :: edge_vector_y
         real(8), intent (in out) :: edge_vector_z
-        real(8) :: scalar_mult         
+        real(8) :: scalar_mult       
+        !$omp declare target  
         scalar_mult = values_dim1 * edge_vector_x + values_dim2 * edge_vector_y +&
             values_dim3 * edge_vector_z
         values_dim1 = scalar_mult*edge_vector_x
@@ -189,76 +315,78 @@ contains
 
         integer :: vec_e_num
         vec_e_num = -1
+        !write(*,*) "calculate_edge"
 
         if (jvirt == 1        .and. kvirt == 1   ) then
             vec_e_num = 1
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == virt_nxp .and. kvirt == 1   ) then
             vec_e_num = 2
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (jvirt == virt_nyp .and. kvirt == 1   ) then
             vec_e_num = 3
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == 1        .and. kvirt == 1       ) then
             vec_e_num = 4
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == 1        .and. jvirt == 1       ) then
             vec_e_num = 5
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == virt_nxp .and. jvirt == 1       ) then
             vec_e_num = 6
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == virt_nxp .and. jvirt == virt_nyp) then
             vec_e_num = 7
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == 1        .and. jvirt == virt_nyp) then
             vec_e_num = 8
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (jvirt == 1        .and. kvirt == virt_nzp) then
             vec_e_num = 9
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == virt_nxp .and. kvirt == virt_nzp    ) then
             vec_e_num = 10
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (jvirt == virt_nyp .and. kvirt == virt_nzp) then
             vec_e_num = 11
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
         if (ivirt == 1        .and. kvirt == virt_nzp) then
             vec_e_num = 12
-            call this%Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
+            call Calculate_on_edge(values_dim1, values_dim2, values_dim3, &
                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
         end if
 
     end subroutine Calculate_egde
 
-    subroutine Calculate_face (this, v_quantity, angle, edge_num)
+    subroutine Calculate_face (this, v_quantity, angle, edge_num, is_offload)
         class (slip_vertex_3d_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
         integer :: nxp, nyp, nzp
         integer :: virt_nxp, virt_nyp, virt_nzp
         integer :: vec_e_num
@@ -274,6 +402,18 @@ contains
         real(8), dimension (:), pointer :: edge_vector_z
         integer, dimension (:), allocatable :: boundary_type
         integer :: i, j, k
+        logical :: is_offload_local
+
+        if (.not. present(is_offload)) then
+        
+            !write(*,*) "calculate_face is_offload_local NOT PRESENT!"
+            is_offload_local = .False.  
+        
+        else
+            is_offload_local = is_offload  
+        end if
+
+        !write(*,*) "calculate_face"
 
         call v_quantity%Point_to_data(values_dim1, values_dim2, values_dim3)
         call v_quantity%boundary_params%Point_to_edge_vectors(edge_vector_x, edge_vector_y, edge_vector_z)
@@ -300,20 +440,42 @@ contains
                     k = 1
                     i = 1
                     vec_e_num = 4
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,k, vec_e_num)
                     do j = 1, nyp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,k, vec_e_num)
+                    do j = 1, nyp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
                 if (boundary_type(6) == 2) then
                     i = 1
                     k = nzp
                     vec_e_num = 12
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,k, vec_e_num)
                     do j = 1, nyp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,k, vec_e_num)
+                    do j = 1, nyp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
             case(2) 
@@ -322,59 +484,125 @@ contains
                     k = 1
                     i = nxp
                     vec_e_num = 2
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,k, vec_e_num)
                     do j = 1, nyp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,k, vec_e_num)
+                    do j = 1, nyp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
                 if (boundary_type(6) == 2) then
                     i = nxp
                     k = nzp
                     vec_e_num = 10
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,k, vec_e_num)
                     do j = 1, nyp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,k, vec_e_num)
+                    do j = 1, nyp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
             case(3) 
                 if (boundary_type(1) == 2) then
                     i = 1
                     j = 1
                     vec_e_num = 5
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,j, vec_e_num)
                     do k = 1, nzp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,j, vec_e_num)
+                    do k = 1, nzp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
                 if (boundary_type(2) == 2) then
                     i = nxp
                     j = 1
                     vec_e_num = 6
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,j, vec_e_num)
                     do k = 1, nzp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,j, vec_e_num)
+                    do k = 1, nzp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
             case(4) 
                 if (boundary_type(2) == 2) then
                     j = nyp
                     i = nxp
                     vec_e_num = 7
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,j, vec_e_num)
                     do k = 1, nzp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,j, vec_e_num)
+                    do k = 1, nzp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
                 if (boundary_type(1) == 2) then
                     j = nyp
                     i = 1
                     vec_e_num = 8
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(i,j, vec_e_num)
                     do k = 1, nzp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                                 edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(i,j, vec_e_num)
+                    do k = 1, nzp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                                edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
             case(5) 
@@ -382,20 +610,42 @@ contains
                     k = 1
                     j = 1
                     vec_e_num = 1
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(j,k, vec_e_num)
                     do i = 1, nxp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                             edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(j,k, vec_e_num)
+                    do i = 1, nxp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                            edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
                 if (boundary_type(4) == 2) then
                     k = 1
                     j = nyp
                     vec_e_num = 3
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(j,k, vec_e_num)
                     do i = 1, nxp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                             edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(j,k, vec_e_num)
+                    do i = 1, nxp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                            edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
 
@@ -404,25 +654,47 @@ contains
                     k = nzp
                     j = 1
                     vec_e_num = 9
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(j,k, vec_e_num)
                     do i = 1, nxp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                             edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(j,k, vec_e_num)
+                    do i = 1, nxp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                            edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
 
                 if (boundary_type(4) == 2) then
                     j = nyp
                     k = nzp
                     vec_e_num = 11
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do firstprivate(j,k, vec_e_num)
                     do i = 1, nxp
-                        call this%Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
                             edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do firstprivate(j,k, vec_e_num)
+                    do i = 1, nxp
+                        call Calculate_on_edge(values_dim1(i,j,k), values_dim2(i,j,k), values_dim3(i,j,k), &
+                            edge_vector_x(vec_e_num), edge_vector_y(vec_e_num), edge_vector_z(vec_e_num))
+                    end do
+                    !$omp end parallel do
+                    end if
                 end if
         end select
     end subroutine Calculate_face
 
-    subroutine Calculate_corner (this, v_quantity, angle, edge_num)
+    subroutine Calculate_corner (this, v_quantity, angle, edge_num, is_offload)
         use geometry_module , only : Check_corner_vertex
         implicit none
         class (slip_vertex_3d_t), intent (in out)     :: this      
@@ -430,6 +702,7 @@ contains
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
         integer :: nxp, nyp, nzp
         integer :: virt_nxp, virt_nyp, virt_nzp
         integer, dimension(:),allocatable :: ivirt,jvirt,kvirt
@@ -440,6 +713,18 @@ contains
 
         real(8), dimension (:,:,:), pointer :: values_dim3
         integer :: i, j, k
+                logical :: is_offload_local
+
+        if (.not. present(is_offload)) then
+        
+            !write(*,*) "calculate_corner is_offload_local NOT PRESENT!"
+            is_offload_local = .False.  
+        
+        else
+            is_offload_local = is_offload  
+        end if
+
+        !write(*,*) "calculate_corner"
 
         call v_quantity%Point_to_data(values_dim1, values_dim2, values_dim3)
 
@@ -459,6 +744,8 @@ contains
         select case (edge_num)
             case(1) 
                 i = 1
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(i)
                 do k = 1, nzp
                     do j = 1, nyp
                         if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
@@ -468,9 +755,24 @@ contains
                         end if
                     end do
                 end do
-
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(i)
+                do k = 1, nzp
+                    do j = 1, nyp
+                        if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
+                            values_dim1(i, j, k) = 0d0
+                            values_dim2(i, j, k) = 0d0
+                            values_dim3(i, j, k) = 0d0
+                        end if
+                    end do
+                end do
+                !$omp end parallel do
+                end if
             case(2) 
                 i = nxp
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(i)
                 do k = 1, nzp
                     do j = 1, nyp
                         if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
@@ -480,9 +782,24 @@ contains
                         end if
                     end do
                 end do
-
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(i)
+                do k = 1, nzp
+                    do j = 1, nyp
+                        if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
+                            values_dim1(i, j, k) = 0d0
+                            values_dim2(i, j, k) = 0d0
+                            values_dim3(i, j, k) = 0d0
+                        end if
+                    end do
+                end do
+                !$omp end parallel do
+                end if
             case(3) 
                 j = 1
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(j)
                 do k = 1, nzp
                     do i = 1, nxp
                         if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
@@ -492,9 +809,24 @@ contains
                         end if
                     end do
                 end do
-
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(j)
+                do k = 1, nzp
+                    do i = 1, nxp
+                        if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
+                            values_dim1(i, j, k) = 0d0
+                            values_dim2(i, j, k) = 0d0
+                            values_dim3(i, j, k) = 0d0
+                        end if
+                    end do
+                end do
+                !$omp end parallel do
+                end if
             case(4) 
                 j = nyp
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(j)
                 do k = 1, nzp
                     do i = 1, nxp
                         if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
@@ -504,9 +836,24 @@ contains
                         end if
                     end do
                 end do
-
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(j)
+                do k = 1, nzp
+                    do i = 1, nxp
+                        if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
+                            values_dim1(i, j, k) = 0d0
+                            values_dim2(i, j, k) = 0d0
+                            values_dim3(i, j, k) = 0d0
+                        end if
+                    end do
+                end do
+                !$omp end parallel do
+                end if
             case(5) 
                 k = 1
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(k)
                 do j = 1, nyp
                     do i = 1, nxp
                         if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
@@ -516,8 +863,24 @@ contains
                         end if
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(k)
+                do j = 1, nyp
+                    do i = 1, nxp
+                        if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
+                            values_dim1(i, j, k) = 0d0
+                            values_dim2(i, j, k) = 0d0
+                            values_dim3(i, j, k) = 0d0
+                        end if
+                    end do
+                end do
+                !$omp end parallel do
+                end if
             case(6) 
                 k = nzp
+                if (is_offload_local) then
+                !$omp target teams distribute parallel do collapse(2) firstprivate(k)
                 do j = 1, nyp
                     do i = 1, nxp
                         if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
@@ -527,6 +890,20 @@ contains
                         end if
                     end do
                 end do
+                !$omp end target teams distribute parallel do
+                else
+                !$omp parallel do collapse(2) firstprivate(k)
+                do j = 1, nyp
+                    do i = 1, nxp
+                        if (Check_corner_vertex(ivirt(i), jvirt(j), kvirt(k), virt_nxp, virt_nyp, virt_nzp) .eqv. .true.) then
+                            values_dim1(i, j, k) = 0d0
+                            values_dim2(i, j, k) = 0d0
+                            values_dim3(i, j, k) = 0d0
+                        end if
+                    end do
+                end do
+                !$omp end parallel do
+                end if
         end select
     end subroutine Calculate_corner
 

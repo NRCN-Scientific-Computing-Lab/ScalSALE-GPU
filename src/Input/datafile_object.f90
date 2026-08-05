@@ -53,6 +53,9 @@ module datafile_module
         integer, public :: npy 
         integer, public :: npz 
         integer, public :: threads 
+        ! AVITAY
+        integer, public :: max_ncyc 
+        ! AVITAY      
 
         integer, public                              :: mesh_type           
         integer, dimension(:), allocatable, public   :: boundary_conditions
@@ -473,6 +476,13 @@ contains
             if (found .eqv. .false.) call error_msg("Parser: Bad value in simulation parameter no_xl_visc")
             this%offset_no_xl_visc = var_i
         end if
+
+        ! AVITAY
+        tmp = segment // ".max_ncyc"
+        call json%get(trim(tmp), var, found)
+        if (found .eqv. .false.) call error_msg("Bad value in simulation_parameters segment (max_ncyc)")
+        this%max_ncyc = var
+        ! AVITAY
 
     end subroutine Parse_simulation_parameters
 

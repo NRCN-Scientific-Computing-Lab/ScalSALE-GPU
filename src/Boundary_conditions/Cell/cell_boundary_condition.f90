@@ -14,12 +14,13 @@ module cell_boundary_condition_module
     end type
 
     abstract interface
-        subroutine Calculate_interface (this, c_quantity, edge_num)
+        subroutine Calculate_interface (this, c_quantity, edge_num, is_offload)
              import :: cell_boundary_condition_t, data_t, quantity_t
 
             class (cell_boundary_condition_t) , intent (in out)     :: this      
             class(quantity_t)   , intent (in out)     :: c_quantity  
             integer             , intent (in)         :: edge_num  
+            logical, optional :: is_offload
 
         end subroutine
 

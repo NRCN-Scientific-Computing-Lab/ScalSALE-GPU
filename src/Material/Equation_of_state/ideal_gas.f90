@@ -51,8 +51,14 @@ contains
       real(8) :: gamma1 
       real(8) :: atomic_weight 
       integer :: i, j, k
+      integer, save :: counter = 0
       gamma1 = gamma_gas - 1d0
       atomic_weight = atomic_mass / AVOGADRO
+
+      !write(*,*) ' ideal_gas.f90 do mikbul, it is called from material.f90, from equation_of_state'
+      !!$omp target update to(sie, sound_vel, vof)
+      if (counter > 2) then
+      !$omp target teams distribute parallel do collapse(3)
       do k = 1, nz
          do j = 1, ny
             do i = 1, nx
@@ -77,6 +83,37 @@ contains
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+      else
+      !$omp parallel do collapse(3)
+      do k = 1, nz
+         do j = 1, ny
+            do i = 1, nx
+               if (vof(mat_num, i, j, k) >= emf) then
+                  if (nrg_or_tmp == 1) then
+                     sie(mat_num, i, j, k) = 1d0 / gamma1 * K_BOLTZMAN * temperature(mat_num, i, j, k) / atomic_weight
+                  else
+                     temperature(mat_num, i, j, k) = atomic_weight * sie(mat_num, i, j, k) * gamma1 / K_BOLTZMAN
+                  end if
+                  pressure (mat_num, i, j, k) = gamma1 * sie(mat_num, i, j, k) * density(mat_num, i, j, k) + 1d-25
+                  sound_vel(mat_num, i, j, k) = gamma1 * gamma_gas * sie(mat_num, i, j, k)
+                  dp_de    (mat_num, i, j, k) = gamma1 * density(mat_num, i, j, k)
+                  dp_drho  (mat_num, i, j, k) = gamma1 * sie(mat_num, i, j, k)
+                  dt_de    (mat_num, i, j, k) = atomic_weight * gamma1 / K_BOLTZMAN
+                  dt_drho  (mat_num, i, j, k) = 0d0
+                  if (sound_vel(mat_num, i, j, k) <= 0d0) then
+                     sound_vel(mat_num, i, j, k) = 1d-10
+                     dp_drho  (mat_num, i, j, k) = 1d-20
+                     pressure (mat_num, i, j, k) = 1d-25
+                  end if
+               end if
+            end do
+         end do
+      end do
+      !$omp end parallel do
+      end if
+      counter = counter + 1
+      !!$omp target update from(pressure, sound_vel, dp_de, dp_drho, dt_de, dt_drho, temperature) 
 
       end subroutine Calculate_ideal_gas
 

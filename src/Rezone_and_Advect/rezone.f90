@@ -141,9 +141,6 @@ contains
 
       integer :: i, i1, i2, j, j1, j2
 
-
-
-
       call this%mesh%Point_to_data(x, y)
       call this%velocity%Point_to_data(velocity_x, velocity_y)
       call this%material_coordinates%Point_to_data (material_x, material_y)
@@ -151,27 +148,14 @@ contains
       call this%vertex_mass%Point_to_data(vertex_mass)
       call this%material_volume%Point_to_data(mat_vol)
 
-
-
-
       material_x = x + velocity_x * dt
       material_y = y + velocity_y * dt
 
       call this%material_coordinates%Calculate(dt, this%velocity, coords=this%mesh%coordinates)
-      call this%material_coordinates%Apply_boundary(this%material_coordinates%data)
+      call this%material_coordinates%Apply_boundary(this%material_coordinates%data, is_offload=.False.)
 
       mesh_velocity_x = velocity_x
       mesh_velocity_y = velocity_y
-
-
-
-
-
-
-
-
-
-
 
       do j = 1, this%nyp
          do i = 1, this%nxp
@@ -187,21 +171,17 @@ contains
       select case (this%rezone_type)
          case (0)
 
-
             mesh_velocity_x = velocity_x
             mesh_velocity_y = velocity_y
 
          case (1)
             mesh_velocity_x = 0d0
             mesh_velocity_y = 0d0
-
-
-
          case default
 
       end select
 
-      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data)
+      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
 
       call this%material_volume%Calculate(this%material_coordinates, cyl_optional=this%mesh%cyl)
 
@@ -234,6 +214,14 @@ contains
       real(8) :: velocity_sq 
       real(8) :: factor      
       integer :: i, j, k
+      integer :: nxp, nyp, nzp
+      real(8) :: mass_threshold, velocity_limit
+
+      nxp = this%nxp
+      nyp = this%nyp
+      nzp = this%nzp
+      mass_threshold = this%mass_threshold
+      velocity_limit = this%velocity_limit
 
       call this%velocity%Point_to_data(velocity_x, velocity_y, velocity_z)
       call this%mesh%Point_to_data(x, y, z)
@@ -242,40 +230,116 @@ contains
       call this%mesh_velocity%Point_to_data(mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
       call this%vertex_mass%Point_to_data(vertex_mass)
 
+      !x,y,z are updated on the GPU
+      !!$omp target update to(vertex_mass)
+      !!$omp target update to(velocity_x, velocity_y, velocity_z)
 
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)            
+      !    !$omp target update from(velocity_x)
+      !    !$omp target update from(velocity_y)
+      !    !$omp target update from(velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, BEFORE FIRST LOOP ********"
+      !    do i = 0, this%nxp + 1
+      !       do j = 0, this%nyp + 1
+      !          do k = 0, this%nzp + 1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8), &                     
+      !                transfer(velocity_x(i, j, k), 0_8), &
+      !                transfer(velocity_y(i, j, k), 0_8), &
+      !                transfer(velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
 
-
-
-
-
-
-      do k = 0, this%nzp + 1
-         do j = 0, this%nyp + 1
-            do i = 0, this%nxp + 1
+      !$omp target teams distribute parallel do collapse(3) 
+      do k = 0, nzp + 1
+         do j = 0, nyp + 1
+            do i = 0, nxp + 1
                material_x(i, j, k) = x(i, j, k) + velocity_x(i, j, k) * dt
                material_y(i, j, k) = y(i, j, k) + velocity_y(i, j, k) * dt
                material_z(i, j, k) = z(i, j, k) + velocity_z(i, j, k) * dt
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+      
+      !TODO: can we calculate material volume on gpu? because mterial_x_y_z are already on the gpu...
+      !!$omp target update from(material_x, material_y, material_z)
 
-      call this%material_volume%Calculate(this%material_coordinates)
+      call this%material_volume%Calculate(this%material_coordinates) !on GPU
       call this%material_volume%Exchange_virtual_space_nonblocking()
 
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)         
+      !    !$omp target update from(velocity_x)
+      !    !$omp target update from(velocity_y)
+      !    !$omp target update from(velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, AFTER FIRST LOOP ********"
+      !    do i = 0, this%nxp + 1
+      !       do j = 0, this%nyp + 1
+      !          do k = 0, this%nzp + 1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8), &                     
+      !                transfer(velocity_x(i, j, k), 0_8), &
+      !                transfer(velocity_y(i, j, k), 0_8), &
+      !                transfer(velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
 
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !   !$omp target update from(mesh_velocity_x)
+      !   !$omp target update from(mesh_velocity_y)
+      !   !$omp target update from(mesh_velocity_z)         
+      !    !$omp target update from(velocity_x)
+      !    !$omp target update from(velocity_y)
+      !    !$omp target update from(velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, BEFORE VELOCITY LIMITER ********"
+      !    do i = 0, this%nxp + 1
+      !       do j = 0, this%nyp + 1
+      !          do k = 0, this%nzp + 1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8), &                     
+      !                transfer(velocity_x(i, j, k), 0_8), &
+      !                transfer(velocity_y(i, j, k), 0_8), &
+      !                transfer(velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
 
-
-
-
-      do k = 1, this%nzp
-         do j = 1, this%nyp
-            do i = 1, this%nxp
+      !$omp target teams distribute parallel do collapse(3) private(velocity_sq, factor)
+      do k = 1, nzp
+         do j = 1, nyp
+            do i = 1, nxp
                velocity_sq = velocity_z(i, j, k) * velocity_z(i, j, k) &
                   + velocity_y(i, j, k) * velocity_y(i, j, k) &
                   + velocity_x(i, j, k) * velocity_x(i, j, k)
 
-               if ((vertex_mass(i, j, k) < this%mass_threshold) .and. (velocity_sq > this%velocity_limit)) then
-                  factor = sqrt(this%velocity_limit / velocity_sq)
+               if ((vertex_mass(i, j, k) < mass_threshold) .and. (velocity_sq > velocity_limit)) then
+                  factor = sqrt(velocity_limit / velocity_sq)
                   velocity_x(i, j, k) = velocity_x(i, j, k) * factor
                   velocity_y(i, j, k) = velocity_y(i, j, k) * factor
                   velocity_z(i, j, k) = velocity_z(i, j, k) * factor
@@ -283,37 +347,82 @@ contains
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+
 
       select case (this%rezone_type)
          case(0)
-
-
-            do k = 1, this%nzp
-               do j = 1, this%nyp
-                  do i = 1, this%nxp
+            !$omp target teams distribute parallel do collapse(3)
+            do k = 1, nzp
+               do j = 1, nyp
+                  do i = 1, nxp
                      mesh_velocity_x(i, j, k) = velocity_x(i, j, k)
                      mesh_velocity_y(i, j, k) = velocity_y(i, j, k)
                      mesh_velocity_z(i, j, k) = velocity_z(i, j, k)
                   end do
                end do
             end do
-
+            !$omp end target teams distribute parallel do
          case(1)
-            do k = 1, this%nzp
-               do j = 1, this%nyp
-                  do i = 1, this%nxp
+            !$omp target teams distribute parallel do collapse(3)
+            do k = 1, nzp
+               do j = 1, nyp
+                  do i = 1, nxp
                      mesh_velocity_x(i, j, k) = 0
                      mesh_velocity_y(i, j, k) = 0
                      mesh_velocity_z(i, j, k) = 0
                   end do
                end do
             end do
-
+            !$omp end target teams distribute parallel do
          case default
 
       end select
+      !!$omp target update from(velocity_x, velocity_y, velocity_z, mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
 
-      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data)
+      ! IMPORTANT NOTE: AVITAY CHANGED THIS TO FALSE, THIS WAS TRUE
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, BEFORE APPLY_BOUNDARY ********"
+      !    do i = 0, this%nxp+1
+      !       do j = 0, this%nyp+1
+      !           do k = 0, this%nzp+1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if
+
+      call this%mesh_velocity%Apply_boundary(this%mesh%coordinates%data, is_offload=.True.)
+
+      ! if (this%cyc_delete == 117 ) then
+      !    #ifdef GPU_BUILD
+      !    !$omp target update from(mesh_velocity_x)
+      !    !$omp target update from(mesh_velocity_y)
+      !    !$omp target update from(mesh_velocity_z)
+      !    #endif
+      !    write(777, '(A)') "******* IN REZONE, AFTER APPLY_BOUNDARY ********"
+      !    do i = 0, this%nxp+1
+      !       do j = 0, this%nyp+1
+      !           do k = 0, this%nzp+1
+      !             write(777, '(3I5,3(" | ",Z18))') i, j, k, &
+      !                transfer(mesh_velocity_x(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_y(i, j, k), 0_8), &
+      !                transfer(mesh_velocity_z(i, j, k), 0_8)
+      !          end do
+      !       end do
+      !    end do
+      !    flush(777)
+      ! end if            
+
       call this%material_volume%Exchange_end()
 
       this%cyc_delete = this%cyc_delete + 1

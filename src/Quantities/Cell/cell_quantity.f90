@@ -98,15 +98,17 @@ contains
    end subroutine Clean_cell_quantity
 
 
-   subroutine Apply_boundary(this, is_blocking)
+   subroutine Apply_boundary(this, is_blocking, is_offload)
       implicit none
       class (cell_quantity_t)   , intent(in out) :: this
       logical, optional :: is_blocking 
+      logical, optional :: is_offload
 
       real(8), dimension (:,:,:), pointer        :: values
       integer                                    :: i, edge
       integer, dimension(:)     , pointer        :: ed_num
       logical :: is_blocking_local
+      logical :: is_offload_local
 
       if (.not. present(is_blocking)) then
          is_blocking_local = .True.  
@@ -114,12 +116,18 @@ contains
          is_blocking_local = is_blocking   
       end if
 
+      if (.not. present(is_offload)) then
+         is_offload_local = .False.  
+      else
+         is_offload_local = is_offload 
+      end if
+
       call this%Point_to_data (1, values)
       call this%boundary_params%Point_to_edges (ed_num)
 
       do i = 1, size(ed_num)
          edge = ed_num(i)
-         call this%boundary_conditions(edge)%bc%Calculate (this, edge)
+         call this%boundary_conditions(edge)%bc%Calculate (this, edge, is_offload)
       end do
 
       if (is_blocking_local) then

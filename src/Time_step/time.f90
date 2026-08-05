@@ -8,6 +8,7 @@ module time_module
    use geometry_module           , only : Distance_2
    use communication_module      , only : communication_t
    use parallel_parameters_module, only: parallel_parameters_t
+   use omp_lib
    implicit none
    private
 
@@ -145,7 +146,7 @@ contains
       integer :: i_dt_reason   
       integer :: j_dt_reason   
       integer :: k_dt_reason   
-
+      real(8) :: velgrad_time
 
 
 
@@ -156,7 +157,9 @@ contains
          call this%Calculate_vel_grad_dt_2d      (mesh, velocity, vof)
          call this%Calculate_rezone_constraint_2d(mesh, vertex_mass, velocity, mesh_velocity, emfm)
       else if(mesh%dimension == 3) then
+         !velgrad_time = omp_get_wtime()
          call this%Calculate_vel_grad_dt_3d      (mesh, velocity)
+         !write(*,'(A50, F12.6)') "Calculate_vel_grad_dt_3d time:", omp_get_wtime() - velgrad_time
          call this%Calculate_rezone_constraint_3d(mesh, vertex_mass, velocity, mesh_velocity, emfm)
       end if
 
@@ -296,7 +299,11 @@ contains
       real(8), dimension(:,:,:), pointer :: z     
       real(8), dimension(:,:,:), pointer :: velocity_x       
       real(8), dimension(:,:,:), pointer :: velocity_y       
-      real(8), dimension(:,:,:), pointer :: velocity_z       
+      real(8), dimension(:,:,:), pointer :: velocity_z   
+      real(8), dimension(:, :, :), pointer :: vel_grad_temp !yonif    
+      real(8) :: global_max
+      real(8) :: local_max
+      integer :: packed_idx
 
 
       integer :: i, j, k       
@@ -305,9 +312,11 @@ contains
       real(8) :: vel_diff_coor_diff_i  
       real(8) :: vel_diff_coor_diff_j  
       real(8) :: vel_diff_coor_diff_k  
+      !real(8) :: start_time
 
       call mesh%Point_to_data(x, y, z)
       call velocity%Point_to_data(velocity_x, velocity_y, velocity_z)
+
 
       vel_grad_max = 0d0
 
@@ -317,6 +326,14 @@ contains
       ny = velocity%d2 - 1
       nz = velocity%d3 - 1
 
+      allocate(vel_grad_temp(1:nx, 1:ny, 1:nz)) !yonif
+
+      !start_time = omp_get_wtime()
+      global_max = -1
+      packed_idx = -1
+      !$omp target data map(tofrom: global_max, packed_idx) map(alloc: vel_grad_temp(1:nx, 1:ny, 1:nz)) 
+      !$omp target teams distribute parallel do collapse(3) private(vel_diff_coor_diff_i, vel_diff_coor_diff_j, vel_diff_coor_diff_k, vel_grad)&
+      !$omp& reduction(max:global_max) 
       do k = 1, nz
          do j = 1, ny
             do i = 1, nx
@@ -344,17 +361,50 @@ contains
 
                vel_grad = max(abs(vel_diff_coor_diff_i), abs(vel_diff_coor_diff_j), abs(vel_diff_coor_diff_k))
 
-               if (vel_grad >= vel_grad_max) then 
+               vel_grad_temp(i,j,k) = vel_grad
+               global_max = max(global_max, vel_grad)
 
-                  vel_grad_max  = vel_grad
-                  this%i_grad = i
-                  this%j_grad = j
-                  this%k_grad = k
-               end if
+               ! if (vel_grad >= vel_grad_max) then 
+               !   vel_grad_max  = vel_grad
+               !   this%i_grad = i
+               !   this%j_grad = j
+               !   this%k_grad = k
+               ! end if
 
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+      !global_max = 0d0
+      !local_max = 0d0
+      !$omp target teams distribute parallel do collapse(3) map(to: global_max) map(tofrom: packed_idx)
+        do k = 1, nz
+         do j = 1, ny
+            do i = 1, nx
+               if (vel_grad_temp(i,j,k) == global_max) then
+               !if(.true. .or. (abs(vel_grad_temp(i,j,k) - global_max) < 1d-14)) then
+                  !$omp atomic write
+                  packed_idx = (k-1)*ny*nx + (j-1)*nx + i
+               endif
+            end do
+         end do
+        end do
+      !$omp end target teams distribute parallel do
+      !$omp end target data
+
+
+      this%i_grad = mod(mod(packed_idx - 1, nx * ny), nx) + 1
+      this%j_grad = mod(packed_idx - 1, nx * ny) / nx + 1
+      this%k_grad = (packed_idx - 1) / (nx * ny) + 1
+      ! write(*,'(A50, F12.6)') "Calculate_vel_grad_dt_3d inside calculate_dt time: ", omp_get_wtime() - start_time
+      ! write(*,'(A50, F12.6)') "max value time: ", global_max
+      ! write(*,'(A50, 3(I0,1X))') "ijk: ", this%i_grad, this%j_grad, this%k_grad
+      ! write(*,'(A50, F12.6)') "val time: ", vel_grad_temp(this%i_grad,this%j_grad,this%k_grad) 
+      ! If I print the vel_grad(ijk) value for checking, must change alloc to tofrom if on GPU
+      deallocate(vel_grad_temp) !yonif
+
+      ! AVITAY ADDED THIS:
+      vel_grad_max = global_max
 
       if (vel_grad_max /= 0) this%dt_grad = this%dt_factor / vel_grad_max 
    end subroutine Calculate_vel_grad_dt_3d
@@ -478,6 +528,10 @@ contains
       real(8), dimension(:, :, :), pointer :: mesh_velocity_y 
       real(8), dimension(:, :, :), pointer :: mesh_velocity_z 
       real(8), dimension(:, :, :), pointer :: vertex_mass     
+      real(8), dimension(:, :, :), pointer :: vel_grad_temp !yonif 
+      real(8) :: global_max
+      real(8) :: local_max
+      integer :: packed_idx
 
       real(8) :: vel_diff_x   
       real(8) :: vel_diff_y   
@@ -499,6 +553,7 @@ contains
 
       integer :: i, j, k 
       logical :: is_wall_x_top, is_wall_x_bot,is_wall_y_top, is_wall_y_bot,is_wall_z_top,is_wall_z_bot
+      real(8) :: start_time
 
       is_wall_x_top = this%parallel_params%is_wall_x_top
       is_wall_x_bot = this%parallel_params%is_wall_x_bot
@@ -520,14 +575,24 @@ contains
       nzp = vert_mass%d3
 
 
-
+      allocate(vel_grad_temp(1:nxp, 1:nyp, 1:nzp)) !yonif
 
 
       vel_rez_max = -1d20
+
+      start_time = omp_get_wtime()
+      global_max = -1
+      packed_idx = -1
+      !$omp target data map(tofrom: global_max, packed_idx) map(alloc: vel_grad_temp(1:nxp, 1:nyp, 1:nzp)) 
+      !$omp target teams distribute parallel do collapse(3) private(vel_grad, vel_diff_x,vel_diff_y,vel_diff_z,len_sq,vel_grad_i_p, vel_grad_j_p, vel_grad_k_p, vel_grad_i_m, vel_grad_j_m, vel_grad_k_m)&
+      !$omp& reduction(max:global_max) 
       do k = 1, nzp
          do j = 1, nyp
             do i = 1, nxp
-               if(vertex_mass(i, j, k) < emfm) cycle
+               if(vertex_mass(i, j, k) < emfm) then 
+                  vel_grad_temp(i,j,k) = vel_rez_max ! contributor Added, this was a bug!
+                  cycle
+               end if
                vel_diff_x = velocity_x(i, j, k) - mesh_velocity_x(i, j, k)
                vel_diff_y = velocity_y(i, j, k) - mesh_velocity_y(i, j, k)
                vel_diff_z = velocity_z(i, j, k) - mesh_velocity_z(i, j, k)
@@ -603,25 +668,54 @@ contains
                else
                   vel_grad_k_m = eps
                end if
-
+            
                vel_grad = max(vel_grad_i_m, vel_grad_j_m, vel_grad_k_m, vel_grad_i_p, vel_grad_j_p, vel_grad_k_p)
-               if (vel_rez_max < vel_grad) then
-                  vel_rez_max = vel_grad
-                  this%i_rez  = i
-                  this%j_rez  = j
-                  this%k_rez  = k
-               end if
+               
+               vel_grad_temp(i,j,k) = vel_grad
+               global_max = max(global_max, vel_grad)
+
+               ! if (vel_rez_max < vel_grad) then
+               !   vel_rez_max = vel_grad
+               !   this%i_rez  = i
+               !   this%j_rez  = j
+               !   this%k_rez  = k
+               ! end if
             end do
          end do
       end do
+      !$omp end target teams distribute parallel do
+      !$omp target teams distribute parallel do collapse(3) map(to: global_max) map(tofrom: packed_idx)
+        do k = 1, nzp
+         do j = 1, nyp
+            do i = 1, nxp
+               if (vel_grad_temp(i,j,k) == global_max) then
+                  !$omp atomic write
+                  packed_idx = (k-1)*nyp*nxp + (j-1)*nxp + i
+               endif
+            end do
+         end do
+        end do
+      !$omp end target teams distribute parallel do
+      !$omp end target data
 
 
 
+        
+        this%i_rez = mod(mod(packed_idx - 1, nxp * nyp), nxp) + 1
+         this%j_rez = mod(packed_idx - 1, nxp * nyp) / nxp + 1
+         this%k_rez = (packed_idx - 1) / (nxp * nyp) + 1
 
+        ! IMPORTANT NOTE - AVITAY ADDED THIS:
+         vel_rez_max = global_max 
+        
          this%dt_rez = this%dt_factor / (vel_rez_max + 1d-30)
          this%dt_rez = max(this%dt_rez, 1d-14)
 
-
+      !    write(*,'(A60, F12.6)') "Calculate_rezone_constraints_3d inside calculate_dt time: ", omp_get_wtime() - start_time
+      !    write(*,'(A60, F30.20)') "max value time: ", vel_rez_max
+      !    write(*,'(A50, 3(I0,1X))') "ijk: ", this%i_rez, this%j_rez, this%k_rez
+      !    write(*,'(A50, F12.6)') "val time: ", vel_grad_temp(this%i_rez,this%j_rez,this%k_rez) 
+        deallocate(vel_grad_temp) !yonif
 
    end subroutine Calculate_rezone_constraint_3d
 

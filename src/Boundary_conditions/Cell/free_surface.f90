@@ -15,10 +15,11 @@ module free_surface_module
     end type free_surface_t
 
 contains
-    subroutine Free_surface_calculate (this, c_quantity, edge_num)
+    subroutine Free_surface_calculate (this, c_quantity, edge_num, is_offload)
         class (free_surface_t) , intent (in out)     :: this      
         class(quantity_t)   , intent (in out)     :: c_quantity  
         integer             , intent (in)         :: edge_num  
+        logical, optional :: is_offload
     end subroutine
 
 end module free_surface_module

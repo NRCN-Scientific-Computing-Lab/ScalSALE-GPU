@@ -1,4 +1,3 @@
-
 module hydro_step_module
     use vertex_boundary_condition_module, only : vertex_boundary_condition_t
     use cell_boundary_condition_module  , only : cell_boundary_condition_t
@@ -42,28 +41,28 @@ module hydro_step_module
         type (num_materials_in_cells_t), pointer :: num_mat_cells        
         type (artificial_viscosity_t)  , pointer :: a_visc               
         type (materials_in_cells_t)    , pointer :: mat_id               
-        type (sound_velocity_t)        , pointer :: total_sound_vel      
+        type (sound_velocity_t), public, pointer :: total_sound_vel      
         type (acceleration_t)          , pointer :: acceleration         
-        type (temperature_t)           , pointer :: total_temperature    
+        type (temperature_t) , public  , pointer :: total_temperature    
         type (vertex_mass_t)           , pointer :: vertex_mass    
         type (vertex_mass_t)           , pointer :: previous_vertex_mass 
         class (mesh_base_t)            , pointer :: mesh                 
-        type (cell_mass_t)             , pointer :: total_cell_mass      
+        type (cell_mass_t), public     , pointer :: total_cell_mass      
         type (cell_mass_t)             , pointer :: previous_cell_mass   
-        type (pressure_t)              , pointer :: total_pressure       
+        type (pressure_t) , public     , pointer :: total_pressure       
         type (pressure_t)              , pointer :: total_pressure_sum   
         type (velocity_t)              , pointer :: velocity             
         type (density_t)               , pointer :: total_density        
         type (volume_t)                , pointer :: total_volume         
-        type (energy_t)                , pointer :: total_sie            
-        type (rezone_t)                , pointer :: rezone               
-        type (advect_t)                , pointer :: advect               
+        type (energy_t), public        , pointer :: total_sie            
+        type (rezone_t), public        , pointer :: rezone               
+        type (advect_t), public        , pointer :: advect               
         type (data_t)                  , pointer :: inversed_vertex_mass
         type (vof_t)                   , pointer :: total_vof            
         type (data_t)                  , pointer :: total_dt_drho        
-        type (data_t)                  , pointer :: total_dp_drho        
+        type (data_t) , public         , pointer :: total_dp_drho        
         type (data_t)                  , pointer :: total_dt_de          
-        type (data_t)                  , pointer :: total_dp_de          
+        type (data_t) , public         , pointer :: total_dp_de          
         type (data_t)                  , pointer :: dvelocity_x_dx       
         type (data_t)                  , pointer :: dvelocity_y_dx       
         type (data_t)                  , pointer :: dvelocity_z_dx       
@@ -85,6 +84,10 @@ module hydro_step_module
 
         integer, public                           :: ncyc 
         integer, public                           :: cyc_delete
+        integer                                   :: file_unit_lagrange
+
+        ! AVITAY
+        integer                                   :: max_ncyc
     contains
 
         procedure, public  :: do_time_step_2d
@@ -235,6 +238,8 @@ module hydro_step_module
 
         procedure, public :: Read_hydro_step
         generic :: read(unformatted) => Read_hydro_step
+
+        procedure, public :: Print_data
       
     end type hydro_step_t
 
@@ -334,15 +339,18 @@ contains
         Constructor%total_dt_de          => total_dt_de
         Constructor%total_dt_drho        => total_dt_drho
         Constructor%cyc_delete = 0
+        Constructor%file_unit_lagrange = 777
+        ! open(Constructor%file_unit_lagrange, file="track_validation_lagrangian", status="unknown", action="write")
         Constructor%parallel_params => parallel_params
+        
         allocate(Constructor%rezone)
 
         Constructor%rezone = rezone_t(df%rezone_type, nxp, nyp, nzp, total_cell_mass%boundary_conditions,&
             velocity%boundary_conditions, mesh, velocity, vertex_mass, &
             total_cell_mass%boundary_params)
+        
+        
         allocate(Constructor%advect)
-
-
 
         Constructor%advect = advect_t(nxp, nyp, nzp,nmats, mat_ids, total_cell_mass%boundary_conditions, velocity%boundary_conditions, &
             total_cell_mass%boundary_params&
@@ -352,6 +360,10 @@ contains
             total_density, total_cell_mass, vertex_mass, &
             total_volume, velocity, emf, emfm , wilkins_scheme, parallel_params)
         Constructor%ncyc = 0
+
+        ! AVITAY
+        Constructor%max_ncyc = df%max_ncyc
+
     end function
 
 
@@ -376,7 +388,7 @@ contains
         call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
         call this%total_vof%       Point_to_data(vof_target)
         call this%total_volume%    Point_to_data(vol_target)
-        !$omp target update to(x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target)
+        !!$omp target update to(x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target)
         !TODO: optimize data movements
         
         call time%Calculate_dt(this%mesh, this%velocity, this%rezone%mesh_velocity, this%vertex_mass, this%total_vof, this%emfm)
@@ -413,46 +425,167 @@ contains
         class (hydro_step_t)         , intent (in out) :: this 
         type (time_t)                , intent (in out) :: time 
 
-        real(8), dimension(:, :, :), pointer :: p,x              
+        real(8), dimension(:, :, :), pointer :: p,x   
+        real(8), dimension(:, :, :), pointer :: velocity_x_target     
+        real(8), dimension(:, :, :), pointer :: velocity_y_target     
+        real(8), dimension(:, :, :), pointer :: velocity_z_target     
+        real(8), dimension(:, :, :), pointer :: x_target              
+        real(8), dimension(:, :, :), pointer :: y_target              
+        real(8), dimension(:, :, :), pointer :: z_target              
+
+        real(8), dimension(:, :, :), pointer :: vol_target            
+        real(8), dimension(:, :, :), pointer :: vof_target 
+
+        real(8), dimension(:, :, :), pointer :: acceleration_x_target     
+        real(8), dimension(:, :, :), pointer :: acceleration_y_target     
+        real(8), dimension(:, :, :), pointer :: acceleration_z_target 
+
+        real(8), dimension(:, :, :), pointer :: inversed_vertex_mass 
+        real(8), dimension(:, :, :), pointer :: vertex_mass 
+
         integer :: i,j,k
+
+        integer :: max_ncyc
+
         real(8) :: accel_time, avisc_time, vel_time, thermo_time, rezone_time, energy_time, mesh_time, dt_time
-        call this%total_sie%Point_to_data(1, x)
+
+        call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
+        call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
+        call this%total_vof%       Point_to_data(vof_target)
+        call this%total_volume%    Point_to_data(vol_target)
+        call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
+        call this%total_sie%Point_to_data(1, x)     
+
+        !AVITAYYYYYYYYYYYYY
+        call this%inversed_vertex_mass%Point_to_data(inversed_vertex_mass)
+        call this%vertex_mass%Point_to_data(vertex_mass)
+
+        max_ncyc = this%max_ncyc
+
 
         thermo_time = omp_get_wtime()
+
+        !write(*,*) "DEBUG 1: time_step_3d ENTER"
+        ! Set color to orange
+        !write(*,*) CHAR(27)//'[38;5;208m'
         call this%Calculate_thermodynamics()
-        write(*,'(A50, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
-        dt_time = omp_get_wtime()       
+        !write(*,'(A50, F12.6)') "Calculate_thermodynamics time:", omp_get_wtime() - thermo_time
+
+        
+        ! Set color to blue
+        !write(*,*) CHAR(27)//'[34m'
+        dt_time = omp_get_wtime()  
+        
         call time%Calculate_dt(this%mesh, this%velocity, this%rezone%mesh_velocity, this%vertex_mass, this%total_vof, this%emfm)
-        write(*,'(A50, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
+        !write(*,'(A50, F12.6)') "Calculate_dt time:", omp_get_wtime() - dt_time
         this%cyc_delete = this%cyc_delete+1
 
+        ! Set color to orange
+        !write(*,*) CHAR(27)//'[38;5;208m'
+
         accel_time = omp_get_wtime()
+
+        !this%Calculate_acceleration_3d INPUT to device: pressure_sum, inversed_vertex_mass, x, y, z
+        !this%Calculate_acceleration_3d OUTPUT on device: acceleration_x, acceleration_y, acceleration_z
+
         call this%Calculate_acceleration_3d(time%dt_mid)
-        write(*,'(A50, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
-        
-        
+        !write(*,'(A50, F12.6)') "Calculate_acceleration_3d time:", omp_get_wtime() - accel_time
+
+        ! Set color to blue
+        !write(*,*) CHAR(27)//'[34m'
+
+        !this%Calculate_artificial_viscosity_3d INPUT to device: acceleration_x, acceleration_y, acceleration_z,
+        !pressure, x , y, z, dvel_y_dy, dvel_z_dz, dvel_x_dy, dvel_y_dx, dvel_x_dz, dvel_z_dx, dvel_y_dz, dvel_z_dy,
+        !linear_visc_fac, sound_vel
+        !this%Calculate_artificial_viscosity_3d OUTPUT from device: NOTHING, we keep a_visc on GPU 
+  
         avisc_time = omp_get_wtime()
         call this%Calculate_artificial_viscosity_3d(time)
-        write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
+        !write(*,'(A50, F12.6)') "Calculate_artificial_viscosity_3d time:", omp_get_wtime() - avisc_time
+
+        ! Set color to orange
+        !write(*,*) CHAR(27)//'[38;5;208m'
         
         vel_time = omp_get_wtime()
+
+        !this%Calculate_velocity_3d INPUT to device: acceleration_x, acceleration_y, acceleration_z,
+        !velocity_x, velocity_y, velocity_z, inversed_vertex_mass, a_visc, x, y, z
+        !this%Calculate_velocity_3d OUTPUT KEEP ON DEVICE: velocity_x, velocity_y, velocity_z
+
+        ! !$OMP TARGET UPDATE from(inversed_vertex_mass, acceleration_x_target)
+        ! if (this%cyc_delete > 0 .and. this%cyc_delete < 2) then
+        !     write(142,'(A, 1I)') "CYCLE: ", this%cyc_delete
+        !     do i=0,this%nxp+1
+        !         do j=0,this%nyp+1
+        !             do k=0,this%nzp+1
+        !                 ! if (this%cyc_delete < 150 ) then
+        !                 write(142,'(A, 3I, 2(Z17))') "ADVECT", i, j, k, inversed_vertex_mass(i,j,k), acceleration_x_target(i,j,k)
+        !                 ! end if
+        !             end do
+        !         end do
+        !     end do
+        ! end if
+
         call this%Calculate_velocity_3d(time%dt_mid)
-        write(*,'(A50, F12.6)') "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
+        !write(*,'(A50, F12.6)') "Calculate_velocity_3d time:", omp_get_wtime() - vel_time
+
+        ! !$OMP TARGET UPDATE from(velocity_x_target)
+        ! if (this%cyc_delete > 1 .and. this%cyc_delete < 3) then
+        !     write(143,'(A, 1I)') "CYCLE: ", this%cyc_delete
+        !     do i=0,this%nxp+1
+        !         do j=0,this%nyp+1
+        !             do k=0,this%nzp+1
+        !                 ! if (this%cyc_delete < 150 ) then
+        !                 write(143,'(A, 3I, 1(Z17))') "ADVECT", i, j, k, velocity_x_target(i,j,k)
+        !                 ! end if
+        !             end do
+        !         end do
+        !     end do
+        ! end if
+
+        ! Set color to blue
+        !write(*,*) CHAR(27)//'[34m'
+
+        !this%rezone%Calculate_rezone_3d INPUT to device EXIST: x, y, z, velocity_x, velocity_y, velocity_z, 
+        !this%rezone%Calculate_rezone_3d OUTPUT from device: velocity_x, velocity_y, velocity_z, mesh_velocity_x, mesh_velocity_y, mesh_velocity_z
     
         rezone_time = omp_get_wtime()
         call this%rezone%Calculate_rezone_3d(time%dt)
-        write(*,'(A50, F12.6)') "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
+        !write(*,'(A50, F12.6)') "Calculate_rezone_3d time:", omp_get_wtime() - rezone_time
+
+        ! Set color to orange
+        !write(*,*) CHAR(27)//'[38;5;208m'
 
         energy_time = omp_get_wtime()
         call this%Calculate_energy_3d(this%init_temperature, time%dt)
-        write(*,'(A50, F12.6)') "Calculate_energy_3d time:", omp_get_wtime() - energy_time
+        !write(*,'(A50, F12.6)') "Calculate_energy_3d time:", omp_get_wtime() - energy_time
+
+        ! Set color to blue
+        !write(*,*) CHAR(27)//'[34m'
 
         !call this%Fix_vof_3d(time%dt, 0)
+        call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
+            this%total_vof, this%total_volume, this%nx, this%ny, this%nz, this%emf)
+        call this%total_sie%Exchange_end()
+        call this%materials%sie%Exchange_end()
+        call this%total_vof%Apply_boundary(.false., is_offload=.false.)
+        call this%materials%vof%Apply_boundary(is_blocking=.false., is_offload=.false.)
         mesh_time = omp_get_wtime()
         call this%Calculate_mesh_3d(time)
-        write(*,'(A50, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
+        !write(*,'(A50, F12.6)') "Calculate_mesh_3d time:", omp_get_wtime() - mesh_time
 
-        if (this%rezone%rezone_type /= 0) call this%advect%Calculate_advect_3d()
+        ! reset color
+        !write(*,*) CHAR(27)//'[0m'
+
+        if (this%rezone%rezone_type /= 0) then
+            call this%advect%Calculate_advect_3d()
+        end if
+
+        ! Runtime debug-file output is disabled. Calling Print_data with its
+        ! OPEN statement disabled causes Fortran to create fort.777 implicitly.
+        ! if (this%cyc_delete > max_ncyc - 5 ) then
+        !     call this%Print_data()
+        ! end if
 
     end subroutine do_time_step_3d
 
@@ -500,15 +633,16 @@ contains
         real(8) :: tmp
         integer :: tmp_mat  
         integer :: i, j, k     
-
-
-
-
-
-
-
-
-
+        integer :: nx_, ny_, nz_, nxp_, nyp_, nzp_, nmats_
+        real(8) :: emf_
+        nx_ = this%nx
+        ny_ = this%ny
+        nz_ = this%nz
+        nxp_ = this%nxp
+        nyp_ = this%nyp
+        nzp_ = this%nzp
+        nmats_ = this%nmats
+        emf_ = this%emf
 
         tmp = omp_get_wtime()
         call this%total_sie%Exchange_virtual_space_nonblocking()
@@ -534,6 +668,8 @@ contains
         call this%total_volume        %Point_to_data(vol)
         call this%total_vof           %Point_to_data(vof)
         call this%total_sie           %Point_to_data(sie)
+        call this%inversed_vertex_mass           %Point_to_data(inversed_vertex_mass)
+        call this%vertex_mass           %Point_to_data(vertex_mass)
 
         call this%materials%temperature%Point_to_data(temperature_vof)
         call this%materials%temperature_old%Point_to_data(temperature_vof_old)
@@ -544,23 +680,46 @@ contains
         call this%materials%sound_vel      %Point_to_data(sound_vel_vof)
         call this%materials%dt_de          %Point_to_data(dt_de_vof)
         call this%materials%vof            %Point_to_data(mat_vof)
+        call this%materials%density        %Point_to_data(density_vof)
+        call this%materials%sie            %Point_to_data(sie_vof)
 
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 1 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
 
-        call this%Calculate_density(this%total_volume)
+        !using: vol,cell_mass, mat_vof (assume all on gpu)
+        call this%Calculate_density(this%total_volume) !on GPU, and keep density and density_vof updated on GPU
+        !updating: density, density_vof (keep on GPU)
 
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (density) part 2 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
 
-        sound_vel   = 1d-20
-        temperature = 0d0
-        pressure    = 0d0
-        dp_drho     = 0d0
-        dp_de       = 0d0
+        !sound_vel   = 1d-20
+        !temperature = 0d0
+        !pressure    = 0d0
+        !dp_drho     = 0d0
+        !dp_de       = 0d0
 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat = 1, this%nmats
+        !$omp target teams distribute parallel do collapse(3)
+        do k = 1, nz_
+            do j = 1, ny_
+                do i = 1, nx_
+                        sound_vel(i, j, k) = 1d-20
+                        temperature   (i, j, k) = 0d0
+                        pressure    (i, j, k) = 0d0
+                        dp_drho      (i, j, k) = 0d0
+                        dp_de      (i, j, k) = 0d0
+                end do
+            end do
+        end do
+        !$omp end target teams distribute parallel do
 
-                        if (vof(i, j, k) >= this%emf) then
+        !$omp target teams distribute parallel do collapse(3) private(tmp_mat)
+        do k = 1, nz_
+            do j = 1, ny_
+                do i = 1, nx_
+                    do tmp_mat = 1, nmats_
+
+                        if (vof(i, j, k) >= emf_) then
                             temperature_vof(tmp_mat, i, j, k) = 0d0
                             pressure_vof   (tmp_mat, i, j, k) = 0d0
                             dp_drho_vof    (tmp_mat, i, j, k) = 0d0
@@ -570,11 +729,27 @@ contains
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do
 
+        !!$omp target update from(sound_vel, temperature, pressure, dp_drho, dp_de, temperature_vof, pressure_vof, dp_drho_vof, dp_de_vof)
 
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 3 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
 
         allocate(dt_de_temp(this%nx, this%ny, this%nz))
-        dt_de_temp = 0d0
+
+        !$omp target enter data map(alloc: dt_de_temp) 
+
+        !$omp target teams distribute parallel do collapse(3)
+         do k = 1, nz_
+             do j = 1, ny_
+                do i = 1, nx_
+                    dt_de_temp(i,j,k) = 0d0
+                end do
+             end do
+         end do
+         !$omp end target teams distribute parallel do
+
         call this%total_sie%Exchange_end()
         call this%total_cell_mass%Exchange_end()
 !        call this%vertex_mass%Exchange_end()
@@ -586,13 +761,22 @@ contains
         call this%materials%sie%Exchange_end()
         call this%materials%cell_mass%Exchange_end()
 
+        !using: temperature, sie, density, sound_vel, vof  (4 dimension!) 
         call this%materials%Apply_eos(this%nx, this%ny, this%nz, this%emf, .true.)
+        !updating: pressure, sound_vel, dp_de, dp_drho, dt_de, dt_drho, temperature (4 dimension!)
 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat = 1, this%nmats
-                        if (mat_vof(tmp_mat, i, j, k) <= this%emf) cycle
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 4 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
+
+        
+        !!$omp target enter data map(to: mat_vof,cell_mass_vof,dt_de_vof,sound_vel_vof, temperature, dt_de_temp)
+
+        !$omp target teams distribute parallel do collapse(3) private(tmp_mat)
+        do k = 1, nz_
+            do j = 1, ny_
+                do i = 1, nx_
+                    do tmp_mat = 1, nmats_
+                        if (mat_vof(tmp_mat, i, j, k) <= emf_) cycle
                         temperature(i, j, k) = temperature(i, j, k) + &
                             temperature_vof_old(tmp_mat, i, j, k) * cell_mass_vof(tmp_mat, i, j, k) / (dt_de_vof(tmp_mat, i, j, k) + 1d-30)
                         sound_vel  (i, j, k) = sound_vel  (i, j, k) + sound_vel_vof(tmp_mat, i, j, k) * mat_vof(tmp_mat, i, j, k)
@@ -604,57 +788,100 @@ contains
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do 
+
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 5 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
+
+        !!$omp target update from(pressure)
+        !!$omp target update from(density)
 
         call this%total_pressure%Exchange_virtual_space_nonblocking()
-        call this%total_density%Apply_boundary(.false.)
-
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    if (vof(i, j, k) <= this%emf) cycle
+        
+        #ifdef GPU_BUILD
+        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.true.) !on GPU
+        #else
+        call this%total_density%Apply_boundary(is_blocking=.false., is_offload=.false.) !on CPU
+        #endif
+        
+        !$omp target teams distribute parallel do collapse(3)
+        do k = 1, nz_
+            do j = 1, ny_
+                do i = 1, nx_
+                    if (vof(i, j, k) <= emf_) cycle
                     temperature(i, j, k) = temperature(i, j, k) / dt_de_temp(i, j, k)
                     dp_drho    (i, j, k) = dp_drho    (i, j, k) / (vof      (i, j, k) + 1d-30)
                     dp_de      (i, j, k) = cell_mass  (i, j, k) / dp_de     (i, j, k)
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do 
+
+        !$omp target exit data map(delete: dt_de_temp)
 
         deallocate(dt_de_temp)
 
         call this%total_pressure%Exchange_end()
-        do k = 0, this%nzp
-            do j = 0, this%nyp
-                do i = 0, this%nxp
+
+        !!$omp target update to(pressure) 
+
+        !$omp target teams distribute parallel do collapse(3)
+        do k = 0, nzp_
+            do j = 0, nyp_
+                do i = 0, nxp_
                     pressure_sum(i,j,k) = pressure(i,j,k)
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do 
 
-
-
-
-
-
-
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 6 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
 
         call this%total_density%Exchange_end()
 
-        call this%num_mat_cells%Apply_boundary(.false.)
-        call this%total_volume %Apply_boundary(.false.)
-        call this%total_sie    %Apply_boundary(.false.)
-        call this%total_vof    %Apply_boundary(.false.)
-        call this%materials%cell_mass%Apply_boundary(.false.)
-        call this%materials%density  %Apply_boundary(.false.)
-        call this%materials%sie      %Apply_boundary(.false.)
-        call this%materials%vof      %Apply_boundary(.false.)
+        !!$omp target update from(density)
+
+        !!$omp target update from(pressure_sum, pressure, dp_de, dp_drho, temperature, sound_vel)
+
+        ! IMPORTANT NOTE: AVITAY CHANGED IS_OFFLOAD TO TRUE
+        call this%num_mat_cells%Apply_boundary(is_blocking=.false., is_offload=.true.) !always false? not mapped at all?
+        
+        #ifdef GPU_BUILD
+        call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        call this%total_vof    %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        call this%materials%cell_mass%Apply_boundary(is_blocking=.false., is_offload=.true.)
+        call this%materials%density  %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        call this%materials%sie      %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.true.)
+        #else
+        call this%total_volume %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%total_sie    %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%total_vof    %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%cell_mass%Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%density  %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%sie      %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        call this%materials%vof      %Apply_boundary(is_blocking=.false., is_offload=.false.)
+        #endif
+
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 7 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
 
 
         if (this%mesh%dimension == 2) then
             call this%vertex_mass%Calculate_vertex_mass_2d(this%mesh%coordinates, this%total_density, this%total_cell_mass, &
                 0, this%mesh%cyl)
         else if (this%mesh%dimension == 3) then
-            call this%vertex_mass%Calculate_vertex_mass_3d(this%mesh%coordinates, this%total_density, this%total_cell_mass)
+            call this%vertex_mass%Calculate_vertex_mass_3d(this%mesh%coordinates, this%total_density, this%total_cell_mass) !yoni: assumes density already on GPU
         end if
+
+
+
+        !!$omp target update from(density)
+
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (vertex_mass_3d) part 8 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
 
         call this%num_mat_cells%Exchange_end()
         call this%total_volume %Exchange_end()
@@ -667,7 +894,26 @@ contains
 
         call this%vertex_mass%Exchange_virtual_space_blocking()
 
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- part 9 time:", omp_get_wtime() - tmp
+        tmp = omp_get_wtime()
+
         call this%Calculate_inversed_vertex_mass()
+
+        
+        ! !$OMP TARGET UPDATE from(vertex_mass)
+        ! if (this%cyc_delete > 0 .and. this%cyc_delete < 2) then
+        !     write(142,'(A, 1I)') "CYCLE: ", this%cyc_delete
+        !     do i=0,this%nxp+1
+        !         do j=0,this%nyp+1
+        !             do k=0,this%nzp+1
+        !                 ! if (this%cyc_delete < 150 ) then
+        !                 write(142,'(A, 3I, 1(Z17))') "AFTER", i, j, k, vertex_mass(i,j,k)
+        !                 ! end if
+        !             end do
+        !         end do
+        !     end do
+        ! end if
+        !write(*,'(A70, F12.6)') "    Calculate_thermodynamics ----- (inversed_matrix_mass) part 10 time:", omp_get_wtime() - tmp
         call this%inversed_vertex_mass%Exchange_virtual_space_blocking()
     end subroutine Calculate_thermodynamics
 
@@ -682,9 +928,18 @@ contains
         real(8), dimension(:, :, :, :), pointer :: cell_mass_vof
         real(8), dimension(:, :, :, :), pointer :: density_vof
         real(8), dimension(:, :, :, :), pointer :: mat_vof
+        integer :: dep2
 
         integer :: i, j, k     
         integer :: tmp_mat  
+        integer :: nx, ny, nz, nmats
+        real(8) :: emf
+
+        nx = this%nx
+        ny = this%ny
+        nz = this%nz
+        nmats = this%nmats
+        emf = this%emf
 
         call this%total_density  %Point_to_data(density)
         call this%total_cell_mass%Point_to_data(cell_mass)
@@ -694,20 +949,23 @@ contains
         call this%materials%vof      %Point_to_data(mat_vof)
         call volume%Point_to_data(vol)
 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
+        !$omp target teams distribute parallel do collapse(3) 
+        do k = 1, nz
+            do j = 1, ny
+                do i = 1, nx
                     density(i, j, k) = cell_mass(i, j, k) / vol(i, j, k)
                 end do
             end do
         end do
-
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat = 1, this%nmats
+        !$omp end target teams distribute parallel do
+             
+        !$omp target teams distribute parallel do collapse(3) private(tmp_mat) 
+        do k = 1, nz
+            do j = 1, ny
+                do i = 1, nx
+                    do tmp_mat = 1, nmats
                         density_vof(tmp_mat, i, j, k) = 0d0
-                        if (mat_vof(tmp_mat, i, j, k) > this%emf) then
+                        if (mat_vof(tmp_mat, i, j, k) > emf) then
                             density_vof(tmp_mat, i, j, k) = cell_mass_vof(tmp_mat, i, j, k) / (vol(i, j, k) * mat_vof(tmp_mat, i, j, k))
 !write(*,*) "Calculating", tmp_mat,i,j,density_vof(tmp_mat,i,j,k),cell_mass_vof(tmp_mat,i,j,k), mat_vof(tmp_mat,i,j,k)
                         end if
@@ -715,6 +973,8 @@ contains
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do
+        !!$omp target update from(density_vof)
 !        stop
     end subroutine Calculate_density
 
@@ -725,13 +985,21 @@ contains
         real(8), dimension(:, :, :), pointer :: vertex_mass          
 
         integer :: i, j, k     
+        integer :: nxp, nyp, nzp
+        real(8) :: emfm
+
+        nxp = this%nxp
+        nyp = this%nyp
+        nzp = this%nzp
+        emfm = this%emfm
 
         call this%inversed_vertex_mass%Point_to_data(inversed_vertex_mass)
         call this%vertex_mass   %Point_to_data(vertex_mass)
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
-                    if (vertex_mass(i, j, k) > this%emfm) then
+        !$omp target teams distribute parallel do collapse(3) 
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
+                    if (vertex_mass(i, j, k) > emfm) then
                         inversed_vertex_mass(i, j, k) = 1d0 / vertex_mass(i, j, k)
                     else
                         inversed_vertex_mass(i, j, k) = 0
@@ -739,6 +1007,7 @@ contains
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do
     end subroutine Calculate_inversed_vertex_mass
 
     subroutine Calculate_acceleration_2d(this, wilkins_scheme, dt_mid)
@@ -795,7 +1064,7 @@ contains
 
 
 
-        call this%acceleration%Apply_boundary(this%mesh%coordinates%data)
+        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
 
         return
 
@@ -811,35 +1080,36 @@ contains
         real(8), dimension(:, :, :), pointer :: acceleration_z        
         real(8), dimension(:, :, :), pointer :: x                     
         real(8), dimension(:, :, :), pointer :: y                     
-        real(8), dimension(:, :, :), pointer :: z                     
+        real(8), dimension(:, :, :), pointer :: z    
+        real(8), dimension(:, :, :), pointer :: velocity_x           
+        real(8), dimension(:, :, :), pointer :: velocity_y           
+        real(8), dimension(:, :, :), pointer :: velocity_z                   
 
         real(8), dimension(:, :, :), pointer :: inversed_vertex_mass  
         real(8), dimension(:, :, :), pointer :: pressure_sum          
 
         integer :: i, j, k            
         integer :: ip,im,jp,jm,kp,km            
+        integer :: nxp, nyp, nzp
         real(8) :: x1, x2, x3, x4, x5, x6  
         real(8) :: y1, y2, y3, y4, y5, y6  
         real(8) :: z1, z2, z3, z4, z5, z6  
-
-
-
-
-
 
         call this%acceleration%Point_to_data(acceleration_x, acceleration_y, acceleration_z)
         call this%mesh        %Point_to_data(x, y, z)
 
         call this%total_pressure_sum  %Point_to_data(pressure_sum)
         call this%inversed_vertex_mass%Point_to_data(inversed_vertex_mass)
+        call this%velocity       %Point_to_data(velocity_x, velocity_y, velocity_z)
 
+        nxp = this%nxp
+        nyp = this%nyp
+        nzp = this%nzp
 
-
-
-
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
+        !$omp target teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, jm, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6 )
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
                     ip = i + 1
                     im = i - 1
                     jp = j + 1
@@ -898,19 +1168,20 @@ contains
                         -pressure_sum(i , jm, km) * ((x6 - x5) * (y1 - y5) - (y6 - y5) * (x1 - x5)) &
                         -pressure_sum(im, jm, k ) * ((x5 - x4) * (y3 - y4) - (y5 - y4) * (x3 - x4)) &
                         -pressure_sum(im, jm, km) * ((x6 - x4) * (y5 - y4) - (y6 - y4) * (x5 - x4)))
-
-
-
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do
 
-
-
-
-        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false.)
-
-
+        !!$omp target update from(acceleration_x, acceleration_y, acceleration_z)
+        !IT SEEMS ACCELERATION NEEDS TO MOVE TO CPU BEFORE RUNNING Calculate_artificial_viscosity_3D 
+        !write(*,*) "acceleration boundary conditions:"
+        #ifdef GPU_BUILD
+        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.true.) !ON GPU
+        #else
+        call this%acceleration%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.false.) !ON CPU
+        #endif
+        !YONI: calculate_derivatives does not update velocity to GPU. please see if it necessary here or not
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
             this%total_vof, this%total_volume, this%nx, this%ny, this%nz, this%emf)
     end subroutine Calculate_acceleration_3d
@@ -1140,7 +1411,8 @@ contains
         real(8) :: x_avg, y_avg, z_avg   
         real(8) :: eff_length            
         real(8) :: eff_vel_div           
-        real(8) :: dt_cour_temp          
+        ! real(8) :: dt_cour_temp ! yonif
+        real(8), dimension(:, :, :), pointer :: dt_cour_temp !yonif   
         real(8) :: linear_visc_fac_temp  
         real(8) :: quad_visc_fac_temp    
         real(8) :: quad_visc_fac         
@@ -1150,6 +1422,21 @@ contains
         integer :: i, j, k  
         integer :: ip, jp, kp
         integer :: mesh_type
+        real(8) :: global_min
+        real(8) :: local_min
+        integer :: local_i, local_j, local_k
+        real(8) :: start_time
+        integer :: packed_idx
+        real(8) :: dt_tmp
+        integer :: nxp, nyp, nzp
+        real(8) :: thisemf
+        thisemf = this%emf
+        nxp = this%nx
+        nyp = this%ny
+        nzp = this%nz
+
+
+        allocate(dt_cour_temp(1:nxp, 1:nyp, 1:nzp)) !yonif
 
         call this%a_visc%Update_visc_factors()
         linear_visc_fac => this%a_visc%xl_visc_mat
@@ -1157,6 +1444,9 @@ contains
         i_sphere        = this%a_visc%to_radial_index_sphere
         i_sphere2       = this%a_visc%from_radial_index_sphere
         mesh_type       = this%mesh%mesh_type
+
+        !TODO: WHY NOT OFFLOAD IN THE BEGINNING?
+        !!$omp target enter data map(to:linear_visc_fac)
 
         call this%velocity%dvelocity_x_dx%Point_to_data(dvel_x_dx)
         call this%velocity%dvelocity_x_dy%Point_to_data(dvel_x_dy)
@@ -1180,34 +1470,50 @@ contains
 
         call this%inversed_vertex_mass%Point_to_data(inversed_vertex_mass)
 
-
-
-
-
         time%dt_cour = 1d20
         call this%acceleration%Exchange_end()
 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    if (vof(i, j, k) < this%emf .or. pressure(i, j, k) == 0d0) then  
+        !DOES NOT EXIST ON GPU: acceleration_x, acceleration_y, acceleration_z
+        !EXIST ON GPU: x, y, z
+        !!$omp target update to(acceleration_x, acceleration_y, acceleration_z)
+        !!$omp target update to(dvel_x_dx, dvel_y_dy, dvel_z_dz, dvel_x_dy, dvel_y_dx, dvel_x_dz, dvel_z_dx, dvel_y_dz, dvel_z_dy)
+        !!$omp target update to(vof, pressure, density, sound_vel)
+        start_time = omp_get_wtime()
+        global_min = 1d20
+        packed_idx = -1
+        !$omp target data map(tofrom: global_min, packed_idx) map(alloc: dt_cour_temp(1:nxp, 1:nyp, 1:nzp)) 
+        
+        !$omp target teams distribute parallel do collapse(3)&
+        !$omp& private(dt_tmp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
+        !$omp& x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, r1, r2, r3, r4, r5, r6, r7, r8,&
+        !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div)&
+        !$omp& reduction(min:global_min)
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
+                    if (vof(i, j, k) < thisemf .or. pressure(i, j, k) == 0d0) then  
                         a_visc(i, j, k) = 0d0
+                        ! IMPORTANT NOTE -  AVITAY ADDED THE NEXT LINE:
+                        dt_cour_temp(i,j,k) = HUGE(1d0)
+                        ! This is crucial because otherwise, some cells of the array
+                        ! would stay uninitialized, which will then corrupt the search
+                        ! for a global min after this loop.
                     else
-                        ip = i + 1
-                        jp = j + 1
-                        kp = k + 1
+                        ! ip = i + 1
+                        ! jp = j + 1
+                        ! kp = k + 1
 
-                        avg_acc_x = (acceleration_x(i , j , k ) + acceleration_x(ip , j , k  ) + acceleration_x(i , j+1, k  ) &
-                            +acceleration_x(ip, jp, k ) + acceleration_x(i  , j , kp)  + acceleration_x(ip, j  , k+1) &
-                            +acceleration_x(i , jp, kp) + acceleration_x(ip , jp, kp)) * 0.125d0
+                        avg_acc_x = (acceleration_x(i , j , k ) + acceleration_x(i + 1 , j , k  ) + acceleration_x(i , j+1, k  ) &
+                            +acceleration_x(i + 1, j + 1, k ) + acceleration_x(i  , j , k + 1)  + acceleration_x(i + 1, j  , k+1) &
+                            +acceleration_x(i , j + 1, k + 1) + acceleration_x(i + 1 , j + 1, k + 1)) * 0.125d0
 
-                        avg_acc_y = (acceleration_y(i , j , k ) + acceleration_y(ip, j , k )  + acceleration_y(i , jp,k ) &
-                            +acceleration_y(ip, jp, k ) + acceleration_y(i , j , kp)  + acceleration_y(ip, j ,kp) &
-                            +acceleration_y(i , jp, kp) + acceleration_y(ip, jp, kp)) * 0.125d0
+                        avg_acc_y = (acceleration_y(i , j , k ) + acceleration_y(i + 1, j , k )  + acceleration_y(i , j + 1,k ) &
+                            +acceleration_y(i + 1, j + 1, k ) + acceleration_y(i , j , k + 1)  + acceleration_y(i + 1, j ,k + 1) &
+                            +acceleration_y(i , j + 1, k + 1) + acceleration_y(i + 1, j + 1, k + 1)) * 0.125d0
 
-                        avg_acc_z = (acceleration_z(i , j , k ) + acceleration_z(ip, j , k  )  + acceleration_z(i , jp, k  ) &
-                            +acceleration_z(ip, jp, k ) + acceleration_z(i , j , kp )  + acceleration_z(ip, j , kp ) &
-                            +acceleration_z(i , jp, kp) + acceleration_z(ip, jp, kp )) * 0.125d0
+                        avg_acc_z = (acceleration_z(i , j , k ) + acceleration_z(i + 1, j , k  )  + acceleration_z(i , j + 1, k  ) &
+                            +acceleration_z(i + 1, j + 1, k ) + acceleration_z(i , j , k + 1 )  + acceleration_z(i + 1, j , k + 1 ) &
+                            +acceleration_z(i , j + 1, k + 1) + acceleration_z(i + 1, j + 1, k + 1 )) * 0.125d0
 
                         tot_acc = sqrt(avg_acc_x * avg_acc_x + avg_acc_y * avg_acc_y + avg_acc_z * avg_acc_z)
 
@@ -1215,42 +1521,42 @@ contains
                         if (tot_acc < 1d-8 .or. (mesh_type /= 2 .and. k < i_sphere) ) then 
 
 
-                            r1 = sqrt(x(i  , j  , kp) ** 2d0 + y(i  , j  , kp) ** 2d0 + z(i  , j  , kp) ** 2d0)
-                            r2 = sqrt(x(ip, j  , kp) ** 2d0 + y(ip, j  , kp) ** 2d0 + z(ip, j  , kp) ** 2d0)
-                            r3 = sqrt(x(i  , jp, kp) ** 2d0 + y(i  , jp, kp) ** 2d0 + z(i  , jp, kp) ** 2d0)
-                            r4 = sqrt(x(ip, jp, kp) ** 2d0 + y(ip, jp, kp) ** 2d0 + z(ip, jp, kp) ** 2d0)
+                            r1 = sqrt(x(i  , j  , k + 1) ** 2d0 + y(i  , j  , k + 1) ** 2d0 + z(i  , j  , k + 1) ** 2d0)
+                            r2 = sqrt(x(i + 1, j  , k + 1) ** 2d0 + y(i + 1, j  , k + 1) ** 2d0 + z(i + 1, j  , k + 1) ** 2d0)
+                            r3 = sqrt(x(i  , j + 1, k + 1) ** 2d0 + y(i  , j + 1, k + 1) ** 2d0 + z(i  , j + 1, k + 1) ** 2d0)
+                            r4 = sqrt(x(i + 1, j + 1, k + 1) ** 2d0 + y(i + 1, j + 1, k + 1) ** 2d0 + z(i + 1, j + 1, k + 1) ** 2d0)
                             r5 = sqrt(x(i  , j  , k  ) ** 2d0 + y(i  , j  , k  ) ** 2d0 + z(i  , j  , k  ) ** 2d0)
-                            r6 = sqrt(x(ip, j  , k  ) ** 2d0 + y(ip, j  , k  ) ** 2d0 + z(ip, j  , k  ) ** 2d0)
-                            r7 = sqrt(x(i  , jp, k  ) ** 2d0 + y(i  , jp, k  ) ** 2d0 + z(i  , jp, k  ) ** 2d0)
-                            r8 = sqrt(x(ip, jp, k  ) ** 2d0 + y(ip, jp, k  ) ** 2d0 + z(ip, jp, k  ) ** 2d0)
+                            r6 = sqrt(x(i + 1, j  , k  ) ** 2d0 + y(i + 1, j  , k  ) ** 2d0 + z(i + 1, j  , k  ) ** 2d0)
+                            r7 = sqrt(x(i  , j + 1, k  ) ** 2d0 + y(i  , j + 1, k  ) ** 2d0 + z(i  , j + 1, k  ) ** 2d0)
+                            r8 = sqrt(x(i + 1, j + 1, k  ) ** 2d0 + y(i + 1, j + 1, k  ) ** 2d0 + z(i + 1, j + 1, k  ) ** 2d0)
                             eff_length = (r1 + r2 + r3 + r4 - r5 - r6 - r7 - r8) / 4d0
                         else
                             x1 = x(i, j, k)
-                            x2 = x(ip, j, k)
-                            x3 = x(ip, jp, k)
-                            x4 = x(i, jp, k)
-                            x5 = x(i, j, kp)
-                            x6 = x(ip, j, kp)
-                            x7 = x(ip, jp, kp)
-                            x8 = x(i, jp, kp)
+                            x2 = x(i + 1, j, k)
+                            x3 = x(i + 1, j + 1, k)
+                            x4 = x(i, j + 1, k)
+                            x5 = x(i, j, k + 1)
+                            x6 = x(i + 1, j, k + 1)
+                            x7 = x(i + 1, j + 1, k + 1)
+                            x8 = x(i, j + 1, k + 1)
 
                             y1 = y(i, j, k)
-                            y2 = y(ip, j, k)
-                            y3 = y(ip, jp, k)
-                            y4 = y(i, jp, k)
-                            y5 = y(i, j, kp)
-                            y6 = y(ip, j, kp)
-                            y7 = y(ip, jp, kp)
-                            y8 = y(i, jp, kp)
+                            y2 = y(i + 1, j, k)
+                            y3 = y(i + 1, j + 1, k)
+                            y4 = y(i, j + 1, k)
+                            y5 = y(i, j, k + 1)
+                            y6 = y(i + 1, j, k + 1)
+                            y7 = y(i + 1, j + 1, k + 1)
+                            y8 = y(i, j + 1, k + 1)
 
                             z1 = z(i, j, k)
-                            z2 = z(ip, j, k)
-                            z3 = z(ip, jp, k)
-                            z4 = z(i, jp, k)
-                            z5 = z(i, j, kp)
-                            z6 = z(ip, j, kp)
-                            z7 = z(ip, jp, kp)
-                            z8 = z(i, jp, kp)
+                            z2 = z(i + 1, j, k)
+                            z3 = z(i + 1, j + 1, k)
+                            z4 = z(i, j + 1, k)
+                            z5 = z(i, j, k + 1)
+                            z6 = z(i + 1, j, k + 1)
+                            z7 = z(i + 1, j + 1, k + 1)
+                            z8 = z(i, j + 1, k + 1)
 
                             x_avg = (x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8) * 0.125d0
                             y_avg = (y1 + y2 + y3 + y4 + y5 + y6 + y7 + y8) * 0.125d0
@@ -1274,36 +1580,60 @@ contains
                         end if
 
 
+                        ! IMPORTANT NOTE: THE ORIGINAL ('main' branch) BACKUS HAD THIS DONE IN 2 SEPARATE STEPS. THIS CHANGES THE RESULTS BECAUSE OF ROUND-UPS.
+                        ! a_visc(i, j, k) = density(i, j, k) * eff_length * &
+                        !     (quad_visc_fac * eff_length * eff_vel_div &
+                        !     -linear_visc_fac(i,j,k) * sqrt(sound_vel(i ,j, k)))
 
+                        ! a_visc(i, j, k) = min(0d0, eff_vel_div) * a_visc(i, j, k)
 
+                        ! ONE LINER
+                        a_visc(i, j, k) = min(0d0, eff_vel_div) * density(i, j, k) * eff_length * &
+                            (quad_visc_fac * eff_length * eff_vel_div &
+                            -linear_visc_fac(i,j,k) * sqrt(sound_vel(i ,j, k)))
 
-                        quad_visc_fac_temp   = quad_visc_fac
-                        linear_visc_fac_temp = linear_visc_fac(i,j,k)
+                        dt_tmp = eff_length * eff_length / sound_vel(i ,j, k)
+                        dt_cour_temp(i,j,k) = dt_tmp
+                        global_min = min(dt_tmp, global_min)
 
-
-
-                        a_visc(i, j, k) = density(i, j, k) * eff_length * &
-                            (quad_visc_fac_temp * eff_length * eff_vel_div &
-                            -linear_visc_fac_temp * sqrt(sound_vel(i ,j, k)))
-
-
-                        a_visc(i, j, k) = min(0d0, eff_vel_div) * a_visc(i, j, k)
-                        dt_cour_temp = eff_length * eff_length / sound_vel(i ,j, k)
-
-                        if (dt_cour_temp < time%dt_cour) then
-                            time%dt_cour = dt_cour_temp
-                            time%i_cour = i
-                            time%j_cour = j
-                            time%k_cour = k
-                        end if
                     end if
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do
+        !$omp target teams distribute parallel do collapse(3) map(to: global_min) map(tofrom: packed_idx)
+            do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
+                if (dt_cour_temp(i,j,k) == global_min) then
+                    !$omp atomic write
+                    packed_idx = (k-1)*nyp*nxp + (j-1)*nxp + i
+                endif
+                end do
+            end do
+            end do
+        !$omp end target teams distribute parallel do
+        !$omp end target data
+        !!$omp target exit data map(delete: linear_visc_fac)
 
+        !WE KEEP a_visc ON GPU!
+        !!$omp target update from(a_visc)
+
+        time%i_cour = mod(mod(packed_idx - 1, nxp * nyp), nxp) + 1
+        time%j_cour = mod(packed_idx - 1, nxp * nyp) / nxp + 1
+        time%k_cour = (packed_idx - 1) / (nxp * nyp) + 1
+
+        time%dt_cour = global_min
+     
+
+        ! write(*,'(A60, F12.6)') "hydro step time: ", omp_get_wtime() - start_time
+        ! write(*,'(A60, F30.20)') "min value time: ", global_min
+        ! write(*,'(A50, 3(I0,1X))') "ijk: ", time%i_cour, time%j_cour, time%k_cour
+        ! write(*,'(A50, F30.20)') "val time: ", dt_cour_temp(time%i_cour,time%j_cour,time%k_cour) 
+        deallocate(dt_cour_temp) !yonif
+        
         call this%a_visc%Exchange_virtual_space_nonblocking()
         time%dt_cour = sqrt(time%dt_cour) / time%dt_cour_fac
-
 
 
     end subroutine Calculate_artificial_viscosity_3d
@@ -1375,7 +1705,7 @@ contains
 
 
 
-        call this%velocity%Apply_boundary(this%mesh%coordinates%data)
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_offload=.False.)
 
 
 
@@ -1404,6 +1734,7 @@ contains
         real(8), dimension(:, :, :), pointer :: z                    
         integer :: i, j, k  
         integer :: ip,im,jp,jm,kp,km  
+        integer :: nxp, nyp, nzp
         real(8) :: x1, x2, x3, x4, x5, x6, x7, x8  
         real(8) :: y1, y2, y3, y4, y5, y6, y7, y8  
         real(8) :: z1, z2, z3, z4, z5, z6, z7, z8  
@@ -1420,12 +1751,22 @@ contains
 
         call this%a_visc%Exchange_end()
 
-        loop_time = omp_get_wtime()
-        !$omp target map(to:inversed_vertex_mass, a_visc, acceleration_x, acceleration_y, acceleration_z) map(from:velocity_x, velocity_y, velocity_z)
-       !$omp teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6)
-        do k = 1, this%nzp
-            do j = 1, this%nyp
-                do i = 1, this%nxp
+        nxp = this%nxp
+        nyp = this%nyp
+        nzp = this%nzp
+
+        loop_time = omp_get_wtime() 
+
+
+        !EXIST ON GPU:a_visc, acceleration_x, acceleration_y, acceleration_z, x, y, z, inversed_vertex_mass
+        !!$omp target update to(velocity_x, velocity_y, velocity_z)
+        !!$omp target update to(a_visc)
+        !$omp target teams distribute parallel do collapse(3) &
+        !$omp& private(ip, im, jp, jm, kp, km, x1, x2, x3, x4, x5, x6, &
+        !$omp& y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6) 
+        do k = 1, nzp
+            do j = 1, nyp
+                do i = 1, nxp
                     ip = i + 1
                     im = i - 1
                     jp = j + 1
@@ -1491,29 +1832,27 @@ contains
                 end do
             end do
         end do
-        !$omp end teams distribute parallel do    
-        !$omp end target  
+        !$omp end target teams distribute parallel do     
+        !!$omp target update from(velocity_x, velocity_y, velocity_z)
+
+        !write(*,'(A70, F12.6)') "    Calculate_velocity_3d----- main loop time:", omp_get_wtime() - loop_time
         
-        write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----loop1 time:", omp_get_wtime() - loop_time
-        
-        loop_time = omp_get_wtime()
         
         if (this%mesh%mesh_type /= 2) then
+            !YONI: TODO: offload! for now assume not called so we are fine. 
+            write(*,*) "Impose_spherical_symmetry is called from Calculate_velocity_3d"
             call this%velocity%Impose_spherical_symmetry(this%mesh%coordinates)
         end if
 
-         write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----spherical time:", omp_get_wtime() - loop_time
-         loop_time = omp_get_wtime()
-
+        !is offloaded
         call this%velocity%Impose_no_move_3d(this%mesh%coordinates)
 
-        write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----no_move time:", omp_get_wtime() - loop_time
-        loop_time = omp_get_wtime()
-        
-        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false.)
-        
-        write(*,'(A70, F12.6)') "    Calculate_velocity_3d-----apply-BC time:", omp_get_wtime() - loop_time    
-        
+        #ifdef GPU_BUILD
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.true.) !ON GPU
+        #else
+        call this%velocity%Apply_boundary(this%mesh%coordinates%data, is_blocking=.false., is_offload=.false.) !ON CPU
+        #endif
+
         call this%velocity%Calculate_derivatives(this%mesh%coordinates, this%total_vof, this%total_volume&
             , this%nx, this%ny, this%nz, this%emf)
             call this%velocity%Exchange_end()
@@ -1809,6 +2148,14 @@ contains
         real(8) :: stress_fac                
 
         integer :: i, j, k, tmp_mat          
+        integer :: nx, ny, nz, nmats
+        real(8) :: emf
+
+        nx = this%nx
+        ny = this%ny
+        nz = this%nz
+        nmats = this%nmats
+        emf = this%emf
 
         call this%velocity         %Point_to_data(velocity_x, velocity_y, velocity_z)
         call this%mesh             %Point_to_data(x, y, z)
@@ -1835,12 +2182,19 @@ contains
         call this%materials%sie        %Point_to_data(sie_vof)
         call this%materials%vof        %Point_to_data(mat_vof)
 
-        do k = 1, this%nz
-            do j = 1, this%ny
-                do i = 1, this%nx
-                    do tmp_mat = 1, this%nmats
+        !!$omp target update to(a_visc)
+        !!$omp target update to(vof, sie, sie_vof, mat_vol, mat_vof, pressure_vof, dp_de_vof, dp_drho_vof, pressure, dp_de, dp_drho, cell_mass_vof)
 
-                        if (vof(i, j, k) < this%emf) then
+        !$omp target teams distribute parallel do collapse(3) private( &
+        !$omp a_visc_temp, vol_diff_stress, vol_diff, sie_vof_temp, pressure_temp, &
+        !$omp dp_de_temp, dp_drho_temp, mass_vof_temp, vol_diff_vof_temp, &
+        !$omp vol_vof_temp, vol_diff_vof_stress_temp, stress_fac, sie_diff)
+        do k = 1, nz
+            do j = 1, ny
+                do i = 1, nx
+                    do tmp_mat = 1, nmats
+
+                        if (vof(i, j, k) < emf) then
                             sie(i, j, k) = 0d0
                             temperature(i, j, k) = teps
                             temperature_vof(tmp_mat, i, j, k) = 0d0
@@ -1856,13 +2210,13 @@ contains
                             a_visc_temp = 0d0
                         end if
 
-                        if (mat_vof(tmp_mat, i, j, k) < this%emf) then
+                        if (mat_vof(tmp_mat, i, j, k) < emf) then
                             sie_vof(tmp_mat, i, j, k) = 0d0
                             temperature_vof(tmp_mat, i, j, k) = 0d0
                         else
                             sie_vof_temp = sie_vof(tmp_mat, i, j, k)
                             if (nmats_in_cell(i, j, k) == 1d0) then
-                                pressure_temp = pressure(i, j, k) 
+                                pressure_temp = pressure(i, j, k)
                                 dp_de_temp    = dp_de   (i, j, k)
                                 dp_drho_temp  = dp_drho (i, j, k)
                             else
@@ -1870,7 +2224,7 @@ contains
                                 dp_de_temp    = dp_de_vof   (tmp_mat, i, j, k)
                                 dp_drho_temp  = dp_drho_vof (tmp_mat, i, j, k)
                             end if
-                            pressure_temp  = pressure_temp * vof(i, j, k)   
+                            pressure_temp  = pressure_temp * vof(i, j, k)
                             mass_vof_temp  = cell_mass_vof(tmp_mat, i, j, k)
 
 
@@ -1894,6 +2248,9 @@ contains
                 end do
             end do
         end do
+        !$omp end target teams distribute parallel do
+
+        !!$omp target update from(sie, temperature, temperature_vof, sie_vof)
 
         call this%total_sie%Exchange_virtual_space_nonblocking()
 
@@ -2164,19 +2521,11 @@ contains
 !                end do
 !            end do
 !        end do
-call this%velocity%Calculate_derivatives(this%mesh%coordinates, &
-            this%total_vof, this%total_volume, this%nx, this%ny, this%nz, this%emf)
-call this%total_sie%exchange_end()
-call this%materials%sie%exchange_end()
-
         deallocate(vof_sum_arr)
         deallocate(vof_max_arr)
         deallocate(sie_vof_sum_arr)
         deallocate(cell_mass_vof_sum_arr)
         deallocate(mat_vof_max_arr)
-        call this%total_vof%Apply_boundarY(.false.)
-            call this%materials%vof%Apply_boundarY(is_blocking=.false.)
-
         return
     end subroutine Fix_vof_3d
 
@@ -2283,7 +2632,7 @@ call this%materials%sie%exchange_end()
 
 
         call this%total_volume%calculate(this%mesh%coordinates, cyl_optional=this%mesh%cyl)
-        call this%total_volume%Apply_boundary()
+        call this%total_volume%Apply_boundary(is_offload=.False.)
 
 
 
@@ -2306,7 +2655,7 @@ call this%materials%sie%exchange_end()
         real(8), dimension(:, :, :), pointer :: mesh_velocity_y 
         real(8), dimension(:, :, :), pointer :: mesh_velocity_z 
         real(8), dimension(:, :, :), pointer :: vertex_mass     
-        real(8), dimension(:, :, :), pointer :: vol             
+        real(8), dimension(:, :, :), pointer :: vol, density            
         real(8), dimension(:, :, :), pointer :: mat_vol             
 
         real(8) :: vel_diff_x   
@@ -2342,49 +2691,38 @@ call this%materials%sie%exchange_end()
         call this%mesh             %Point_to_data(x, y, z)
         call this%vertex_mass%Point_to_data(vertex_mass)
         call this%total_volume     %Point_to_data(vol)
+        call this%total_density     %Point_to_data(density)
         call this%rezone%mesh_velocity  %Point_to_data(mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
 
-
-
-
-
-
-
-
-
-        call this%mesh%coordinates%Calculate(time%dt, this%rezone%mesh_velocity)
+        ! calculate the coordinates
+        call this%mesh%coordinates%Calculate(time%dt, this%rezone%mesh_velocity) !on GPU
         call this%mesh%Exchange_virtual_space_blocking()
 
-
-
-
-
-
-
-
-
-        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data)
-        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data)
-
-
-
-
-
-
+        #ifdef GPU_BUILD
+        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.true.)
+        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.true.)
+        #else
+        call this%mesh%coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.false.)
+        call this%rezone%material_coordinates%Apply_boundary(this%mesh%coordinates%data, is_offload=.false.)
+        #endif
 
         call this%total_vof%Exchange_end()
-            call this%materials%vof%Exchange_end()
-        call this%Calculate_density(this%rezone%material_volume)
-        call this%total_density%Apply_boundary()
-!            call this%materials%density  %Exchange_virtual_space_blocking()
+        call this%materials%vof%Exchange_end()
 
-
-
-
-
-
+        call this%Calculate_density(this%rezone%material_volume) !on GPU, and keep density and density_vof updated on GPU
+        
+        #ifdef GPU_BUILD
+        call this%total_density%Apply_boundary(is_offload=.true.)
+        #else
+        call this%total_density%Apply_boundary(is_offload=.false.)
+        #endif
+        ! calculate volume bruh
         call this%total_volume%Calculate(this%mesh%coordinates)
-        call this%total_volume%Apply_boundary()
+        #ifdef GPU_BUILD
+        call this%total_volume%Apply_boundary(is_offload=.true.)
+        #else
+        call this%total_volume%Apply_boundary(is_offload=.false.)
+        #endif
 
 
         return
@@ -2811,6 +3149,99 @@ call this%materials%sie%exchange_end()
 
     end subroutine Read_hydro_step
    
-   
+    subroutine Print_data(this)
+        implicit none
+        class(hydro_step_t), intent(in) :: this
+        real(8), dimension(:, :, :), pointer :: x_target              
+        real(8), dimension(:, :, :), pointer :: y_target              
+        real(8), dimension(:, :, :), pointer :: z_target  
+
+        real(8), dimension(:, :, :), pointer :: velocity_x      
+        real(8), dimension(:, :, :), pointer :: velocity_y      
+        real(8), dimension(:, :, :), pointer :: velocity_z      
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_x 
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_y 
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_z 
+
+        real(8), dimension(:, :, :), pointer :: mat_x_target     
+        real(8), dimension(:, :, :), pointer :: mat_y_target              
+        real(8), dimension(:, :, :), pointer :: mat_z_target
+        real(8), dimension(:, :, :), pointer :: volume_data, sie_data, density_data
+        real(8), dimension(:, :, :), pointer :: cell_mass_data, vertex_mass_data
+        real(8), dimension(:, :, :), pointer :: num_mat_cells_data, pressure_data
+
+        integer :: i, j, k
+
+        call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
+
+        call this%velocity         %Point_to_data(velocity_x, velocity_y, velocity_z)
+        call this%rezone%mesh_velocity  %Point_to_data(mesh_velocity_x, mesh_velocity_y, mesh_velocity_z)
+
+        ! call this%hydro%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
+        call this%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
+        call this%total_volume%Point_to_data(volume_data)
+        call this%total_sie%Point_to_data(sie_data)
+        call this%total_density%Point_to_data(density_data)
+        call this%total_cell_mass%Point_to_data(cell_mass_data)
+        call this%vertex_mass%Point_to_data(vertex_mass_data)
+        call this%num_mat_cells%Point_to_data(num_mat_cells_data)
+        call this%total_pressure%Point_to_data(pressure_data)
+
+        ! Synchronize GPU data back to CPU before printing
+        #ifdef GPU_BUILD
+        !!$omp target update from(x_target)
+        ! !$omp target update from(y_target)
+        ! !$omp target update from(z_target)
+
+        ! !$omp target update from(velocity_x)
+        ! !$omp target update from(velocity_y)
+        ! !$omp target update from(velocity_z)
+        ! !$omp target update from(mesh_velocity_x)
+        ! !$omp target update from(mesh_velocity_y)
+        ! !$omp target update from(mesh_velocity_z)
+
+        !!$omp target update from(mat_x_target)
+        !!$omp target update from(mat_y_target)
+        !!$omp target update from(mat_z_target)
+
+        !$omp target update from(volume_data, sie_data, density_data, cell_mass_data)
+        !$omp target update from(vertex_mass_data, num_mat_cells_data, pressure_data)
+        #endif
+
+        write(this%file_unit_lagrange, '(A,I0)') "TIMESTEP NUMBER: ", this%cyc_delete
+        write(this%file_unit_lagrange, '(A)') "  I    J    K   |        SIE         |      DENSITY       |     CELL_MASS      |     VERTEX_MASS    |    NUM_MAT_CELLS"
+        write(this%file_unit_lagrange, '(A)') "-------------------------------------------------------------------------------------------------------------"
+        ! IMPORTANT NOTE: PAY ATTENTION TO THE BOUNDARIES
+        do i = 0, this%nxp!+1
+            do j = 0, this%nyp!+1
+                do k = 0, this%nzp!+1
+                    write(this%file_unit_lagrange, '(3I5,5(" | ",Z18))') i, j, k, &
+                        !transfer(x_target(i, j, k), 0_8), &
+                        ! transfer(mesh_velocity_x(i, j, k), 0_8), &
+                        ! transfer(mesh_velocity_y(i, j, k), 0_8), &
+                        ! transfer(mesh_velocity_z(i, j, k), 0_8), &
+                        ! transfer(velocity_x(i, j, k), 0_8), &
+                        ! transfer(velocity_y(i, j, k), 0_8), &
+                        ! transfer(velocity_z(i, j, k), 0_8)
+
+                        ! transfer(mat_x_target(i, j, k), 0_8), &
+                        ! transfer(mat_y_target(i, j, k), 0_8), &
+                        ! transfer(mat_z_target(i, j, k), 0_8)
+
+
+                        transfer(this%total_volume%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%total_density%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%total_sie%data(1)%values(i, j, k), 0_8), &
+                        !transfer(this%total_pressure%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%total_cell_mass%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%vertex_mass%data(1)%values(i, j, k), 0_8), &
+                        transfer(this%num_mat_cells%data(1)%values(i, j, k), 0_8)
+                end do
+            end do
+        end do
+
+        flush(this%file_unit_lagrange)
+
+    end subroutine Print_data  
    
 end module hydro_step_module

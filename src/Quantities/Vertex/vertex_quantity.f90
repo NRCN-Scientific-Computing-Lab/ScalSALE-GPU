@@ -104,15 +104,17 @@ contains
     end subroutine Clean_vertex_quantity
 
 
-    subroutine Apply_boundary(this, coordinates_values, is_blocking)
+    subroutine Apply_boundary(this, coordinates_values, is_blocking, is_offload)
         implicit none
         class (vertex_quantity_t)        , intent(in out) :: this
         type(data_t), dimension(:), pointer,intent(inout)        :: coordinates_values
         logical, optional :: is_blocking 
+        logical, optional :: is_offload
         integer, dimension(:)            , pointer        :: ed_num
         integer, dimension(:)            , allocatable        :: ed_num_test
         integer                                           :: i,  edge
         logical :: is_blocking_local
+        logical :: is_offload_local
 
         if (.not. present(is_blocking)) then
             is_blocking_local = .True.  
@@ -120,21 +122,28 @@ contains
             is_blocking_local = is_blocking   
         end if
 
+        if (.not. present(is_offload)) then
+            is_offload_local = .False.  
+        else
+            is_offload_local = is_offload  
+        end if
+
         call this%boundary_params%Point_to_edges (ed_num)
         do i = 1, size(ed_num)
             edge = ed_num(i)
 
-            call this%boundary_conditions(edge)%bc% Calculate (this, coordinates_values, 0d0, edge)
+
+            call this%boundary_conditions(edge)%bc% Calculate (this, coordinates_values, 0d0, edge, is_offload)
         end do
 
         do i = 1, size(ed_num)
             edge = ed_num(i)
-            call this%boundary_conditions(edge)%bc% Calculate_face (this, 0d0, edge)
+            call this%boundary_conditions(edge)%bc% Calculate_face (this, 0d0, edge, is_offload)
         end do
 
         do i = 1, size(ed_num)
             edge = ed_num(i)
-            call this%boundary_conditions(edge)%bc% Calculate_corner (this, 0d0, edge)
+            call this%boundary_conditions(edge)%bc% Calculate_corner (this, 0d0, edge, is_offload)
         end do
 
         if (is_blocking_local) then

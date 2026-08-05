@@ -21,9 +21,11 @@ module data_module
       type (parallel_parameters_t)   , public, pointer :: parallel_params      
 
 
-      real(8), dimension(:), allocatable     :: send_buf
-      real(8), dimension(:), allocatable     :: recv_buf
+      real(8), dimension(:), pointer, contiguous, public :: send_buf => null()
+      real(8), dimension(:), pointer, contiguous, public :: recv_buf => null()
       integer :: request
+      logical :: exchange_pending = .false.
+      logical :: exchange_offload = .false.
    contains
 
 
@@ -41,6 +43,8 @@ module data_module
       procedure, private ::Set_send_buf
 
       procedure, private ::Get_recv_buf
+
+      procedure, private :: Buffers_on_device
 
 
       procedure, public :: Exchange_virtual_space_nonblocking
@@ -184,8 +188,8 @@ contains
 
    subroutine Set_communication (this, comm, comm_params)
       class (data_t), intent(in out) :: this  
-      type(communication_t), pointer            :: comm
-      type(communication_parameters_t), pointer :: comm_params
+      type(communication_t), target, intent(in out)            :: comm
+      type(communication_parameters_t), target, intent(in out) :: comm_params
       integer, dimension(3) :: vals_shape
       integer :: d1,d2,d3
 
@@ -200,27 +204,36 @@ contains
          d3 = vals_shape(3) - 2
          allocate(this%send_buf(0:2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7))
          allocate(this%recv_buf(0:2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7))
+         call this%Buffers_on_device(this%send_buf, this%recv_buf)
       end if
    end subroutine Set_communication
+
+   subroutine Buffers_on_device(this, sbuff, rbuff)
+      class(data_t), intent(in out) :: this
+      real(8), dimension(:), pointer, contiguous, intent(in out) :: sbuff, rbuff
+
+      !$omp target enter data map(alloc: sbuff, rbuff)
+   end subroutine Buffers_on_device
 
 
    subroutine Exchange_virtual_space_blocking (this, ghost_width)
       class (data_t), intent(in out) :: this  
-      real(8), dimension(:,:,:), allocatable :: send_buf, recv_buf
-      integer, dimension(3) :: vals_shape
       integer, optional :: ghost_width
       integer :: ghost_width_local
-      integer :: ghost_width_local_x
-      integer :: i,j,k
+      logical :: offload
       if (.not. present(ghost_width)) then
          ghost_width_local = 1   
       else
          ghost_width_local = 1   
       end if
       if (this%communication%is_parallel .eqv. .true.) then
-         call this%Set_send_buf()
-         call this%communication%Send_recv_neighbors_diag (this%communication_parameters, this%send_buf, this%recv_buf)
-         call this%Get_recv_buf()
+         offload = .true.
+         if (this%parallel_params%offload_counter < 22) offload = .false.
+         this%parallel_params%offload_counter = this%parallel_params%offload_counter + 1
+         call this%Set_send_buf(offload)
+         call this%communication%Send_recv_neighbors_diag(this%communication_parameters, this%send_buf, &
+                                                          this%recv_buf, offload, this%exchange_pending)
+         call this%Get_recv_buf(offload)
       end if
 
 
@@ -233,6 +246,7 @@ contains
       class (data_t), intent(in out) :: this  
       integer, optional :: ghost_width
       integer :: ghost_width_local
+      logical :: offload
 
       if (.not. present(ghost_width)) then
          ghost_width_local = 1   
@@ -240,9 +254,13 @@ contains
          ghost_width_local = 1   
       end if
       if (this%communication%is_parallel .eqv. .true.) then
-         call this%Set_send_buf()
+         offload = .true.
+         if (this%parallel_params%offload_counter < 22) offload = .false.
+         this%parallel_params%offload_counter = this%parallel_params%offload_counter + 1
+         this%exchange_offload = offload
+         call this%Set_send_buf(offload)
          call this%communication%Send_neighbors_diag (this%communication_parameters,&
-                                                      this%send_buf, this%recv_buf, this%request)
+                                                      this%send_buf, this%recv_buf, this%request, offload, this%exchange_pending)
 
       end if
 
@@ -253,218 +271,947 @@ contains
 
       if (this%communication%is_parallel .eqv. .true.) then
          call this%communication%Wait_recv_neighbors_diag (this%communication_parameters,&
-                                                           this%send_buf, this%recv_buf, this%request)
-         call this%Get_recv_buf()
+                                                           this%send_buf, this%recv_buf, this%request, &
+                                                           this%exchange_offload, this%exchange_pending)
+         call this%Get_recv_buf(this%exchange_offload)
       end if
 
    end subroutine Exchange_end
 
 
-   subroutine Get_recv_buf(this)
-      class (data_t), intent(in out) :: this  
+   subroutine Get_recv_buf(this, offload)
+      class (data_t), intent(in out) :: this
+      logical, intent(in) :: offload
+      real(8), dimension(:,:,:), pointer :: values
+      real(8), dimension(:), pointer, contiguous :: recv_buf
       integer, dimension(3) :: vals_shape
-      integer :: d1, d2, d3, x, y, z
+      integer :: d1, d2, d3, x, y, z, npx, npy, npz, offset
+      integer :: i, j, k, n
 
-      vals_shape = shape(this%values)
+      values => this%values
+      recv_buf => this%recv_buf
+      vals_shape = shape(values)
       d1 = vals_shape(1) - 2
       d2 = vals_shape(2) - 2
       d3 = vals_shape(3) - 2
-
       x = this%parallel_params%my_coords(1)
       y = this%parallel_params%my_coords(2)
       z = this%parallel_params%my_coords(3)
+      npx = this%parallel_params%npx
+      npy = this%parallel_params%npy
+      npz = this%parallel_params%npz
 
-      if (x+1 /= this%parallel_params%npx+1) then
-         this%values(d1+1, 0:d2+1, 0:d3+1) = reshape(this%recv_buf(0 : (d2+2)*(d3+2)-1), (/d2+2, d3+2/))
-      end if
+      if (offload) then
+         if (x+1 /= npx+1) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  values(d1+1,j,k) = recv_buf(0+j+(d2+2)*k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
-      if (x-1 /= 0) then
-         this%values(0, 0:d2+1, 0:d3+1) = reshape(this%recv_buf((d2+2)*(d3+2) : 2*(d2+2)*(d3+2)-1), (/d2+2, d3+2/))
-      end if
+         if (x-1 /= 0) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  values(0,j,k) = recv_buf((d2+2)*(d3+2)+j+(d2+2)*k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
-      if (y+1 /= this%parallel_params%npy+1) then
-         this%values(0:d1+1, d2+1, 0:d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2) : 2*(d2+2)*(d3+2)+(d1+2)*(d3+2)-1), (/d1+2, d3+2/))
-      end if
-      if (y-1 /= 0) then
-         this%values(0:d1+1, 0, 0:d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+(d1+2)*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)-1), (/d1+2, d3+2/))
-      end if
-      if (z+1 /= this%parallel_params%npz+1) then
-         this%values(0:d1+1, 0:d2+1, d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2)-1), (/d1+2, d2+2/))
+         if (y+1 /= npy+1) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  values(i,d2+1,k) = recv_buf(2*(d2+2)*(d3+2)+i+(d1+2)*k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y-1 /= 0) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  values(i,0,k) = recv_buf(2*(d2+2)*(d3+2)+(d1+2)*(d3+2)+i+(d1+2)*k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (z+1 /= npz+1) then
+            !$omp target teams distribute parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  values(i,j,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+i+(d1+2)*j)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (z-1 /= 0) then
+            !$omp target teams distribute parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  values(i,j,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2)+i+(d1+2)*j)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               values(d1+1,d2+1,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               values(d1+1,0,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2)+k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               values(0,d2+1,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2)+k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               values(0,0,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2)+k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               values(d1+1,j,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+j)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               values(d1+1,j,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2)+j)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               values(0,j,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2)+j)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               values(0,j,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2)+j)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               values(i,d2+1,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+i)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               values(i,d2+1,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2)+i)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               values(i,0,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2)+i)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               values(i,0,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2)+i)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(d1+1,d2+1,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(d1+1,d2+1,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+1+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(d1+1,0,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+2+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(d1+1,0,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+3+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(0,d2+1,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+4+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(0,d2+1,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+5+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(0,0,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+6+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               values(0,0,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7+n)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+      else
+         if (x+1 /= npx+1) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  values(d1+1,j,k) = recv_buf(0+j+(d2+2)*k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  values(0,j,k) = recv_buf((d2+2)*(d3+2)+j+(d2+2)*k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y+1 /= npy+1) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  values(i,d2+1,k) = recv_buf(2*(d2+2)*(d3+2)+i+(d1+2)*k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y-1 /= 0) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  values(i,0,k) = recv_buf(2*(d2+2)*(d3+2)+(d1+2)*(d3+2)+i+(d1+2)*k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (z+1 /= npz+1) then
+            !$omp parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  values(i,j,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+i+(d1+2)*j)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (z-1 /= 0) then
+            !$omp parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  values(i,j,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2)+i+(d1+2)*j)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1) then
+            !$omp parallel do
+            do k = 0, d3+1
+               values(d1+1,d2+1,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0) then
+            !$omp parallel do
+            do k = 0, d3+1
+               values(d1+1,0,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2)+k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1) then
+            !$omp parallel do
+            do k = 0, d3+1
+               values(0,d2+1,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2)+k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0) then
+            !$omp parallel do
+            do k = 0, d3+1
+               values(0,0,k) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2)+k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do j = 0, d2+1
+               values(d1+1,j,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+j)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do j = 0, d2+1
+               values(d1+1,j,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2)+j)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do j = 0, d2+1
+               values(0,j,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2)+j)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do j = 0, d2+1
+               values(0,j,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2)+j)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do i = 0, d1+1
+               values(i,d2+1,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+i)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do i = 0, d1+1
+               values(i,d2+1,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2)+i)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do i = 0, d1+1
+               values(i,0,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2)+i)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do i = 0, d1+1
+               values(i,0,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2)+i)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               values(d1+1,d2+1,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+n)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               values(d1+1,d2+1,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+1+n)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               values(d1+1,0,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+2+n)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               values(d1+1,0,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+3+n)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               values(0,d2+1,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+4+n)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               values(0,d2+1,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+5+n)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               values(0,0,d3+1) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+6+n)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               values(0,0,0) = recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7+n)
+            end do
+            !$omp end parallel do
+         end if
 
       end if
-      if (z-1 /= 0) then
-         this%values(0:d1+1, 0:d2+1, 0) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)-1), (/d1+2, d2+2/))
-      end if
-
-      if (x+1 /= this%parallel_params%npx+1 .and. y+1 /= this%parallel_params%npy+1) then
-         this%values(d1+1, d2+1, 0:d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2)-1), (/d3+2/))
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y-1 /= 0) then
-         this%values(d1+1, 0, 0:d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2)-1), (/d3+2/))
-      end if
-      if (x-1 /= 0 .and. y+1 /= this%parallel_params%npy+1) then
-         this%values(0, d2+1, 0:d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2)-1), (/d3+2/))
-      end if
-      if (x-1 /= 0 .and. y-1 /= 0) then
-         this%values(0, 0, 0:d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)-1), (/d3+2/))
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(d1+1, 0:d2+1, d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2)-1), (/d2+2/))
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. z-1 /= 0) then
-         this%values(d1+1, 0:d2+1, 0) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2)-1), (/d2+2/))
-      end if
-      if (x-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(0, 0:d2+1, d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2)-1), (/d2+2/))
-      end if
-      if (x-1 /= 0 .and. z-1 /= 0) then
-         this%values(0, 0:d2+1, 0) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)-1), (/d2+2/))
-      end if
-      if (y+1 /= this%parallel_params%npy+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(0:d1+1, d2+1, d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2)-1), (/d1+2/))
-      end if
-      if (y+1 /= this%parallel_params%npy+1 .and. z-1 /= 0) then
-         this%values(0:d1+1, d2+1, 0) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2)-1), (/d1+2/))
-      end if
-      if (y-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(0:d1+1, 0, d3+1) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2)-1), (/d1+2/))
-      end if
-      if (y-1 /= 0 .and. z-1 /= 0) then
-         this%values(0:d1+1, 0, 0) = reshape(this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)-1), (/d1+2/))
-      end if
-
-
-
-      if (x+1 /= this%parallel_params%npx+1 .and. y+1 /= this%parallel_params%npy+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(d1+1, d2+1, d3+1) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2))
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y+1 /= this%parallel_params%npy+1 .and. z-1 /= 0) then
-         this%values(d1+1, d2+1, 0) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+1)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(d1+1, 0, d3+1) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+2)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y-1 /= 0 .and. z-1 /= 0) then
-         this%values(d1+1, 0, 0) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+3)
-      end if
-      if (x-1 /= 0 .and. y+1 /= this%parallel_params%npy+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(0, d2+1, d3+1) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+4)
-      end if
-      if (x-1 /= 0 .and. y+1 /= this%parallel_params%npy+1 .and. z-1 /= 0) then
-         this%values(0, d2+1, 0) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+5)
-      end if
-      if (x-1 /= 0 .and. y-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%values(0, 0, d3+1) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+6)
-      end if
-      if (x-1 /= 0 .and. y-1 /= 0 .and. z-1 /= 0) then
-         this%values(0, 0, 0) = this%recv_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7)
-      end if
-!
-!      if (this%parallel_params%my_rank == 0) then
-!      write(*,*)this%parallel_params%my_rank,this%values
-!end if
    end subroutine Get_recv_buf
 
 
-   subroutine Set_send_buf(this)
-      class (data_t), intent(in out) :: this  
+   subroutine Set_send_buf(this, offload)
+      class (data_t), intent(in out) :: this
+      logical, intent(in) :: offload
+      real(8), dimension(:,:,:), pointer :: values
+      real(8), dimension(:), pointer, contiguous :: send_buf
       integer, dimension(3) :: vals_shape
-      integer :: d1, d2, d3, x, y, z, offset
+      integer :: d1, d2, d3, x, y, z, npx, npy, npz, offset
+      integer :: i, j, k, n
 
-      vals_shape = shape(this%values)
+      values => this%values
+      send_buf => this%send_buf
+      vals_shape = shape(values)
       d1 = vals_shape(1) - 2
       d2 = vals_shape(2) - 2
       d3 = vals_shape(3) - 2
-
-      x = this%communication%parallel_params%my_coords(1)
-      y = this%communication%parallel_params%my_coords(2)
-      z = this%communication%parallel_params%my_coords(3)
+      x = this%parallel_params%my_coords(1)
+      y = this%parallel_params%my_coords(2)
+      z = this%parallel_params%my_coords(3)
+      npx = this%parallel_params%npx
+      npy = this%parallel_params%npy
+      npz = this%parallel_params%npz
       offset = this%communication_parameters%dim_offset
 
-      if (x+1 /= this%parallel_params%npx+1) then
-         this%send_buf(0 : (d2+2)*(d3+2)-1) = reshape(this%values(d1 - offset, 0:d2+1, 0:d3+1), (/d2+2 * d3+2/))
-      end if
+      if (offload) then
+         if (x+1 /= npx+1) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  send_buf(0+j+(d2+2)*k) = values(d1-offset,j,k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
-      if (x-1 /= 0) then
-         this%send_buf((d2+2)*(d3+2) : 2*(d2+2)*(d3+2)-1) = reshape(this%values(1 + offset, 0:d2+1, 0:d3+1), (/d2+2 * d3+2/))
-      end if
+         if (x-1 /= 0) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  send_buf((d2+2)*(d3+2)+j+(d2+2)*k) = values(1+offset,j,k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
-      if (y+1 /= this%parallel_params%npy+1) then
-         this%send_buf(2*(d2+2)*(d3+2) : 2*(d2+2)*(d3+2)+(d1+2)*(d3+2)-1) = reshape(this%values(0:d1+1, d2 - offset, 0:d3+1), (/d1+2 * d3+2/))
-      end if
-      if (y-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+(d1+2)*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)-1) = reshape(this%values(0:d1+1, 1 + offset, 0:d3+1), (/d1+2 * d3+2/))
-      end if
-      if (z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2)-1) = reshape(this%values(0:d1+1, 0:d2+1, d3 - offset), (/d1+2 * d2+2/))
-      end if
-      if (z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)-1) = reshape(this%values(0:d1+1, 0:d2+1, 1 + offset), (/d1+2 * d2+2/))
+         if (y+1 /= npy+1) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+i+(d1+2)*k) = values(i,d2-offset,k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
-      end if
+         if (y-1 /= 0) then
+            !$omp target teams distribute parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+(d1+2)*(d3+2)+i+(d1+2)*k) = values(i,1+offset,k)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
-      if (x+1 /= this%parallel_params%npx+1 .and. y+1 /= this%parallel_params%npy+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2)-1) = this%values(d1 - offset, d2 - offset, 0:d3+1)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2)-1) = this%values(d1 - offset, 1 + offset, 0:d3+1)
-      end if
-      if (x-1 /= 0 .and. y+1 /= this%parallel_params%npy+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2)-1) = this%values(1 + offset, d2 - offset, 0:d3+1)
-      end if
-      if (x-1 /= 0 .and. y-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)-1) = this%values(1+offset, 1+offset, 0:d3+1)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2)-1) = this%values(d1 - offset, 0:d2+1, d3 - offset)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2)-1) = this%values(d1 - offset, 0:d2+1, 1 + offset)
-      end if
-      if (x-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2)-1) = this%values(1 + offset, 0:d2+1, d3 - offset)
-      end if
-      if (x-1 /= 0 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)-1) = this%values(1 + offset, 0:d2+1, 1 + offset)
-      end if
-      if (y+1 /= this%parallel_params%npy+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2)-1) = this%values(0:d1+1, d2 - offset, d3 - offset)
-      end if
-      if (y+1 /= this%parallel_params%npy+1 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2)-1) = this%values(0:d1+1, d2 - offset, 1 + offset)
-      end if
-      if (y-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2)-1) = this%values(0:d1+1, 1 + offset, d3 - offset)
-      end if
-      if (y-1 /= 0 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2) : 2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)-1) = this%values(0:d1+1, 1 + offset, 1+offset)
-      end if
+         if (z+1 /= npz+1) then
+            !$omp target teams distribute parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+i+(d1+2)*j) = values(i,j,d3-offset)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
+         if (z-1 /= 0) then
+            !$omp target teams distribute parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2)+i+(d1+2)*j) = values(i,j,1+offset)
+               end do
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
+         if (x+1 /= npx+1 .and. y+1 /= npy+1) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+k) = values(d1-offset,d2-offset,k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
 
-      if (x+1 /= this%parallel_params%npx+1 .and. y+1 /= this%parallel_params%npy+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)) = this%values(d1- offset, d2-offset, d3-offset)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y+1 /= this%parallel_params%npy+1 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+1) = this%values(d1-offset, d2-offset, 1 + offset)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+2) = this%values(d1-offset, 1+offset, d3-offset)
-      end if
-      if (x+1 /= this%parallel_params%npx+1 .and. y-1 /= 0 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+3) = this%values(d1-offset, 1+offset, 1+offset)
-      end if
-      if (x-1 /= 0 .and. y+1 /= this%parallel_params%npy+1 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+4) = this%values(1+offset, d2-offset, d3-offset)
-      end if
-      if (x-1 /= 0 .and. y+1 /= this%parallel_params%npy+1 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+5) = this%values(1+offset, d2-offset, 1+offset)
-      end if
-      if (x-1 /= 0 .and. y-1 /= 0 .and. z+1 /= this%parallel_params%npz+1) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+6) = this%values(1+offset, 1+offset, d3-offset)
-      end if
-      if (x-1 /= 0 .and. y-1 /= 0 .and. z-1 /= 0) then
-         this%send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7) = this%values(1+offset, 1+offset, 1+offset)
+         if (x+1 /= npx+1 .and. y-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2)+k) = values(d1-offset,1+offset,k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2)+k) = values(1+offset,d2-offset,k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2)+k) = values(1+offset,1+offset,k)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+j) = values(d1-offset,j,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2)+j) = values(d1-offset,j,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2)+j) = values(1+offset,j,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2)+j) = values(1+offset,j,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+i) = values(i,d2-offset,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2)+i) = values(i,d2-offset,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2)+i) = values(i,1+offset,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (y-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2)+i) = values(i,1+offset,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+n) = values(d1-offset,d2-offset,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+1+n) = values(d1-offset,d2-offset,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+2+n) = values(d1-offset,1+offset,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+3+n) = values(d1-offset,1+offset,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+4+n) = values(1+offset,d2-offset,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+5+n) = values(1+offset,d2-offset,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+6+n) = values(1+offset,1+offset,d3-offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp target teams distribute parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7+n) = values(1+offset,1+offset,1+offset)
+            end do
+            !$omp end target teams distribute parallel do
+         end if
+
+      else
+         if (x+1 /= npx+1) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  send_buf(0+j+(d2+2)*k) = values(d1-offset,j,k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do j = 0, d2+1
+                  send_buf((d2+2)*(d3+2)+j+(d2+2)*k) = values(1+offset,j,k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y+1 /= npy+1) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+i+(d1+2)*k) = values(i,d2-offset,k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y-1 /= 0) then
+            !$omp parallel do collapse(2)
+            do k = 0, d3+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+(d1+2)*(d3+2)+i+(d1+2)*k) = values(i,1+offset,k)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (z+1 /= npz+1) then
+            !$omp parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+i+(d1+2)*j) = values(i,j,d3-offset)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (z-1 /= 0) then
+            !$omp parallel do collapse(2)
+            do j = 0, d2+1
+               do i = 0, d1+1
+                  send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+(d1+2)*(d2+2)+i+(d1+2)*j) = values(i,j,1+offset)
+               end do
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1) then
+            !$omp parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+k) = values(d1-offset,d2-offset,k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0) then
+            !$omp parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+(d3+2)+k) = values(d1-offset,1+offset,k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1) then
+            !$omp parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+2*(d3+2)+k) = values(1+offset,d2-offset,k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0) then
+            !$omp parallel do
+            do k = 0, d3+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+3*(d3+2)+k) = values(1+offset,1+offset,k)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+j) = values(d1-offset,j,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+(d2+2)+j) = values(d1-offset,j,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+2*(d2+2)+j) = values(1+offset,j,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do j = 0, d2+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+3*(d2+2)+j) = values(1+offset,j,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+i) = values(i,d2-offset,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+(d1+2)+i) = values(i,d2-offset,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+2*(d1+2)+i) = values(i,1+offset,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (y-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do i = 0, d1+1
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+3*(d1+2)+i) = values(i,1+offset,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+n) = values(d1-offset,d2-offset,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+1+n) = values(d1-offset,d2-offset,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+2+n) = values(d1-offset,1+offset,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x+1 /= npx+1 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+3+n) = values(d1-offset,1+offset,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+4+n) = values(1+offset,d2-offset,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y+1 /= npy+1 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+5+n) = values(1+offset,d2-offset,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z+1 /= npz+1) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+6+n) = values(1+offset,1+offset,d3-offset)
+            end do
+            !$omp end parallel do
+         end if
+
+         if (x-1 /= 0 .and. y-1 /= 0 .and. z-1 /= 0) then
+            !$omp parallel do
+            do n = 0, 0
+               send_buf(2*(d2+2)*(d3+2)+2*(d1+2)*(d3+2)+2*(d1+2)*(d2+2)+4*(d3+2)+4*(d2+2)+4*(d1+2)+7+n) = values(1+offset,1+offset,1+offset)
+            end do
+            !$omp end parallel do
+         end if
+
       end if
    end subroutine Set_send_buf
 

@@ -72,7 +72,7 @@ module problem_module
 
         integer                                               :: n_materials     
 
-        integer                                               :: wilkins_scheme 
+        integer                                               :: wilkins_scheme, max_ncyc
 
         !       integer(hid_t)                                        :: main_hdf5_diagnostics_file_id
 
@@ -197,6 +197,7 @@ contains
         nz = Constructor%nz
 
 
+        Constructor%max_ncyc = df%max_ncyc
         Constructor%dimension  = df%dimension
         Constructor%n_materials = df%reduct_num_mat
         Constructor%wilkins_scheme = df%sw_wilkins
@@ -247,6 +248,7 @@ contains
         if (df%dimension == 2) allocate(bc_c_wrap_arr(4))
         if (df%dimension == 3) allocate(bc_c_wrap_arr(6))
         allocate(bc_c_wrap)
+        call Constructor%parallel_params%init_device_binding()
 
 
 
@@ -260,7 +262,7 @@ contains
 
         write(*,*) trim(my_id)
 
-        open(unit=69, file="diags" // trim(my_id), status="replace", action="write")
+        ! open(unit=69, file="diags" // trim(my_id), status="replace", action="write")
 
         if (Constructor%wilkins_scheme == 1) then 
             allocate(Constructor%previous_vertex_mass)
@@ -269,7 +271,6 @@ contains
 
         Constructor%boundary_params = boundary_parameters_t(nxp, nyp, nzp, Constructor%dimension,Constructor%parallel_params&
             , df%mesh_type, df%boundary_conditions)
-
 
 
         if (df%dimension == 2) then
@@ -370,7 +371,6 @@ contains
         call Constructor%total_volume%Point_to_data (vol)
 
 
-
         call Constructor%Create_materials (df, bc_c_wrap_arr, Constructor%mat_cells)
 
 
@@ -464,10 +464,12 @@ contains
 
         call Constructor%Set_communication()
 
+
         call Constructor%mesh%Exchange_virtual_space_blocking()
         call Constructor%total_vof%Exchange_virtual_space_blocking()
 
         write(*,*) "Done diagnostics"
+
 
         if(Constructor%dimension == 3) then
 
@@ -476,6 +478,7 @@ contains
 
 
             call Constructor%mesh%coordinates%Apply_boundary(Constructor%mesh%coordinates%data)
+
             call Constructor%mesh%coordinates%Exchange_virtual_space_blocking()
 
             call Constructor%mesh%Calculate_average_coordinates()
@@ -507,6 +510,7 @@ contains
 
         end if
 
+
         if (Constructor%wilkins_scheme == 1) then
             call Constructor%previous_cell_mass%Calculate_cell_mass(Constructor%total_volume, Constructor%total_density)
 
@@ -522,7 +526,9 @@ contains
 
         end if
 
+
         call Constructor%velocity%Apply_boundary (Constructor%mesh%coordinates%data)
+
 
         call Constructor%total_vertex_mass%Exchange_virtual_space_blocking()
 
@@ -537,6 +543,7 @@ contains
             do j = 1, Constructor%ny
                 do i = 1, Constructor%nx
                     do tmp_mat=1, Constructor%n_materials
+                        !TODO: to initilize on GPU directly
                         cell_mass_vof(tmp_mat, i,j,k) = vol(i,j,k) * density_vof(tmp_mat,i,j,k)
                     end do
                 end do
@@ -636,7 +643,7 @@ contains
         class (problem_t), intent(in out) :: this
         integer :: i, error_hdf5
 
-        close(69)
+        ! close(69)
         do i=1,size(this%textual_diagnostics(1:))
             call this%textual_diagnostics(i)%Close_diagnostic
         end do
@@ -664,7 +671,7 @@ contains
         integer :: first_comm, comm, rank
         integer :: left, right, rear, front, down, up
         integer :: npx, npy, npz 
-        integer :: i, j, k, n_l, xs, ys, zs
+        integer :: i, j, k, n_l, xs, ys, zs, m
       
         real(8), dimension(:,:,:), pointer  :: values
         real(8), dimension(:), allocatable  :: array
@@ -693,19 +700,107 @@ contains
         real(8), dimension(:, :, :), pointer :: velocity_x_target     
         real(8), dimension(:, :, :), pointer :: velocity_y_target     
         real(8), dimension(:, :, :), pointer :: velocity_z_target 
-                real(8), dimension(:, :, :), pointer :: acceleration_x_target     
+        
+        real(8), dimension(:, :, :), pointer :: acceleration_x_target     
         real(8), dimension(:, :, :), pointer :: acceleration_y_target     
         real(8), dimension(:, :, :), pointer :: acceleration_z_target 
-        real(8), dimension(:, :, :), pointer :: x_target              
-        real(8), dimension(:, :, :), pointer :: avisc_target              
-        real(8), dimension(:, :, :), pointer :: rmv_target              
         
+        real(8), dimension(:, :, :), pointer :: x_target     
         real(8), dimension(:, :, :), pointer :: y_target              
-        real(8), dimension(:, :, :), pointer :: z_target              
+        real(8), dimension(:, :, :), pointer :: z_target
+        
+        real(8), dimension(:, :, :), pointer :: mat_x_target     
+        real(8), dimension(:, :, :), pointer :: mat_y_target              
+        real(8), dimension(:, :, :), pointer :: mat_z_target
+
+        real(8), dimension(:, :, :), pointer :: mat_volume_target
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_x_target
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_y_target
+        real(8), dimension(:, :, :), pointer :: mesh_velocity_z_target
+        
+        
+        real(8), dimension(:, :, :), pointer :: avisc_target              
+        real(8), dimension(:, :, :), pointer :: inverse_vertex_mass_target            
+        real(8), dimension(:, :, :), pointer :: pressure_sum_target
 
         real(8), dimension(:, :, :), pointer :: vol_target            
         real(8), dimension(:, :, :), pointer :: vof_target 
-      
+        real(8), dimension(:, :, :), pointer :: sie_target 
+        real(8), dimension(:, :, :,:), pointer :: sie_vof_target 
+        real(8), dimension(:, :, :,:), pointer :: mat_vof_target
+
+        real(8), dimension(:, :, :), pointer :: sound_vel_target
+        real(8), dimension(:, :, :), pointer :: density_target
+        real(8), dimension(:, :, :), pointer :: pressure_target
+        real(8), dimension(:, :, :), pointer :: vertex_mass_target  
+
+        real(8), dimension(:, :, :), pointer :: dp_drho_target
+        real(8), dimension(:, :, :), pointer :: dp_de_target
+        real(8), dimension(:, :, :), pointer :: temperature_target
+        real(8), dimension(:, :, :), pointer :: cell_mass_target
+        real(8), dimension(:, :, :), pointer :: nmats_in_cell_target
+
+        real(8), dimension(:, :, :,:), pointer :: pressure_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dp_drho_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dt_drho_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dp_de_vof_target
+        real(8), dimension(:, :, :,:), pointer :: cell_mass_vof_target
+        real(8), dimension(:, :, :,:), pointer :: density_vof_target
+
+        real(8), dimension(:, :, :,:), pointer :: temperature_vof_target
+        real(8), dimension(:, :, :,:), pointer :: old_temperature_vof_target
+        real(8), dimension(:, :, :,:), pointer :: dt_de_vof_target
+        real(8), dimension(:, :, :,:), pointer :: sound_vel_vof_target
+        real(8), dimension(:,:,:), pointer :: xl_visc_mat_target
+
+        ! ===== ADVECT ARRAYS =====
+        real(8), dimension(:, :, :), pointer :: vof_adv_target
+        real(8), dimension(:, :, :), pointer :: cell_mass_adv_target
+        real(8), dimension(:, :, :), pointer :: vel_adv_weight_target
+        real(8), dimension(:, :, :), pointer :: mat_id_target
+
+        real(8), dimension(:, :, :, :), pointer :: mat_vof_adv_target
+        real(8), dimension(:, :, :, :), pointer :: mat_cell_mass_adv_target
+        real(8), dimension(:, :, :, :), pointer :: sie_vof_adv_target
+
+        real(8), dimension(:, :, :, :), pointer :: a_adv_target
+        real(8), dimension(:, :, :, :), pointer :: b_adv_target
+        real(8), dimension(:, :, :, :), pointer :: c_adv_target
+        real(8), dimension(:, :, :, :), pointer :: side_adv_target
+
+        real(8), dimension(:, :, :, :), pointer :: a_mat_target
+        real(8), dimension(:, :, :, :), pointer :: b_mat_target
+        real(8), dimension(:, :, :, :), pointer :: c_mat_target
+        real(8), dimension(:, :, :, :), pointer :: side_mat_target
+
+        real(8), dimension(:, :, :, :), pointer :: init_mat_layers_target
+        real(8), dimension(:, :, :, :), pointer :: init_mat_layers_adv_target
+
+        real(8) :: checksum_velocity_x, checksum_velocity_y, checksum_velocity_z
+        real(8) :: checksum_acceleration_x, checksum_acceleration_y, checksum_acceleration_z
+        real(8) :: checksum_x, checksum_y, checksum_z, checksum_sie_vof, checksum_pressure_vof
+        real(8) :: checksum_density, checksum_pressure, checksum_total_sie
+
+        integer, dimension(:), pointer :: i_virt, j_virt, k_virt
+
+        character(len=8) :: date, time
+        integer :: iunit
+        character(len=30) :: filename
+        
+        checksum_velocity_x = 0.0
+        checksum_velocity_y = 0.0
+        checksum_velocity_z = 0.0
+        checksum_density = 0.0
+        checksum_pressure = 0.0
+        checksum_acceleration_x = 0.0
+        checksum_acceleration_y = 0.0
+        checksum_acceleration_z = 0.0
+        checksum_x = 0.0
+        checksum_y = 0.0
+        checksum_z = 0.0
+        checksum_sie_vof = 0.0
+        checksum_pressure_vof = 0.0
+        checksum_total_sie = 0.0
       
         !        call this%cr%Get_ckpt_name(this%name, ckpt_name)
 #ifdef DEBUG
@@ -723,9 +818,9 @@ contains
                         !call this%Write_to_files()
         ncyc = 1
         if (this%rezone_type == 0) then
-            max_ncyc = 11
+            max_ncyc = this%max_ncyc
         else
-            max_ncyc = 11
+            max_ncyc = this%max_ncyc
         end if
 
         if (this%mesh%dimension == 2) then
@@ -738,7 +833,7 @@ contains
             end do
 
         else if (this%mesh%dimension == 3) then
-        
+
             call this%velocity%dvelocity_x_dx%Point_to_data(dvel_x_dx_target)
             call this%velocity%dvelocity_x_dy%Point_to_data(dvel_x_dy_target)
             call this%velocity%dvelocity_x_dz%Point_to_data(dvel_x_dz_target)
@@ -748,50 +843,164 @@ contains
             call this%velocity%dvelocity_z_dx%Point_to_data(dvel_z_dx_target)
             call this%velocity%dvelocity_z_dy%Point_to_data(dvel_z_dy_target)
             call this%velocity%dvelocity_z_dz%Point_to_data(dvel_z_dz_target)
-    call this%total_inverse_vertex_mass%Point_to_data(rmv_target)
+            call this%total_density  %Point_to_data(density_target)
+            call this%total_inverse_vertex_mass%Point_to_data(inverse_vertex_mass_target)
+            call this%total_vertex_mass%Point_to_data(vertex_mass_target)
             call this%velocity%            Point_to_data(velocity_x_target, velocity_y_target, velocity_z_target)
             call this%acceleration%            Point_to_data(acceleration_x_target, acceleration_y_target, acceleration_z_target)
             call this%mesh%coordinates%Point_to_data(x_target, y_target, z_target)
             call this%total_vof%       Point_to_data(vof_target)
             call this%a_visc%       Point_to_data(avisc_target)
+            call this%num_mat_cells %       Point_to_data(nmats_in_cell_target)
             call this%total_volume%    Point_to_data(vol_target)
+            call this%hydro%total_sie%    Point_to_data(sie_target)
+            call this%hydro%total_pressure %Point_to_data(pressure_target)
+            call this%total_pressure_sum%point_to_data(pressure_sum_target)
+
+            call this%hydro%total_sound_vel%Point_to_data(sound_vel_target)
+            call this%hydro%total_dp_drho       %Point_to_data(dp_drho_target)
+            call this%hydro%total_dp_de         %Point_to_data(dp_de_target)   
+            call this%hydro%total_temperature    %Point_to_data(temperature_target)
+            call this%hydro%total_cell_mass    %Point_to_data(cell_mass_target)
             
-            write(*,*) "Number of Available devices: ", omp_get_num_devices()
-            !$omp target enter data map(to: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target, avisc_target, acceleration_x_target, acceleration_y_target, acceleration_z_target, rmv_target) &
+            call this%materials%vof             %Point_to_data(mat_vof_target)
+            call this%materials%sie             %Point_to_data(sie_vof_target)
+            call this%materials%pressure        %Point_to_data(pressure_vof_target)
+            call this%materials%dp_drho         %Point_to_data(dp_drho_vof_target)
+            call this%materials%dp_de           %Point_to_data(dp_de_vof_target)
+            call this%materials%dt_drho         %Point_to_data(dt_drho_vof_target)
+            call this%materials%cell_mass       %Point_to_data(cell_mass_vof_target)
+            call this%materials%temperature     %Point_to_data(temperature_vof_target)
+            call this%materials%temperature_old %Point_to_data(old_temperature_vof_target)
+            call this%materials%dt_de           %Point_to_data(dt_de_vof_target)
+            call this%materials%density         %Point_to_data(density_vof_target)
+            call this%materials%sound_vel       %Point_to_data(sound_vel_vof_target)
+            
+            !not sure if works, but for now not needed, because we explicitly use the value 0.2 in hydro_step.f90 in Calculate_artificial_viscosity_3d.
+            xl_visc_mat_target => this%a_visc%xl_visc_mat
+
+
+            ! ============================= REZONE THINGS ========================== !
+            call this%hydro%rezone%material_coordinates%Point_to_data(mat_x_target, mat_y_target, mat_z_target)
+            call this%hydro%rezone%material_volume%Point_to_data(mat_volume_target)
+            call this%hydro%rezone%mesh_velocity%Point_to_data(mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target)
+
+            ! ============================= ADVECT THINGS ========================== !
+            call this%hydro%advect%vof_advect%Point_to_data(vof_adv_target)
+            call this%hydro%advect%adv_cell_mass%Point_to_data(cell_mass_adv_target)
+            call this%hydro%advect%vel_adv_weight%Point_to_data(vel_adv_weight_target)
+            call this%mat_cells%Point_to_data(mat_id_target)
+
+            call this%hydro%advect%adv_mats%vof%Point_to_data(mat_vof_adv_target)
+            call this%hydro%advect%adv_mats%cell_mass%Point_to_data(mat_cell_mass_adv_target)
+            call this%hydro%advect%adv_mats%sie%Point_to_data(sie_vof_adv_target)
+
+            call this%hydro%advect%a%Point_to_data(a_adv_target)
+            call this%hydro%advect%b%Point_to_data(b_adv_target)
+            call this%hydro%advect%c%Point_to_data(c_adv_target)
+            call this%hydro%advect%side%Point_to_data(side_adv_target)
+
+            call this%hydro%advect%adv_mats%a%Point_to_data(a_mat_target)
+            call this%hydro%advect%adv_mats%b%Point_to_data(b_mat_target)
+            call this%hydro%advect%adv_mats%c%Point_to_data(c_mat_target)
+            call this%hydro%advect%adv_mats%side%Point_to_data(side_mat_target)
+
+            call this%materials%Point_to_initial_layers(init_mat_layers_target)
+            call this%hydro%advect%adv_mats%Point_to_initial_layers(init_mat_layers_adv_target)
+
+            ! ==== VERTEX MASS ==== !
+            call this%parallel_params%Point_to_virtual_array(i_virt, j_virt, k_virt)
+
+            start = omp_get_wtime()
+
+            !$omp target enter data map(to: x_target, y_target, z_target,&
+            !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
+            !$omp& mesh_velocity_x_target, mesh_velocity_y_target, mesh_velocity_z_target,&
+            !$omp& mat_x_target, mat_y_target, mat_z_target,&
+            !$omp& vof_target, vol_target, avisc_target, mat_volume_target, pressure_sum_target,&
+            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, inverse_vertex_mass_target, density_target, density_vof_target, vertex_mass_target, &
+            !$omp& temperature_vof_target, temperature_target, pressure_vof_target, pressure_target, old_temperature_vof_target, sound_vel_vof_target, dp_drho_vof_target, dp_drho_target, dp_de_target, dt_de_vof_target, sound_vel_target, &
+            !$omp& mat_vof_target, cell_mass_vof_target, cell_mass_target, dp_de_vof_target, dt_drho_vof_target, sie_vof_target, sie_target, nmats_in_cell_target, &
+            !$omp& vof_adv_target, cell_mass_adv_target, vel_adv_weight_target, mat_id_target, &
+            !$omp& mat_vof_adv_target, mat_cell_mass_adv_target, sie_vof_adv_target, &
+            !$omp& a_adv_target, b_adv_target, c_adv_target, side_adv_target, &
+            !$omp& a_mat_target, b_mat_target, c_mat_target, side_mat_target, &
+            !$omp& init_mat_layers_target, init_mat_layers_adv_target, xl_visc_mat_target, k_virt, i_virt, j_virt) &
             !$omp& map(alloc: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target, &
             !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
-        
+            
+            
+            !write(*,*) "Initial target enter data Time:", omp_get_wtime() - start
+
             do while (this%time%Should_continue() .and. ncyc < max_ncyc)
                 start = omp_get_wtime()
                 call this%hydro%do_time_step_3d(this%time)
+                ! !$omp parallel
+                !     !$omp single
+                !         write(*,*) "NUMBER OF THREADS: ", omp_get_num_threads()
+                !     !$omp end single
+                ! !$omp end parallel
                 call this%time%Update_time()
                 !  call this%Write_to_files()
                 counter = counter + 1
                 ncyc = ncyc + 1
-                write(*,'(A30, F12.6)') "Total cycle time: ", omp_get_wtime()-start
-                write(*,*) "#####################################################################"
+                
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,12):", this%mesh%coordinates%data(1)%values(1,1,12)
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,13):", this%mesh%coordinates%data(1)%values(1,1,13)
+                
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,12):", x_target(1,1,12)
+                ! write(*,*) "BEFORE TARGET UPDATE, at (1,1,13):", x_target(1,1,13)
+                ! write(*,*) "------------------------"
+                ! !$omp target update from(x_target)
+                ! write(*,*) "AFTER, at (1,1,12):", z_target(1,1,5)
+                ! write(*,*) "AFTER, at (1,1,13):", x_target(1,1,13)
+
+                ! write(*,*) "AFTER, at (1,1,12):", this%mesh%coordinates%data(1)%values(1,1,12)
+                ! write(*,*) "AFTER, at (1,1,13):", this%mesh%coordinates%data(1)%values(1,1,13)
+
+                ! !$omp target
+                ! write(*,*) x_target(1,6,11)
+                ! !$omp end target
+
+                
+                !write(*,'(A30, F12.6)') "Total cycle time: ", omp_get_wtime()-start
+                !write(*,*) "#####################################################################"
             !      call this%cr%Checkpoint(ckpt_name)
             end do
+        
             
-            !$omp target exit data map(delete: x_target, y_target, z_target, velocity_x_target, velocity_y_target, velocity_z_target, vof_target, vol_target) &
-            !$omp& map(from: dvel_x_dx_target, dvel_x_dy_target, dvel_x_dz_target, dvel_y_dx_target, dvel_y_dy_target,&
-            !$omp& dvel_y_dz_target, dvel_z_dx_target, dvel_z_dy_target, dvel_z_dz_target)
-            
+            !$omp target exit data map(from: x_target, y_target, z_target,&
+            !$omp& velocity_x_target, velocity_y_target, velocity_z_target,&
+            !$omp& acceleration_x_target, acceleration_y_target, acceleration_z_target, density_target, pressure_target, sie_vof_target, pressure_vof_target, sie_target, &
+            !$omp& vof_adv_target, cell_mass_adv_target, vel_adv_weight_target, mat_id_target, &
+            !$omp& mat_vof_adv_target, mat_cell_mass_adv_target, sie_vof_adv_target, &
+            !$omp& a_adv_target, b_adv_target, c_adv_target, side_adv_target, &
+            !$omp& a_mat_target, b_mat_target, c_mat_target, side_mat_target, &
+            !$omp& init_mat_layers_target, init_mat_layers_adv_target, k_virt, i_virt, j_virt)
+
+            !total time ends before checksum!
+            write(*,'(A60, F12.6)') "Total Time:", omp_get_wtime() - finish
+            !write(*,*) "ncyc: ", ncyc-1
+
+            ! Runtime checksum/V&V file generation is disabled. The checksum
+            ! loops were removed because their only consumer was the per-rank
+            ! V&V output file.
+
         end if
 
         !print some cell quantities at the end of the calculation to help you debug your code.
         !you should expect the same result for each correct execution you make. 
         !we print the values in a stride of 10 in each axis to save on storage and I/O operations.
         !these values should indicate whether your code is correct or not.
-        write(*,*) "Total Time:", omp_get_wtime() - finish
-        write(*,*) "ncyc: ", ncyc-1
 
         !open (unit=411, file='total_pressure_result.txt', status = 'replace')  
         !write(411,*) this%total_pressure%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
         !close (411)
-        open (unit=412, file='velocity_result.txt', status = 'replace')  
-        write(412,*) this%velocity%data(1)%values(0:this%nxp, 0:this%nyp, 0:this%nzp) 
-        close (412)
+
+        ! open (unit=412, file='velocity_result.txt', status = 'replace')
+        ! write(412,*) this%velocity%data(1)%values(0:this%nxp, 0:this%nyp, 0:this%nzp)
+        ! close (412)
+
         !open (unit=413, file='total_cell_mass_result.txt', status = 'replace')  
         !write(413,*) this%total_cell_mass%data(1)%values(1:this%nx:10, 1:this%ny:10, 1:this%nz:10) 
         !close (413)
@@ -800,16 +1009,16 @@ contains
         !close (414)
 
         call this%Close_files()
-        if (this%parallel_params%my_rank == 0) then
+!        if (this%parallel_params%my_rank == 0) then
 
 !            write(str1, *) this%global_nx
 !            write(str2, *) this%num_proc
 !            write(*,*) str1,str2
 !            open (71, status = 'replace', file = trim(tmp2(:len(trim(tmp2)) -4 ) // "_" &
 !                // trim(tmp) // ".txt"))
-            open (71, status = 'replace', file = "runtime_" // trim(int2str(this%global_nx)) // "_" // trim(int2str(this%num_proc)) // ".txt")
-            write(71,*) "Total Time:", omp_get_wtime() - finish
-        end if
+!            open (71, status = 'replace', file = "runtime_" // trim(int2str(this%global_nx)) // "_" // trim(int2str(this%num_proc)) // ".txt")
+!            write(71,*) "Total Time:", omp_get_wtime() - finish
+!        end if
         
     end subroutine Start_calculation
 
@@ -898,7 +1107,7 @@ contains
 
         call this%total_sie%Point_to_data(sie)
         call this%total_cell_mass%Point_to_data(cell_mass)
-        call this%materials%Apply_eos(this%nx, this%ny, this%nz,emf,.false.)
+        call this%materials%Apply_eos(this%nx, this%ny, this%nz,emf,.false.) !TODO yoni: can do on GPU?
 
 
 
@@ -981,7 +1190,7 @@ contains
             df%npx, df%npy, df%npz, coords, 1)
 
 
-        this%communication_parameters_material = communication_parameters_t(df%reduct_num_mat, this%nxp, this%nyp, this%nzp, num_neighbors, communicator,&
+        this%communication_parameters_material = communication_parameters_t(df%reduct_num_mat, this%nx, this%ny, this%nz, num_neighbors, communicator,&
             df%npx, df%npy, df%npz, coords, 0)
 
 
@@ -1005,7 +1214,11 @@ contains
 
         call omp_set_num_threads(max_threads)
 
-        threads = omp_get_num_threads()
+        !$omp parallel
+            !$omp single
+                threads = omp_get_num_threads() ! AVITAY : THIS LINE ALREADY EXISTED, BUT IT WASN'T ENCAPSULATED INSIDE A PARALLEL REGION
+            !$omp end single
+        !$omp end parallel
 
         if (threads /= max_threads) then
             write(*,*) "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"

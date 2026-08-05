@@ -25,7 +25,7 @@ module vertex_boundary_condition_module
 
     abstract interface
 
-        subroutine Calculate_interface (this, v_quantity, coordinates, angle, edge_num)
+        subroutine Calculate_interface (this, v_quantity, coordinates, angle, edge_num, is_offload)
             import :: vertex_boundary_condition_t, data_t, quantity_t
 
             class (vertex_boundary_condition_t), intent (in out)     :: this      
@@ -34,10 +34,23 @@ module vertex_boundary_condition_module
             type(data_t), dimension(:), pointer,intent(inout)        :: coordinates
             real (8)                           , intent (in)     :: angle    
             integer                            , intent (in)     :: edge_num 
+            logical, optional :: is_offload
 
         end subroutine
 
-        subroutine Calculate_face_interface (this, v_quantity, angle, edge_num)
+        subroutine Calculate_face_interface (this, v_quantity, angle, edge_num, is_offload)
+            import :: vertex_boundary_condition_t, data_t, quantity_t
+            
+            class (vertex_boundary_condition_t), intent (in out)     :: this      
+
+            class(quantity_t), intent (in out) :: v_quantity  
+            real (8)                           , intent (in)     :: angle    
+            integer                            , intent (in)     :: edge_num 
+            logical, optional :: is_offload
+
+        end subroutine
+
+        subroutine Calculate_corner_interface (this, v_quantity, angle, edge_num, is_offload)
             import :: vertex_boundary_condition_t, data_t, quantity_t
 
             class (vertex_boundary_condition_t), intent (in out)     :: this      
@@ -45,17 +58,7 @@ module vertex_boundary_condition_module
             class(quantity_t), intent (in out) :: v_quantity  
             real (8)                           , intent (in)     :: angle    
             integer                            , intent (in)     :: edge_num 
-
-        end subroutine
-
-        subroutine Calculate_corner_interface (this, v_quantity, angle, edge_num)
-            import :: vertex_boundary_condition_t, data_t, quantity_t
-
-            class (vertex_boundary_condition_t), intent (in out)     :: this      
-
-            class(quantity_t), intent (in out) :: v_quantity  
-            real (8)                           , intent (in)     :: angle    
-            integer                            , intent (in)     :: edge_num 
+            logical, optional :: is_offload
 
         end subroutine
 

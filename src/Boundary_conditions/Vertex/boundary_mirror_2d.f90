@@ -19,7 +19,7 @@ module boundary_mirror_2d_module
 
 
 contains
-    subroutine Boundary_mirror_2d_calculate (this, v_quantity, coordinates, angle, edge_num)
+    subroutine Boundary_mirror_2d_calculate (this, v_quantity, coordinates, angle, edge_num, is_offload)
         use geometry_module, only : Mirror_image
         class (boundary_mirror_2d_t)           , intent (in out) :: this      
 
@@ -27,6 +27,7 @@ contains
         type(data_t), dimension(:), pointer,intent(inout)        :: coordinates
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
         real(8), dimension(:,:,:), pointer :: x, y
         integer :: nxp, nyp, ii,jj,i1,i2,j1,j2
@@ -94,22 +95,24 @@ contains
 
     end subroutine Boundary_mirror_2d_calculate
 
-    subroutine Calculate_face (this, v_quantity, angle, edge_num)
+    subroutine Calculate_face (this, v_quantity, angle, edge_num, is_offload)
         class (boundary_mirror_2d_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
     end subroutine
 
-    subroutine Calculate_corner (this, v_quantity, angle, edge_num)
+    subroutine Calculate_corner (this, v_quantity, angle, edge_num, is_offload)
         implicit none
         class (boundary_mirror_2d_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
+        logical, optional :: is_offload
 
     end subroutine
 end module Boundary_mirror_2d_module

@@ -1,0 +1,12 @@
+{
+  "gpu": {
+    "vendor": "nvidia",
+    "check": false,
+    "extra_flags": []
+  },
+  "serial": {
+    "vendor": "nvidia",
+    "check": false,
+    "extra_flags": []
+  }
+}

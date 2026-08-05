@@ -51,6 +51,7 @@ contains
       use quantity_module, only: quantity_t
       use geometry_module, only: x_proj, Polygon_volume
       use general_utils_module, only : Get_axises_num
+      use omp_lib
       implicit none
       class (volume_t)         , intent(in out) :: this   
       class (quantity_t)       , intent(in out) :: coordinates   
@@ -72,9 +73,11 @@ contains
       real(8) :: x1, x2, x3, x4, x5, x6, x7, x8  
       real(8) :: y1, y2, y3, y4, y5, y6, y7, y8  
       real(8) :: z1, z2, z3, z4, z5, z6, z7, z8  
+      real(8) :: start_time
       real(8) :: cyl
       integer :: sw_vertex_mass
       integer                                         :: dimension
+      integer, save                                   :: counter = 0
 
 
 
@@ -116,6 +119,11 @@ contains
 
      is_neg = 0
      nz = this%d3
+
+     start_time = omp_get_wtime()
+     !!$omp target update to(x, y, z)
+     if (counter > 0) then
+     !$omp target teams distribute parallel do collapse(3) private(ip,jp,kp,x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8)
          do k = 1, nz
             do j = 1, ny
                do i = 1, nx
@@ -157,17 +165,61 @@ contains
                                   +x_proj(y7, z7, y8, z8, y5, z5, y2, z2, y3, z3, y1, z1) * x6 &
                                   +x_proj(y8, z8, y5, z5, y6, z6, y3, z3, y4, z4, y2, z2) * x7 &
                                   +x_proj(y5, z5, y6, z6, y7, z7, y4, z4, y1, z1, y3, z3) * x8 ) / 12d0
-
-
-
                end do
             end do
          end do
+         !$omp end target teams distribute parallel do
+     else
+     !$omp parallel do collapse(3) private(ip,jp,kp,x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8)
+         do k = 1, nz
+            do j = 1, ny
+               do i = 1, nx
+                  ip = i + 1
+                  jp = j + 1
+                  kp = k + 1
+                  x1 = x(i , j , k  )
+                  x2 = x(ip, j , k  )
+                  x3 = x(ip, jp, k  )
+                  x4 = x(i , jp, k  )
+                  x5 = x(i , j , kp )
+                  x6 = x(ip, j , kp )
+                  x7 = x(ip, jp, kp )
+                  x8 = x(i , jp, kp )
 
+                  y1 = y(i , j , k )
+                  y2 = y(ip, j , k )
+                  y3 = y(ip, jp, k )
+                  y4 = y(i , jp, k )
+                  y5 = y(i , j , kp)
+                  y6 = y(ip, j , kp)
+                  y7 = y(ip, jp, kp)
+                  y8 = y(i , jp, kp)
 
+                  z1 = z(i , j , k  )
+                  z2 = z(ip, j , k  )
+                  z3 = z(ip, jp, k  )
+                  z4 = z(i , jp, k  )
+                  z5 = z(i , j , kp)
+                  z6 = z(ip, j , kp)
+                  z7 = z(ip, jp, kp)
+                  z8 = z(i , jp, kp)
 
-
-
+                  vol(i, j, k) = (-x_proj(y2, z2, y3, z3, y4, z4, y5, z5, y6, z6, y8, z8) * x1 &
+                                  -x_proj(y3, z3, y4, z4, y1, z1, y6, z6, y7, z7, y5, z5) * x2 &
+                                  -x_proj(y4, z4, y1, z1, y2, z2, y7, z7, y8, z8, y6, z6) * x3 &
+                                  -x_proj(y1, z1, y2, z2, y3, z3, y8, z8, y5, z5, y7, z7) * x4 &
+                                  +x_proj(y6, z6, y7, z7, y8, z8, y1, z1, y2, z2, y4, z4) * x5 &
+                                  +x_proj(y7, z7, y8, z8, y5, z5, y2, z2, y3, z3, y1, z1) * x6 &
+                                  +x_proj(y8, z8, y5, z5, y6, z6, y3, z3, y4, z4, y2, z2) * x7 &
+                                  +x_proj(y5, z5, y6, z6, y7, z7, y4, z4, y1, z1, y3, z3) * x8 ) / 12d0
+               end do
+            end do
+         end do
+         !$omp end parallel do
+     end if
+         counter = counter + 1
+         !!$omp target update from(vol)
+         !write(*,'(A70, F12.6)') "Calculate() loop time:", omp_get_wtime() - start_time
 
       end if
    end subroutine Calculate

@@ -19,7 +19,7 @@ module slip_vertex_module
 
 
 contains
-    subroutine Slip_vertex_calculate_2d (this, v_quantity, coordinates, angle, edge_num)
+    subroutine Slip_vertex_calculate_2d (this, v_quantity, coordinates, angle, edge_num, is_offload)
         class (slip_vertex_t)              , intent (in out) :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
@@ -29,6 +29,7 @@ contains
 
         real(8), dimension (:,:,:), pointer :: x 
         real(8), dimension (:,:,:), pointer :: y 
+        logical, optional :: is_offload
 
         real(8) :: slope        
         real(8) :: delta_x      
@@ -94,22 +95,22 @@ contains
     end subroutine
 
 
-    subroutine Calculate_face (this, v_quantity, angle, edge_num)
+    subroutine Calculate_face (this, v_quantity, angle, edge_num, is_offload)
         class (slip_vertex_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
-
+        logical, optional :: is_offload
     end subroutine
 
-    subroutine Calculate_corner (this, v_quantity, angle, edge_num)
+    subroutine Calculate_corner (this, v_quantity, angle, edge_num, is_offload)
         implicit none
         class (slip_vertex_t), intent (in out)     :: this      
 
         class(quantity_t), intent (in out) :: v_quantity  
         real (8)                           , intent (in)     :: angle    
         integer                            , intent (in)     :: edge_num 
-
+        logical, optional :: is_offload
     end subroutine
 end module slip_vertex_module

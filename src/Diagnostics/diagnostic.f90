@@ -267,10 +267,10 @@ contains
 
         if (rank /= 0) then
             tmp2 = trim(Constructor_textual_diagnostic_t%file_prefix)
-            open (Constructor_textual_diagnostic_t%diagnostics_group_file, status = 'replace', file = trim(tmp2(:len(trim(tmp2)) -4 ) // "_" &
-                // trim(tmp) // ".txt"))
+            ! open (Constructor_textual_diagnostic_t%diagnostics_group_file, status = 'replace', file = trim(tmp2(:len(trim(tmp2)) -4 ) // "_" &
+            !     // trim(tmp) // ".txt"))
         else
-            open (Constructor_textual_diagnostic_t%diagnostics_group_file, status = 'replace', file = trim(Constructor_textual_diagnostic_t%file_prefix))
+            ! open (Constructor_textual_diagnostic_t%diagnostics_group_file, status = 'replace', file = trim(Constructor_textual_diagnostic_t%file_prefix))
         end if
     end function Constructor_textual_diagnostic_t
 

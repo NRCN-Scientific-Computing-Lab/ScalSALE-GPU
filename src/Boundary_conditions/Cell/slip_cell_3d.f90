@@ -15,15 +15,30 @@ module slip_cell_3d_module
     end type slip_cell_3d_t
 
 contains
-    subroutine Slip_cell_3d_calculate (this, c_quantity, edge_num)
+    subroutine Slip_cell_3d_calculate (this, c_quantity, edge_num, is_offload)
         class (slip_cell_3d_t) , intent (in out)     :: this      
         class(quantity_t)   , intent (in out)     :: c_quantity  
         integer             , intent (in)         :: edge_num  
+        logical, optional :: is_offload
 
         real(8), dimension(:,:,:), pointer :: values
         real(8), dimension(:,:,:,:), pointer :: values_4d
         integer :: i, j, k, nxp, nyp, nzp,m, nmats
 
+        logical :: is_offload_local
+
+        if (.not. present(is_offload)) then
+        
+            !write(*,*) "Slip_cell_3d_calculate is_offload_local NOT PRESENT!"
+            is_offload_local = .False.  
+        
+        else
+            is_offload_local = is_offload  
+        end if
+
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! yoni for now to make sure:
+        !is_offload_local = .True.
+        !write(*,*) "Slip_cell_3d_calculate called, is_offload_local=", is_offload_local
         nxp = c_quantity%d1 + 1
         nyp = c_quantity%d2 + 1
         nzp = c_quantity%d3 + 1
@@ -33,6 +48,8 @@ contains
             select case(edge_num)
                 case(1)
                     i = 1
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(i)
                     do k = 0, nzp
                         do j = 0, nyp
                             do m = 1, nmats
@@ -40,21 +57,48 @@ contains
                             end do
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(i)
+                    do k = 0, nzp
+                        do j = 0, nyp
+                            do m = 1, nmats
+                                values_4d(m, i-1, j, k) = values_4d(m, i, j, k)
+                            end do
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
 
                 case(2)
                     i = nxp
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(i)
                     do k = 0, nzp
                         do j = 0, nyp
                             do m = 1, nmats
-
                                 values_4d(m, i, j, k) = values_4d(m, i-1, j, k)
                             end do
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(i)
+                    do k = 0, nzp
+                        do j = 0, nyp
+                            do m = 1, nmats
+                                values_4d(m, i, j, k) = values_4d(m, i-1, j, k)
+                            end do
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(3)
                     j = 1
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(j)
                     do k = 0, nzp
                         do i = 0, nxp
                             do m = 1, nmats
@@ -63,9 +107,24 @@ contains
                             end do
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(j)
+                    do k = 0, nzp
+                        do i = 0, nxp
+                            do m = 1, nmats
 
-                case(4)
+                                values_4d(m, i, j-1, k) = values_4d(m, i, j, k)
+                            end do
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
+
+                case(4)               
                     j = nyp
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(j)
                     do k = 0, nzp
                         do i = 0, nxp
                             do m = 1, nmats
@@ -74,10 +133,24 @@ contains
                             end do
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(j)
+                    do k = 0, nzp
+                        do i = 0, nxp
+                            do m = 1, nmats
 
+                                values_4d(m, i, j, k) = values_4d(m, i, j-1, k)
+                            end do
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(5)
                     k = 1
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(k)
                     do j = 0, nyp
                         do i = 0, nxp
                             do m = 1, nmats
@@ -86,9 +159,24 @@ contains
                             end do
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(k)
+                    do j = 0, nyp
+                        do i = 0, nxp
+                            do m = 1, nmats
+
+                                values_4d(m, i, j, k-1) = values_4d(m, i, j, k)
+                            end do
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(6)
                     k = nzp
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(k)
                     do j = 0, nyp
                         do i = 0, nxp
                             do m = 1, nmats
@@ -97,7 +185,19 @@ contains
                             end do
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(k)
+                    do j = 0, nyp
+                        do i = 0, nxp
+                            do m = 1, nmats
 
+                                values_4d(m, i, j, k) = values_4d(m, i, j, k-1)
+                            end do
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
             end select
         else
             call c_quantity%Point_to_data(values)
@@ -105,52 +205,123 @@ contains
             select case(edge_num)
                 case(1)
                     i = 1
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(i)
                     do k = 0, nzp
                         do j = 0, nyp
                             values(i-1, j, k) = values(i, j, k)
                         end do
                     end do
-
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(i)
+                    do k = 0, nzp
+                        do j = 0, nyp
+                            values(i-1, j, k) = values(i, j, k)
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(2)
                     i = nxp
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(i)
                     do k = 0, nzp
                         do j = 0, nyp
                             values(i, j, k) = values(i-1, j, k)
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(i)
+                    do k = 0, nzp
+                        do j = 0, nyp
+                            values(i, j, k) = values(i-1, j, k)
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(3)
                     j = 1
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(j)
                     do k = 0, nzp
                         do i = 0, nxp
                             values(i, j-1, k) = values(i, j, k)
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(j)
+                    do k = 0, nzp
+                        do i = 0, nxp
+                            values(i, j-1, k) = values(i, j, k)
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(4)
                     j = nyp
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(j)
                     do k = 0, nzp
                         do i = 0, nxp
                             values(i, j, k) = values(i, j-1, k)
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(j)
+                    do k = 0, nzp
+                        do i = 0, nxp
+                            values(i, j, k) = values(i, j-1, k)
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(5)
                     k = 1
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(k)
                     do j = 0, nyp
                         do i = 0, nxp
                             values(i, j, k-1) = values(i, j, k)
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(k)
+                    do j = 0, nyp
+                        do i = 0, nxp
+                            values(i, j, k-1) = values(i, j, k)
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
 
                 case(6)
                     k = nzp
+                    if (is_offload_local) then
+                    !$omp target teams distribute parallel do collapse(2) firstprivate(k)
                     do j = 0, nyp
                         do i = 0, nxp
                             values(i, j, k) = values(i, j, k-1)
                         end do
                     end do
+                    !$omp end target teams distribute parallel do
+                    else
+                    !$omp parallel do collapse(2) firstprivate(k)
+                    do j = 0, nyp
+                        do i = 0, nxp
+                            values(i, j, k) = values(i, j, k-1)
+                        end do
+                    end do
+                    !$omp end parallel do
+                    end if
             end select
         end if
         return

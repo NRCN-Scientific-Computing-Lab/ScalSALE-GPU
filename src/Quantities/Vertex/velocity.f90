@@ -172,7 +172,6 @@ contains
         real(8) :: start_time
         integer :: ip,im,jp,jm, km,kp
         integer,save :: cntr = 0
-        integer :: ndev
         logical :: do_offload
         logical :: is_accel
         integer :: SIZE
@@ -228,14 +227,41 @@ contains
         call total_vof   %Point_to_data(vof)
         call total_volume%Point_to_data(vol)
         
-       ndev = omp_get_num_devices()
-       start_time = omp_get_wtime()
-       !$omp target map(to:x, y, z, velocity_x, velocity_y, velocity_z, vof, vol) map(from:dvel_x_dx, dvel_x_dy, dvel_x_dz, dvel_y_dx, dvel_y_dy, dvel_y_dz, dvel_z_dx, dvel_z_dy, dvel_z_dz)
-       !$omp teams distribute parallel do collapse(3) private(ip,jp,kp,x1,x2,x3,x4,x5,x6,x7,x8,y1,y2,y3,y4,y5,y6,y7,y8,z1,z2,z3,z4,z5,z6,z7,z8,u1,u2,u3,u4,u5,u6,u7,u8) &
-       !$omp& private(v1,v2,v3,v4,v5,v6,v7,v8,w1,w2,w3,w4,w5,w6,w7,w8) 
-        do k = 1, nz
-            do j = 1, ny
-                do i = 1, nx
+    start_time = omp_get_wtime()
+    
+    !PLEASE CHECK IF X,Y,Z ARE UPDATED BEFORE EACH CALL AND THEN REMOVE IT FROM HERE
+    !!$omp target update to(x, y, z, velocity_x, velocity_y, velocity_z) 
+    !!$omp target update to(vof, vol)   
+
+    !$omp target teams distribute parallel do collapse(3) &
+    !$omp& private(ip, jp, kp, x1, x2, x3, x4, x5, x6, x7, x8, &
+    !$omp& y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, &
+    !$omp& u1, u2, u3, u4, u5, u6, u7, u8, v1, v2, v3, v4, v5, v6, v7, v8, &
+    !$omp& w1, w2, w3, w4, w5, w6, w7, w8, &
+    !$omp& u1u2u4, u1u4u5, u1u2u5, u2u3u1, u2u1u6, u2u3u6, u3u4u2, u3u2u7, u3u4u7, &
+    !$omp& u4u1u3, u4u3u8, u4u1u8, u5u8u6, u5u6u1, u5u8u1, u6u5u7, u6u7u2, u6u5u2, &
+    !$omp& u7u6u8, u7u8u3, u7u6u3, u8u7u5, u8u5u4, u8u7u4, &
+    !$omp& y4y1z2z1z4z1y2y1, y5y1z4z1z5z1y4y1, y2y1z5z1z2z1y5y1, y1y2z3z2z1z2y3y2, &
+    !$omp& y6y2z1z2z6z2y1y2, y3y2z6z2z3z2y6y2, y2y3z4z3z2z3y4y3, y7y3z2z3z7z3y2y3, &
+    !$omp& y4y3z7z3z4z3y7y3, y3y4z1z4z3z4y1y4, y8y4z3z4z8z4y3y4, y1y4z8z4z1z4y8y4, &
+    !$omp& y6y5z8z5z6z5y8y5, y1y5z6z5z1z5y6y5, y8y5z1z5z8z5y1y5, y7y6z5z6z7z6y5y6, &
+    !$omp& y2y6z7z6z2z6y7y6, y5y6z2z6z5z6y2y6, y8y7z6z7z8z7y6y7, y3y7z8z7z3z7y8y7, &
+    !$omp& y6y7z3z7z6z7y3y7, y5y8z7z8z5z8y7y8, y4y8z5z8z4z8y5y8, y7y8z4z8z7z8y4y8, &
+    !$omp& z4z1x2x1x4x1z2z1, z5z1x4x1x5x1z4z1, z2z1x5x1x2x1z5z1, z1z2x3x2x1x2z3z2, &
+    !$omp& z6z2x1x2x6x2z1z2, z3z2x6x2x3x2z6z2, z2z3x4x3x2x3z4z3, z7z3x2x3x7x3z2z3, &
+    !$omp& z4z3x7x3x4x3z7z3, z3z4x1x4x3x4z1z4, z8z4x3x4x8x4z3z4, z1z4x8x4x1x4z8z4, &
+    !$omp& z6z5x8x5x6x5z8z5, z1z5x6x5x1x5z6z5, z8z5x1x5x8x5z1z5, z7z6x5x6x7x6z5z6, &
+    !$omp& z2z6x7x6x2x6z7z6, z5z6x2x6x5x6z2z6, z8z7x6x7x8x7z6z7, z3z7x8x7x3x7z8z7, &
+    !$omp& z6z7x3x7x6x7z3z7, z5z8x7x8x5x8z7z8, z4z8x5x8x4x8z5z8, z7z8x4x8x7x8z4z8, &
+    !$omp& x4x1y2y1y4y1x2x1, x5x1y4y1y5y1x4x1, x2x1y5y1y2y1x5x1, x1x2y3y2y1y2x3x2, &
+    !$omp& x6x2y1y2y6y2x1x2, x3x2y6y2y3y2x6x2, x2x3y4y3y2y3x4x3, x7x3y2y3y7y3x2x3, &
+    !$omp& x4x3y7y3y4y3x7x3, x3x4y1y4y3y4x1x4, x8x4y3y4y8y4x3x4, x1x4y8y4y1y4x8x4, &
+    !$omp& x6x5y8y5y6y5x8x5, x1x5y6y5y1y5x6x5, x8x5y1y5y8y5x1x5, x7x6y5y6y7y6x5x6, &
+    !$omp& x2x6y7y6y2y6x7x6, x5x6y2y6y5y6x2x6, x8x7y6y7y8y7x6x7, x3x7y8y7y3y7x8x7, &
+    !$omp& x6x7y3y7y6y7x3x7, x5x8y7y8y5y8x7x8, x4x8y5y8y4y8x5x8, x7x8y4y8y7y8x4x8)
+    do k=1, nz
+        do j = 1, ny
+            do i = 1, nx
                     ip = i + 1
                     jp = j + 1
                     kp = k + 1
@@ -446,14 +472,12 @@ contains
                         (u7u6u8 * x8x7y6y7y8y7x6x7 + u7u8u3 * x3x7y8y7y3y7x8x7 + u7u6u3 * x6x7y3y7y6y7x3x7) +&
                         (u8u7u5 * x5x8y7y8y5y8x7x8 + u8u5u4 * x4x8y5y8y4y8x5x8 + u8u7u4 * x7x8y4y8y7y8x4x8))
 
-
                 end do
             end do
         end do
-        !$omp end teams distribute parallel do    
-        !$omp end target
-        write(*,'(A70, F12.6)') "Derivatives Kernel time:", omp_get_wtime() - start_time
-        !$omp target update from(dvel_x_dx, dvel_x_dy, dvel_x_dz, dvel_y_dx, dvel_y_dy, dvel_y_dz, dvel_z_dx, dvel_z_dy, dvel_z_dz)
+        !$omp end target teams distribute parallel do     
+        !!$omp target update from(dvel_x_dx, dvel_x_dy, dvel_x_dz, dvel_y_dx, dvel_y_dy, dvel_y_dz, dvel_z_dx, dvel_z_dy, dvel_z_dz)
+        !write(*,'(A70, F12.6)') "Derivatives Kernel time:", omp_get_wtime() - start_time
         cntr = cntr  + 1
     end subroutine Calculate_derivatives
 
@@ -538,17 +562,19 @@ contains
         class (coordinates_t), intent(inout)  :: coords
 
         integer :: i, j, k, nxp, nyp, nzp
-        real(8) :: radial_vel 
-        real(8) :: vel_x_tmp 
-        real(8) :: vel_y_tmp 
-        real(8) :: vel_z_tmp 
+        real(8) :: radial_vel
+        real(8) :: vel_x_tmp
+        real(8) :: vel_y_tmp
+        real(8) :: vel_z_tmp
         real(8) :: vel
-        real(8), dimension(:, :, :), pointer :: velocity_x   
-        real(8), dimension(:, :, :), pointer :: velocity_y   
-        real(8), dimension(:, :, :), pointer :: velocity_z   
-        real(8), dimension(:, :, :), pointer :: x            
-        real(8), dimension(:, :, :), pointer :: y            
-        real(8), dimension(:, :, :), pointer :: z            
+        real(8), dimension(:, :, :), pointer :: velocity_x
+        real(8), dimension(:, :, :), pointer :: velocity_y
+        real(8), dimension(:, :, :), pointer :: velocity_z
+        real(8), dimension(:, :, :), pointer :: x
+        real(8), dimension(:, :, :), pointer :: y
+        real(8), dimension(:, :, :), pointer :: z
+        real(8), dimension(:), allocatable :: radial_vel_temp
+        real(8) :: local_min
 
         if (this%no_move_flag .eqv. .false.) return
 
@@ -559,6 +585,13 @@ contains
         nyp = this%d2
         nzp = this%d3
         k = this%no_move_index
+
+        ! IMPORTANT NOTE AVITAY: Changed this reduction to follow Yoni's approach for reduction of min/max on GPUs. Seems like it doesn't matter because we don't use this subroutine anyway.
+
+        allocate(radial_vel_temp(1:nxp * nyp))
+
+        !$omp target teams distribute parallel do collapse(2) private(vel_x_tmp, vel_y_tmp, vel_z_tmp, vel)&
+        !$omp& map(from: radial_vel_temp(1:nxp * nyp))
         do j = 1, nyp
             do i = 1, nxp
                           vel_x_tmp = velocity_x(i, j, k)
@@ -566,15 +599,36 @@ contains
                           vel_z_tmp = velocity_z(i, j, k)
                 vel = (vel_x_tmp*x(i,j,k) + vel_y_tmp*y(i,j,k) +vel_z_tmp*z(i,j,k)) &
                       / (x(i,j,k)*x(i,j,k) + y(i,j,k)*y(i,j,k) + z(i,j,k)*z(i,j,k))
-                radial_vel = min(radial_vel, vel)
+                radial_vel_temp((j - 1) * nxp + i) = vel
             end do
         end do
+        !$omp end target teams distribute parallel do
 
+        local_min = HUGE(1d0)
+        !$omp parallel private(i) firstprivate(local_min)
+        !$omp do
+        do i = 1, nxp * nyp
+            if (radial_vel_temp(i) < local_min) then
+                local_min = radial_vel_temp(i)
+            endif
+        end do
+        !$omp end do
+
+        !$omp critical
+        if (local_min < radial_vel) then
+            radial_vel = local_min
+        endif
+        !$omp end critical
+        !$omp end parallel
+
+        deallocate(radial_vel_temp)
+    
         if (radial_vel < -1d-10) then
             this%no_move_flag = .false.
         end if
         if (this%no_move_flag .eqv. .false.) return
 
+        !$omp target teams distribute parallel do collapse(2) 
         do j = 1, nyp
             do i = 1, nxp
                 velocity_x(i, j, k) = 0d0
@@ -582,6 +636,7 @@ contains
                 velocity_z(i, j, k) = 0d0
             end do
         end do
+        !$omp end target teams distribute parallel do
     end subroutine Impose_no_move_3d
 
     subroutine Initialize(this,  i_sphere, i_sphere_up, no_move_layer, start_index)
