@@ -1106,7 +1106,7 @@ contains
         nyp = this%nyp
         nzp = this%nzp
 
-        !$omp target teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, jm, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6 )
+        !$omp target teams distribute parallel do collapse(3) private(ip, im, jp, jm, kp, km, x1, x2, x3, x4, x5, x6, y1, y2, y3, y4, y5, y6, z1, z2, z3, z4, z5, z6 )
         do k = 1, nzp
             do j = 1, nyp
                 do i = 1, nxp

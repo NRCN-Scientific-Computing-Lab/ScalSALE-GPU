@@ -30,17 +30,6 @@ module advect_module
     private
     public :: advect_t
 
-    ! CUDA Profiler API for conditional profiling
-    interface
-        subroutine cudaProfilerStart() bind(C, name='cudaProfilerStart')
-            use iso_c_binding
-        end subroutine cudaProfilerStart
-
-        subroutine cudaProfilerStop() bind(C, name='cudaProfilerStop')
-            use iso_c_binding
-        end subroutine cudaProfilerStop
-    end interface
-    
     !! AVITAY :
     real(8), dimension(:), allocatable, SAVE :: local_adv_mats_fxtm 
     ! !$OMP THREADPRIVATE(local_adv_mats_fxtm)
@@ -2750,13 +2739,6 @@ contains
 
         advect_start = omp_get_wtime() ! AVITAY
 
-        ! Start profiling when close to end of simulation (last 5 cycles)
-#ifdef GPU_BUILD
-        if (this%cyc_delete > this%datafile%max_ncyc - 5) then
-            call cudaProfilerStart()
-        end if
-#endif
-
         emf = this%emf
         shorter_advect = this%shorter_advect
         nx = this%nx
@@ -3976,16 +3958,9 @@ contains
         deallocate(active_k)
 #endif
 
-#ifdef GPU_BUILD
-        ! Stop profiling after this cycle if we were profiling
-        if (this%cyc_delete > this%datafile%max_ncyc - 5) then
-            call cudaProfilerStop()
-        end if
-#endif
-
         this%cyc_delete=this%cyc_delete+1
 
-        advect_time = omp_get_wtime - advect_start
+        advect_time = omp_get_wtime() - advect_start
 
         advect_total_time = advect_total_time + advect_time
 
@@ -5012,7 +4987,7 @@ contains
             c2(tmp_mat, i, j, k) = cn
 
         end do  ! end do valid_idx
-        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO
+        !$OMP END TARGET TEAMS DISTRIBUTE PARALLEL DO SIMD
 
         ! END OF KERNEL 3: NEWTON-RAPHSON CONVERGENCE
         ! ====================================================================
