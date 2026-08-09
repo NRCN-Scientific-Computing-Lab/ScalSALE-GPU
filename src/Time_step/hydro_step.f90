@@ -1411,8 +1411,6 @@ contains
         real(8) :: x_avg, y_avg, z_avg   
         real(8) :: eff_length            
         real(8) :: eff_vel_div           
-        ! real(8) :: dt_cour_temp ! yonif
-        real(8), dimension(:, :, :), pointer :: dt_cour_temp !yonif   
         real(8) :: linear_visc_fac_temp  
         real(8) :: quad_visc_fac_temp    
         real(8) :: quad_visc_fac         
@@ -1423,20 +1421,13 @@ contains
         integer :: ip, jp, kp
         integer :: mesh_type
         real(8) :: global_min
-        real(8) :: local_min
-        integer :: local_i, local_j, local_k
         real(8) :: start_time
-        integer :: packed_idx
-        real(8) :: dt_tmp
         integer :: nxp, nyp, nzp
         real(8) :: thisemf
         thisemf = this%emf
         nxp = this%nx
         nyp = this%ny
         nzp = this%nz
-
-
-        allocate(dt_cour_temp(1:nxp, 1:nyp, 1:nzp)) !yonif
 
         call this%a_visc%Update_visc_factors()
         linear_visc_fac => this%a_visc%xl_visc_mat
@@ -1480,11 +1471,8 @@ contains
         !!$omp target update to(vof, pressure, density, sound_vel)
         start_time = omp_get_wtime()
         global_min = 1d20
-        packed_idx = -1
-        !$omp target data map(tofrom: global_min, packed_idx) map(alloc: dt_cour_temp(1:nxp, 1:nyp, 1:nzp)) 
-        
         !$omp target teams distribute parallel do collapse(3)&
-        !$omp& private(dt_tmp, avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
+        !$omp& private(avg_acc_x, avg_acc_y, avg_acc_z, tot_acc, &
         !$omp& x1, x2, x3, x4, x5, x6, x7, x8, y1, y2, y3, y4, y5, y6, y7, y8, z1, z2, z3, z4, z5, z6, z7, z8, r1, r2, r3, r4, r5, r6, r7, r8,&
         !$omp& x_avg, y_avg, z_avg, eff_length, eff_vel_div)&
         !$omp& reduction(min:global_min)
@@ -1493,11 +1481,6 @@ contains
                 do i = 1, nxp
                     if (vof(i, j, k) < thisemf .or. pressure(i, j, k) == 0d0) then  
                         a_visc(i, j, k) = 0d0
-                        ! IMPORTANT NOTE -  AVITAY ADDED THE NEXT LINE:
-                        dt_cour_temp(i,j,k) = HUGE(1d0)
-                        ! This is crucial because otherwise, some cells of the array
-                        ! would stay uninitialized, which will then corrupt the search
-                        ! for a global min after this loop.
                     else
                         ! ip = i + 1
                         ! jp = j + 1
@@ -1592,46 +1575,26 @@ contains
                             (quad_visc_fac * eff_length * eff_vel_div &
                             -linear_visc_fac(i,j,k) * sqrt(sound_vel(i ,j, k)))
 
-                        dt_tmp = eff_length * eff_length / sound_vel(i ,j, k)
-                        dt_cour_temp(i,j,k) = dt_tmp
-                        global_min = min(dt_tmp, global_min)
+                        global_min = min(global_min, eff_length * eff_length / sound_vel(i, j, k))
 
                     end if
                 end do
             end do
         end do
         !$omp end target teams distribute parallel do
-        !$omp target teams distribute parallel do collapse(3) map(to: global_min) map(tofrom: packed_idx)
-            do k = 1, nzp
-            do j = 1, nyp
-                do i = 1, nxp
-                if (dt_cour_temp(i,j,k) == global_min) then
-                    !$omp atomic write
-                    packed_idx = (k-1)*nyp*nxp + (j-1)*nxp + i
-                endif
-                end do
-            end do
-            end do
-        !$omp end target teams distribute parallel do
-        !$omp end target data
         !!$omp target exit data map(delete: linear_visc_fac)
 
         !WE KEEP a_visc ON GPU!
         !!$omp target update from(a_visc)
 
-        time%i_cour = mod(mod(packed_idx - 1, nxp * nyp), nxp) + 1
-        time%j_cour = mod(packed_idx - 1, nxp * nyp) / nxp + 1
-        time%k_cour = (packed_idx - 1) / (nxp * nyp) + 1
-
+        time%i_cour = 0
+        time%j_cour = 0
+        time%k_cour = 0
         time%dt_cour = global_min
      
 
         ! write(*,'(A60, F12.6)') "hydro step time: ", omp_get_wtime() - start_time
         ! write(*,'(A60, F30.20)') "min value time: ", global_min
-        ! write(*,'(A50, 3(I0,1X))') "ijk: ", time%i_cour, time%j_cour, time%k_cour
-        ! write(*,'(A50, F30.20)') "val time: ", dt_cour_temp(time%i_cour,time%j_cour,time%k_cour) 
-        deallocate(dt_cour_temp) !yonif
-        
         call this%a_visc%Exchange_virtual_space_nonblocking()
         time%dt_cour = sqrt(time%dt_cour) / time%dt_cour_fac
 
