@@ -2717,7 +2717,7 @@ contains
         real(8) :: emf
         real(8), allocatable :: thread_call_times(:)
         integer, allocatable :: thread_call_counts(:)
-        integer :: max_threads, thread_id, total_calls
+        integer :: thread_id, total_calls
         real(8) :: total_call_time, overall_avg_time
 
         ! real(8), pointer, dimension(:) :: fxtm_ptr
@@ -2948,9 +2948,8 @@ contains
         
         ! AVITAY : CHANGING THE EXECUTION ORDER FROM "1, this%nz/ny/nx" to "this%nz/ny/nx, 1, -1" DOESN'T MESS UP CORRECTION (ONLY AT LAST 15-16 DIGITS)
 
-        max_threads = omp_get_max_threads()
-        ! allocate(thread_call_times(max_threads))
-        ! allocate(thread_call_counts(max_threads))
+        ! allocate(thread_call_times(omp_get_max_threads()))
+        ! allocate(thread_call_counts(omp_get_max_threads()))
         ! thread_call_times = 0.0d0
         ! thread_call_counts = 0
 
@@ -3440,35 +3439,6 @@ contains
         ! total_loop_time = total_loop_time + loop_time
         ! timestep_count = timestep_count + 1
 
-        if (this%cyc_delete == this%datafile%max_ncyc-2 ) then ! max_ncyc = 300 (--> 298)
-            !$omp parallel
-                !$omp single
-                    write(*,*) "!!!!!!! NUMBER OF THREADS !!!!!!! :" , omp_get_num_threads()
-                !$omp end single
-            !$omp end parallel
-            write(*,*) "!!!!!!! NUMBER OF THREADS USING DATAFILE MODULE !!!!!!! :" , this%datafile%threads
-            write(*,*) "!!!!!!! NUMBER OF MAX THREADS !!!!!!! :" , max_threads
-
-        !     ! write(*, '(A,F11.9,A,I6,A)') 'Average loop time: ', total_loop_time/timestep_count, &
-        !     !                 ' seconds over ', timestep_count, ' timesteps'
-        !     ! write(*, '(A,F15.9,A)') 'TOTAL Line_Calc_3d time: ', total_loop_time, ' seconds  '
-        !     ! write(*, '(A,F15.9,A)') 'TOTAL REGION 1 time: ', total_time1, ' seconds  '
-        !     ! write(*, '(A,F15.9,A)') 'TOTAL REGION 2 time: ', total_time2, ' seconds  '
-        !     ! write(*, '(A,F15.9,A)') 'TOTAL REGION 3 time: ', total_time3, ' seconds  '
-        !     ! write(*, '(A,F15.9,A)') 'TOTAL REGION 4 time: ', total_time4, ' seconds  '
-        !     ! write(*, '(A,F15.9,A)') 'TOTAL *TRIPLE-LOOP* time: ', total_loop_time, ' seconds  '
-
-            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *DATA MOVEMENTS IN SCAN MIXED CELLS* time: ', this%total_timer_data, ' seconds  '
-            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *SCAN MIXED CELLS* time: ', this%total_timer1_time, ' seconds  '
-            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *PREFIX SUM* time: ', this%total_timer2_time, ' seconds  '
-            write(*, '(A,F15.9,A)') '-- TOP -- TOTAL *LINE_CALC_3D* time: ', this%total_line_calc_top_time, ' seconds  '
-            write(*, '(A,F15.9,A)') '-- BOTTOM -- TOTAL *LINE_CALC_3D* time: ', this%total_line_calc_bottom_time, ' seconds  '
-            write(*, '(A,F15.9,A)') 'TOTAL *KERNEL* time: ', total_kernel_time, ' seconds  '
-            write(*, '(A,F15.9,A)') 'TOTAL *DATA MOVEMENT 1* time: ', total_data_movement_time, ' seconds  '
-            write(*, '(A,F15.9,A)') 'TOTAL *DATA MOVEMENT 2* time: ', total_data_movement_time2, ' seconds  '
-            write(*, '(A,F15.9,A)') 'TOTAL *ADVECT* time: ', advect_total_time, ' seconds  '
-
-        end if
         ! AVITAY
 
         if (.not. allocated(velocity_x_adv)) then
