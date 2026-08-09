@@ -12,7 +12,7 @@ from repro_common import RunConfiguration, parse_suite_args, run_suite
 
 TEST_NAME = "SERIAL_TIMES"
 PHYSICS = ("lagrange", "euler")
-VENDOR = os.environ.get("SCALSALE_CPU_VENDOR", "nvidia")
+VENDOR = os.environ.get("SCALSALE_CPU_VENDOR", "intel")
 
 # Every unique global problem size used by the weak-scaling suites above.
 PROBLEM_SIZES = (

@@ -1,7 +1,5 @@
 #! /bin/bash
-#module purge
-#module load intel/18.0.1.163 openmpi/4.0.4_intel cmake
-#module load anaconda2
+# ??? Add the site-specific environment/module commands required for this build.
 
 cd ../../build
 #FC=mpiifort #cmake ../src/

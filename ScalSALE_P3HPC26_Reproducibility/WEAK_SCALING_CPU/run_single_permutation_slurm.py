@@ -12,6 +12,6 @@ from repro_common import delegate_single_permutation
 delegate_single_permutation(
     test_name="WEAK_SCALING_CPU",
     expected_mode="serial",
-    expected_vendor=os.environ.get("SCALSALE_CPU_VENDOR", "nvidia"),
+    expected_vendor=os.environ.get("SCALSALE_CPU_VENDOR", "intel"),
     max_tasks_per_node=112,
 )

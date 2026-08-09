@@ -132,8 +132,8 @@ GPU suites also accept:
 ```
 
 Use the default GPU request mode `none` when the partition assigns GPUs
-automatically. CPU suites use the NVIDIA compiler branch by default; select Intel
-with `export SCALSALE_CPU_VENDOR=intel`.
+automatically. CPU suites use the Intel compiler branch by default; select NVIDIA
+with `export SCALSALE_CPU_VENDOR=nvidia`.
 
 The scripts validate the configured layouts, build the required executable,
 create a job-local datafile, generate `submit.sbatch`, and submit with `sbatch`.

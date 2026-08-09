@@ -12,7 +12,7 @@ from repro_common import RunConfiguration, parse_suite_args, run_suite
 
 TEST_NAME = "WEAK_SCALING_MPI_X"
 PHYSICS = ("lagrange", "euler")
-VENDOR = os.environ.get("SCALSALE_CPU_VENDOR", "nvidia")
+VENDOR = os.environ.get("SCALSALE_CPU_VENDOR", "intel")
 CONFIGURATIONS = (
     RunConfiguration("16_processes_7_threads", (4, 4, 1), (600, 600, 300), 1, 16),
     RunConfiguration("32_processes_7_threads", (4, 8, 1), (600, 1200, 300), 2, 16),

@@ -74,8 +74,7 @@ From `src/Scripts`, run:
 ./run.sh <np> [gpu|cpu|main_gpu|main_cpu]
 ```
 
-`np` is the MPI process count and the default mode is `gpu`. For a threaded CPU
-run, set `OMP_NUM_THREADS` to the same value as `parallel.threads`.
+`np` is the MPI process count and the default mode is `gpu`.
 
 To use an explicit datafile instead of the default one, run directly from the
 repository root:
@@ -144,8 +143,8 @@ GPU suites also accept:
 ```
 
 Use the default GPU request mode `none` when the partition assigns GPUs
-automatically. CPU suites use the NVIDIA compiler branch by default; select Intel
-with `export SCALSALE_CPU_VENDOR=intel`.
+automatically. CPU suites use the Intel compiler branch by default; select NVIDIA
+with `export SCALSALE_CPU_VENDOR=nvidia`.
 
 The scripts validate the configured layouts, build the required executable,
 create a job-local datafile, generate `submit.sbatch`, and submit with `sbatch`.

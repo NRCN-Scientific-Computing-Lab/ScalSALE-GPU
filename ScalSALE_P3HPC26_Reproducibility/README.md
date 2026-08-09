@@ -37,8 +37,8 @@ Every suite accepts `--physics all|lagrange|euler`, `--max-cycles N`, and
 `--clean-first` after the partition and optional account.
 GPU suites also accept `--gpu-request-mode` and `--gpu-gres-name`.
 
-The default physics array is `("lagrange", "euler")`. The CPU compiler vendor can
-be changed without editing the scripts:
+The default physics array is `("lagrange", "euler")`. CPU suites use Intel by
+default; select NVIDIA without editing the scripts:
 
 ```bash
 export SCALSALE_CPU_VENDOR=nvidia
