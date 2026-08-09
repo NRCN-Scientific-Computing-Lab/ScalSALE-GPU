@@ -7,30 +7,19 @@ the working directory unless stated otherwise.
 ## 1. Prepare the environment
 
 Load the modules supplied by your cluster. No site-specific versions are assumed.
-
-- NVIDIA build: NVHPC Fortran, a compatible MPI implementation, and the NVIDIA
-  GPU runtime/driver.
-- Intel build: Intel oneAPI Fortran (`ifx`), a compatible MPI implementation,
-  and the Intel Level Zero runtime for GPU execution.
-- All builds: CMake, Make, Python 3, JSON-Fortran, and zlib.
-- Paper suites: Slurm commands such as `sbatch` and `squeue`.
-
+  
 A typical site command has this general form:
 
 ```bash
-module load <compiler> <mpi> <cmake> <python> <json-fortran> <zlib> <slurm>
+module load <compiler> <mpi> <cmake> <python> <json-fortran> <slurm>
 ```
+Intel runs also requires the Inrel Level Zero runtime for GPU execution.
 
 The repository scripts intentionally do not load modules. Replace the commented
-`???` placeholders with your site's environment commands if jobs do not inherit
-the environment from the submission shell.
+`???` placeholders on run_single_permutation_slurm.py with your site's environment commands if jobs do not inherit the environment from the submission shell.
 
 Before building, edit `src/CMakeLists.txt`. Its NVHPC branch currently contains
-the site-specific JSON-Fortran path:
-
-```text
-/home/reemh/json-fortran/build_nvhpc
-```
+the site-specific JSON-Fortran path.
 
 The Intel branch also contains a site-specific path. Replace the path in the
 branch you use with your JSON-Fortran build directory. That directory must contain
@@ -71,11 +60,10 @@ the OpenMP thread count. The paper layouts additionally require
 From `src/Scripts`, run:
 
 ```bash
-./run.sh <np> [gpu|cpu|main_gpu|main_cpu]
+./run.sh <np> [gpu|cpu]
 ```
 
-`np` is the MPI process count and the default mode is `gpu`. For a threaded CPU
-run, set `OMP_NUM_THREADS` to the same value as `parallel.threads`.
+`np` is the MPI process count.
 
 To use an explicit datafile instead of the default one, run directly from the
 repository root:
