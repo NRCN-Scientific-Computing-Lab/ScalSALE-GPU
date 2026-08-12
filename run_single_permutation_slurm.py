@@ -96,9 +96,15 @@ def build_job_script(args: argparse.Namespace, job_dir: Path, datafile_path: Pat
         "mpirun",
         "-n",
         str(total_processes),
-        shlex.quote(str(args.executable_path)),
-        shlex.quote(str(datafile_path)),
     ]
+    if args.mode == "serial" and args.vendor == "intel":
+        command_parts.extend(["-ppn", str(args.tasks_per_node)])
+    command_parts.extend(
+        [
+            shlex.quote(str(args.executable_path)),
+            shlex.quote(str(datafile_path)),
+        ]
+    )
     solver_command = " ".join(command_parts)
 
     if args.profile_ncu:
@@ -157,12 +163,37 @@ def build_job_script(args: argparse.Namespace, job_dir: Path, datafile_path: Pat
 
     if args.mode == "gpu":
         sbatch_lines.append("export OMP_TARGET_OFFLOAD=MANDATORY")
+        if args.vendor == "intel":
+            # Required by Intel MPI for direct GPU-buffer communication.
+            sbatch_lines.append("export I_MPI_OFFLOAD=2")
         if args.ze_flat_hierarchy:
             sbatch_lines.append(
                 "export ZE_FLAT_DEVICE_HIERARCHY={0}".format(args.ze_flat_hierarchy)
             )
         if args.acc_notify:
             sbatch_lines.append("export NVCOMPILER_ACC_NOTIFY=3")
+    else:
+        # Keep each OpenMP team inside a compact, non-overlapping core domain.
+        # For the paper's 16-rank x 7-thread layout this gives eight domains per
+        # 56-core socket; for the 112-rank layout each domain is one core.
+        sbatch_lines.extend(
+            [
+                "export OMP_DYNAMIC=FALSE",
+                "export OMP_PLACES=cores",
+                "export OMP_PROC_BIND=close",
+            ]
+        )
+        if args.vendor == "intel":
+            sbatch_lines.extend(
+                [
+                    "export I_MPI_PIN=1",
+                    "export I_MPI_PIN_RESPECT_CPUSET=1",
+                    "export I_MPI_PIN_ORDER=compact",
+                    "export I_MPI_PIN_DOMAIN={0}".format(
+                        "core" if args.threads == 1 else "omp"
+                    ),
+                ]
+            )
 
     sbatch_lines.extend(
         [
@@ -185,6 +216,22 @@ def build_job_script(args: argparse.Namespace, job_dir: Path, datafile_path: Pat
             "  echo 'gpus_per_node: {0}'".format(args.gpus_per_node if args.mode == "gpu" else 0),
             "  echo 'ZE_FLAT_DEVICE_HIERARCHY: {0}'".format(
                 args.ze_flat_hierarchy if args.ze_flat_hierarchy else "unset"
+            ),
+            "  echo 'I_MPI_OFFLOAD: {0}'".format(
+                "2" if args.mode == "gpu" and args.vendor == "intel" else "unset"
+            ),
+            "  echo 'CPU binding: {0}'".format(
+                (
+                    "I_MPI_PIN_DOMAIN={0}, compact; OMP_PLACES=cores; OMP_PROC_BIND=close".format(
+                        "core" if args.threads == 1 else "omp"
+                    )
+                    if args.mode == "serial" and args.vendor == "intel"
+                    else (
+                        "OMP_PLACES=cores; OMP_PROC_BIND=close"
+                        if args.mode == "serial"
+                        else "n/a"
+                    )
+                )
             ),
             "  echo 'gpu_request_mode: {0}'".format(args.gpu_request_mode if args.mode == "gpu" else "n/a"),
             "  echo 'max_cycles: {0}'".format(

@@ -135,6 +135,10 @@ The default runs both Lagrangian and Eulerian physics. Common options are:
 --clean-first
 ```
 
+The default `--max-cycles` value is `402`, and the suite always writes it into
+each generated datafile. Supplying the option overrides that reproducibility
+default.
+
 GPU suites also accept:
 
 ```text
@@ -148,6 +152,10 @@ with `export SCALSALE_CPU_VENDOR=nvidia`.
 
 The scripts validate the configured layouts, build the required executable,
 create a job-local datafile, generate `submit.sbatch`, and submit with `sbatch`.
+Intel GPU jobs export `I_MPI_OFFLOAD=2`. CPU jobs bind OpenMP threads to cores;
+with Intel MPI they use compact `omp` pinning domains for hybrid runs and
+one-core domains for pure-MPI runs. The generated Intel MPI command also sets
+the ranks per node explicitly with `-ppn`, matching the placement in the paper.
 Results are written to:
 
 ```text

@@ -33,8 +33,10 @@ Show the complete command help with:
 ./ScalSALE_P3HPC26_Reproducibility/run_test.sh --help
 ```
 
-Every suite accepts `--physics all|lagrange|euler`, `--max-cycles N`, and
-`--clean-first` after the partition and optional account.
+Every suite writes `max_ncyc=402`, as used for the paper runs. It accepts
+`--max-cycles N` to override that value. Every suite also accepts
+`--physics all|lagrange|euler` and `--clean-first` after the partition and
+optional account.
 GPU suites also accept `--gpu-request-mode` and `--gpu-gres-name`.
 
 The default physics array is `("lagrange", "euler")`. CPU suites use Intel by
@@ -95,4 +97,12 @@ exact per-node problem size and the required x/z divisibility.
 
 The PVC job scripts export the actual Level Zero setting
 `ZE_FLAT_DEVICE_HIERARCHY=FLAT` or `COMPOSITE` before `mpirun`, so it applies to all
-ranks on every allocated node.
+ranks on every allocated node. Intel GPU jobs also export `I_MPI_OFFLOAD=2` to
+enable GPU-aware Intel MPI communication.
+
+CPU jobs bind threads to cores. Intel CPU jobs use compact, non-overlapping MPI
+pinning domains: `I_MPI_PIN_DOMAIN=omp` for the 16-rank, 7-thread configuration
+and `I_MPI_PIN_DOMAIN=core` for the 112-rank configuration. Together with
+`I_MPI_PIN_ORDER=compact` and an explicit Intel MPI `-ppn` value, this places
+eight 7-core MPI domains on each 56-core socket in the paper's hybrid
+configuration.

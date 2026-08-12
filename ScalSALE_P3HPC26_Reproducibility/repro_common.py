@@ -76,7 +76,12 @@ def parse_suite_args(
         default="all",
         help="physics path to submit; default submits both",
     )
-    parser.add_argument("--max-cycles", type=int)
+    parser.add_argument(
+        "--max-cycles",
+        type=int,
+        default=402,
+        help="maximum cycle value written to the datafile; default: 402",
+    )
     parser.add_argument("--partition", required=True)
     parser.add_argument("-account", "--account")
     parser.add_argument("--main-dir", type=Path, default=PROJECT_ROOT)
@@ -190,8 +195,7 @@ def run_suite(
                 )
             if ze_flat_hierarchy:
                 command.extend(["-ze_flat_hierarchy", ze_flat_hierarchy])
-            if args.max_cycles is not None:
-                command.extend(["-max_cycles", str(args.max_cycles)])
+            command.extend(["-max_cycles", str(args.max_cycles)])
             if first and args.clean_first:
                 command.append("-clean")
 
