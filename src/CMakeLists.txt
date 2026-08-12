@@ -45,7 +45,7 @@ set(ENV{JSONFORTRAN} "/home/reemh/json-fortran/build_nvhpc")
 	message(STATUS "Using GPU A100")
 
         # IF USING NVIDIA V100 GPU:
-	#set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc70,ptxinfo -Minfo=accel,mp,inline -mp=gpu -cpp -fopenmp -O3 -g -Minline=levels:10,size:10")
+	#set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc70,ptxinfo -Minfo=accel,mp,inline -mp=gpu -cpp -fopenmp -O2 -g -Minline=levels:10,size:10")
 	#message(STATUS "Using GPU V100")
 
     elseif(BUILD_TARGET STREQUAL "CPU")
@@ -57,7 +57,7 @@ set(ENV{JSONFORTRAN} "/home/reemh/json-fortran/build_nvhpc")
         message(STATUS "Using NVHPC CPU-only flags")
     else()
         # Default NVHPC flags (GPU)
-        set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc70,ptxinfo -Minfo=accel,mp,inline -mp=gpu -cpp -fopenmp -O3 -g -Minline=levels:10,size:10")
+        set(CMAKE_Fortran_FLAGS "-fPIC -gpu=cc70,ptxinfo -Minfo=accel,mp,inline -mp=gpu -cpp -fopenmp -O2 -g -Minline=levels:10,size:10")
         message(STATUS "Using default NVHPC GPU flags (V100)")
     endif()
 
@@ -67,15 +67,15 @@ set(ENV{JSONFORTRAN} "/home/u39966a550667980b66e637513213840/json-fortran/json-f
 
     if(BUILD_TARGET STREQUAL "GPU")
         # Intel with GPU offloading (Intel GPUs)
-        set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O3 -qopenmp -fopenmp-targets=spir64")
+        set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O2 -qopenmp -fopenmp-targets=spir64")
         message(STATUS "Using Intel GPU offloading flags")
     elseif(BUILD_TARGET STREQUAL "CPU")
         # Intel CPU-only build
-        set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O3 -qopenmp")
+        set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O2 -qopenmp")
         message(STATUS "Using Intel CPU-only flags")
     else()
         # Default Intel flags (CPU-only)
-        set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O3 -qopenmp")
+        set(CMAKE_Fortran_FLAGS "-fPIC -cpp -fpp -O2 -qopenmp")
         message(STATUS "Using default Intel CPU flags")
     endif()
 endif()
